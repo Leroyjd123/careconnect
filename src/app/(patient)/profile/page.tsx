@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
+import { APP_VERSION } from "@/lib/releases";
 import { getMyConversations } from "@/lib/data";
 import { signOut } from "@/app/actions/auth";
 import { Avatar } from "@/components/ui/Avatar";
@@ -62,6 +63,8 @@ export default async function ProfilePage() {
           Sign out
         </Button>
       </form>
+
+      <p className="text-center text-[13px] text-ink-2">CareConnect version {APP_VERSION}</p>
     </main>
   );
 }

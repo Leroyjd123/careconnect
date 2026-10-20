@@ -54,8 +54,18 @@ invites, set up custom SMTP (`docs/SETUP.md` §3).
 | `/doctor` | doctor | Inbox list + empty pane. First run shows the welcome and 3 steps. |
 | `/doctor/c/[id]` | doctor | Inbox \| conversation \| patient panel. `?rx=new` / `?rx=<id>` swaps in the prescription composer. |
 | `/doctor/patients` | doctor | Status table with Resend and Open chat. `?invite=1` opens the invite form. |
+| `/doctor/settings` | doctor | Account details, current version and release notes. |
 | `/rx/[id]/print` | both | Plain sheet for printing or "Save as PDF". |
 | `/styleguide` | dev | Every shared component. |
+
+## Versions and release notes
+
+The version and release notes live in `src/lib/releases.ts` (newest first; the first entry is the running version).
+The doctor sees them under **Settings**; patients see the version at the bottom of **Profile**.
+
+To ship a release: add an entry at the top of `RELEASES`, set the same `version` in `package.json`
+(`npm version <x.y.z> --no-git-tag-version`), commit, then tag it: `git tag v<x.y.z> && git push --tags`.
+New features bump the minor number (0.3.0 → 0.4.0); fixes bump the patch (0.3.0 → 0.3.1).
 
 ## Checks
 

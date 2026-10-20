@@ -23,6 +23,8 @@ import { Composer } from "@/components/chat/Composer";
 import { AttachSheet } from "@/components/chat/AttachSheet";
 import { MedicineFields } from "@/components/rx/MedicineFields";
 import { ReviewIssueDialog } from "@/components/rx/ReviewIssueDialog";
+import { ReleaseNotes } from "@/components/doctor/ReleaseNotes";
+import { RELEASES } from "@/lib/releases";
 import { DURATION_OPTIONS, FREQUENCY_OPTIONS, LANGUAGES } from "@/lib/constants";
 
 function Section({ title, file, children }: { title: string; file: string; children: ReactNode }) {
@@ -215,6 +217,12 @@ export function Styleguide() {
             When Dr. Sharma sends one, it will appear here and in your chat.
           </EmptyState>
         </Card>
+      </Section>
+
+      <Section title="Release notes" file="components/doctor/ReleaseNotes.tsx · lib/releases.ts">
+        <div className="max-w-2xl">
+          <ReleaseNotes releases={RELEASES.slice(0, 2)} />
+        </div>
       </Section>
 
       <Section title="Navigation" file="components/layout/TabBar.tsx · PatientTabBar.tsx · DoctorSidebar.tsx">

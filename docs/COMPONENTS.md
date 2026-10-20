@@ -59,12 +59,13 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity, New prescription, Reports/Prescriptions tabs. | ✅ |
 | `InviteDialog` | `doctor/InviteDialog.tsx` | Name + email form → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
 | `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status + actions (resend, open chat). | ✅ |
+| `ReleaseNotes` | `doctor/ReleaseNotes.tsx` | Version history on `/doctor/settings`, from `RELEASES` in `lib/releases.ts`. First entry marked Current. | ✅ |
 
 ## Server actions — `src/app/actions` (already written; build UI on these)
 
 | Action | File |
 |---|---|
-| `login`, `signOut` | `actions/auth.ts` |
+| `login`, `setPassword`, `signOut` | `actions/auth.ts` |
 | `invitePatient`, `resendInvite` | `actions/patients.ts` |
 | `sendMessage`, `sendAttachment`, `getFileUrl`, `markRead` | `actions/messages.ts` |
 | `saveDraft`, `issuePrescription`, `deleteDraft` | `actions/prescriptions.ts` |

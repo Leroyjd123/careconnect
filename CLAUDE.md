@@ -80,6 +80,8 @@ Use the exact strings in `docs/SPEC.md` where given.
 
 ## Definition of done
 
+- User-visible change? Add it to the top release in `src/lib/releases.ts` (or start a new one and bump `package.json`).
+
 - `npm run typecheck && npm run lint && npm run build` pass.
 - Loading, empty and error states exist for anything that fetches or submits.
 - Works at 390px wide and at 1440px wide.

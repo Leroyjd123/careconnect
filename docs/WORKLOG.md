@@ -17,6 +17,7 @@ Rules for whoever edits this file:
 - `npm run typecheck && npm run lint && npm run build` pass. 16 routes compile.
 - Connected to a Supabase project. Verified by hand: doctor and patient password sign-in, patient invite (existing-account path).
 - Sign-in switched from email OTP to email + password (see Decisions log). Invite email → `/set-password`.
+- v0.3.0: `/doctor/settings` with version + release notes; version on patient Profile.
 - `PRODUCT.md` and `DESIGN.md` added (product record and visual system).
 - Not verified: chat both ways + realtime, uploads, prescriptions, invite email to a new address, 390px/1440px pass.
 
@@ -55,6 +56,9 @@ Newest last. Never delete an entry; add a superseding one instead.
 
 - **Email + password sign-in, not OTP** (2026-10-20). Supabase's built-in email (~2/hour, team members only) made code sign-in unusable for testing, and the owner asked for passwords. The only email sent is the invite; its link signs the user in and `/set-password` makes them choose one. Resend invite still uses a magic-link email for the same landing. Supersedes the "email → 6-digit code" sign-in in the original spec.
 - **`EMAIL_RE` lives in `lib/constants.ts`**, shared by the login and invite actions.
+
+- **Release notes are code, not a table** (`src/lib/releases.ts`). They change only when the app is deployed, so a DB table would add RLS and admin UI for nothing. `package.json` version must match `RELEASES[0].version`.
+- **Doctor got a Settings page** (`/doctor/settings`) to hold account details and release notes; it is the 4th nav item. Profile fields are read-only there until an edit flow is specced.
 
 ## Known gaps — deliberate, not bugs
 

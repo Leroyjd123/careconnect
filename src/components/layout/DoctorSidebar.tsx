@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, LogOut, UserPlus, Users } from "lucide-react";
+import { Inbox, LogOut, Settings, UserPlus, Users } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { CountBadge } from "@/components/ui/Badge";
 import { IconButton } from "@/components/ui/Button";
@@ -15,6 +15,7 @@ const NAV: TabItem[] = [
   { href: "/doctor", label: "Inbox", Icon: Inbox, exact: true },
   { href: "/doctor/patients", label: "Patients", Icon: Users },
   { href: "/doctor/patients?invite=1", label: "Invite patient", shortLabel: "Invite", Icon: UserPlus },
+  { href: "/doctor/settings", label: "Settings", Icon: Settings },
 ];
 
 /**

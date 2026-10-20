@@ -26,6 +26,7 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/profile` | patient | Name, email, language (EN/ಕನ್ನಡ/हिन्दी), privacy, help, sign out (C3) |
 | `/doctor` | doctor | Inbox. Desktop: list + empty conversation pane. Phone: list (D2, E1, D9) |
 | `/doctor/c/[id]` | doctor | Same 3 columns with conversation open + PatientPanel (D2, D3, D6, E2) |
+| `/doctor/settings` | doctor | Account details (name, email, specialty, reg no), current version, release notes ✅ |
 | `/doctor/patients` | doctor | Patients + invite status, `?invite=1` opens InviteDialog (D7, D8) |
 | `/rx/[id]/print` | both | Print-friendly prescription; browser "Save as PDF" (C2 Download) |
 | `/styleguide` | dev only | All shared components |
