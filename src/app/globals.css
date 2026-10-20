@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/*
+ * CareConnect design tokens. The ONLY place colours, radii and shadows are defined.
+ * Use them as Tailwind classes: bg-forest, text-ink-2, rounded-card, shadow-float…
+ * Never hard-code a hex value in a component.
+ */
+@theme {
+  --font-sans: "Inter Variable", -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Brand */
+  --color-forest: #1f6b57;      /* primary actions, selected states */
+  --color-forest-700: #17503f;  /* pressed / link hover */
+  --color-sage: #8faf9b;        /* secondary accent, light blobs */
+  --color-mint: #eaf3ee;        /* soft background */
+  --color-mint-200: #dcebe2;    /* soft buttons, active tab */
+  --color-mint-300: #cfe3d6;    /* patient avatar, own bubble tint */
+  --color-ivory: #f8f8f4;       /* sheets, dialogs */
+  --color-ground: #edf4ef;      /* app background under the glass */
+
+  /* Text */
+  --color-ink: #26332f;         /* primary text */
+  --color-ink-2: #4f5f58;       /* secondary text (≥ 4.5:1 on white and mint) */
+  --color-ink-3: #3f5a4f;       /* labels, eyebrows */
+
+  /* Lines & states */
+  --color-line: #d3e3d9;
+  --color-line-soft: #e3ece6;
+  --color-danger: #8e2f25;
+  --color-danger-bg: #fbedea;
+  --color-warning: #5e4b2b;
+  --color-warning-bg: #f4eedf;
+  --color-file-pdf: #9a3b2e;
+  --color-file-pdf-bg: #f4e3df;
+
+  /* Avatar tones (initials). Picked per person by Avatar, never by hand. */
+  --color-tone-sky: #2f4e5e;
+  --color-tone-sky-bg: #d9e4ea;
+  --color-tone-rose: #5e3a4c;
+  --color-tone-rose-bg: #e8dce2;
+
+  /* Shape */
+  --radius-field: 14px;
+  --radius-tile: 20px;
+  --radius-card: 28px;
+
+  /* Depth */
+  --shadow-float: 0 18px 40px -20px rgb(31 74 60 / 0.4);
+  --shadow-lift: 0 8px 20px -14px rgb(31 74 60 / 0.45);
+  --shadow-cta: 0 10px 24px -10px rgb(31 107 87 / 0.7);
+  --shadow-modal: 0 40px 90px -30px rgb(20 40 32 / 0.55);
+}
+
+/* Frosted glass surfaces. Pick one; don't hand-roll backdrop-filter elsewhere. */
+@utility glass {
+  background: rgb(255 255 255 / 0.6);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 0.85);
+}
+@utility glass-subtle {
+  background: rgb(255 255 255 / 0.4);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 0.8);
+}
+@utility glass-strong {
+  background: rgb(248 248 244 / 0.9);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgb(255 255 255 / 0.95);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-ground text-ink font-sans antialiased;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+  }
+  a {
+    @apply text-forest;
+  }
+  a:hover {
+    @apply text-forest-700;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  dialog::backdrop {
+    background: rgb(38 51 47 / 0.3);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
