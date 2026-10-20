@@ -1,35 +1,54 @@
 import type { ReactNode } from "react";
 import { FileText, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 type PrescriptionCardProps = {
-  issuedAt: string;
+  /** Left out for a draft, which has no issue date yet. */
+  issuedAt?: string;
   medicines: string[];
   /** Buttons/links under the card: "View prescription", "Issue a correction". */
   actions?: ReactNode;
+  /** Doctor's unissued draft: dashed outline, "Not sent". */
+  draft?: boolean;
   replaced?: boolean;
+  /** Newest issued prescription, in the patient's list. */
+  latest?: boolean;
 };
 
 /**
- * The prescription card that appears in chat (both sides) and on the patient's list.
- * Issued prescriptions are locked, so this card is read-only by design.
+ * The prescription card that appears in chat (both sides), the doctor's panel and the
+ * patient's list. Issued prescriptions are locked, so this card is read-only by design.
  */
-export function PrescriptionCard({ issuedAt, medicines, actions, replaced }: PrescriptionCardProps) {
+export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced, latest }: PrescriptionCardProps) {
+  const count = `${medicines.length} ${medicines.length === 1 ? "medicine" : "medicines"}`;
+
   return (
-    <div className="flex w-full flex-col gap-3 rounded-[22px] border border-white bg-white/90 p-4 shadow-lift">
+    <div
+      className={cn(
+        "flex w-full flex-col gap-3 rounded-[22px] border p-4",
+        draft ? "border-dashed border-sage bg-white/70" : "border-white bg-white/90 shadow-lift",
+      )}
+    >
       <div className="flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-forest text-white">
+        <span
+          className={cn(
+            "flex size-11 shrink-0 items-center justify-center rounded-[14px]",
+            draft ? "bg-mint-200 text-forest" : "bg-forest text-white",
+          )}
+        >
           <FileText aria-hidden="true" className="size-5" strokeWidth={1.75} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-base font-semibold">Prescription</span>
-          <span className="text-[13px] text-ink-2">
-            {formatDate(issuedAt)} · {medicines.length} {medicines.length === 1 ? "medicine" : "medicines"}
-          </span>
+          <span className="text-base font-semibold">{draft ? "Draft prescription" : "Prescription"}</span>
+          <span className="text-[13px] text-ink-2">{issuedAt ? `${formatDate(issuedAt)} · ${count}` : count}</span>
         </div>
-        {replaced ? (
+        {draft ? (
+          <Badge tone="outline">Not sent</Badge>
+        ) : replaced ? (
           <Badge tone="outline">Replaced</Badge>
+        ) : latest ? (
+          <Badge tone="solid">Latest</Badge>
         ) : (
           <Badge tone="brand" icon={<Lock aria-hidden="true" />}>
             Issued

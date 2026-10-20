@@ -4,9 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
+import { EMAIL_RE } from "@/lib/constants";
 import type { ActionResult } from "@/lib/types";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Doctor invites a patient by email.
@@ -77,7 +76,7 @@ export async function resendInvite(patientId: string): Promise<ActionResult> {
   if (!patient?.email) return { ok: false, error: "Patient not found." };
   if (patient.status === "active") return { ok: false, error: "This patient has already joined." };
 
-  // For existing users, a magic link email works as a fresh invite.
+  // For existing users, a magic-link email works as a fresh invite: it lands on /auth/confirm → /set-password.
   const { error } = await admin.auth.signInWithOtp({
     email: patient.email,
     options: { shouldCreateUser: false, emailRedirectTo: `${env.siteUrl()}/auth/confirm` },

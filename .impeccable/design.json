@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T00:00:00Z",
+  "title": "Design System: CareConnect",
+  "extensions": {
+    "colorMeta": {
+      "forest": { "role": "primary", "displayName": "Eucalyptus", "canonical": "#1f6b57", "tonalRamp": ["#0b2a22", "#123d32", "#17503f", "#1f6b57", "#3f8a74", "#6fab98", "#a8cfc1", "#dcefe8"] },
+      "forest-700": { "role": "primary", "displayName": "Eucalyptus Deep", "canonical": "#17503f" },
+      "sage": { "role": "secondary", "displayName": "Sage", "canonical": "#8faf9b", "tonalRamp": ["#2c3d33", "#43594b", "#5c7865", "#76947f", "#8faf9b", "#adc6b5", "#cbdcd1", "#e8f0eb"] },
+      "mint": { "role": "neutral", "displayName": "Mint Mist", "canonical": "#eaf3ee" },
+      "mint-200": { "role": "neutral", "displayName": "Mint Leaf", "canonical": "#dcebe2" },
+      "mint-300": { "role": "neutral", "displayName": "Mint Bud", "canonical": "#cfe3d6" },
+      "ivory": { "role": "neutral", "displayName": "Ivory", "canonical": "#f8f8f4" },
+      "ground": { "role": "neutral", "displayName": "Garden Ground", "canonical": "#edf4ef" },
+      "ink": { "role": "neutral", "displayName": "Forest Ink", "canonical": "#26332f" },
+      "ink-2": { "role": "neutral", "displayName": "Moss Ink", "canonical": "#4f5f58" },
+      "ink-3": { "role": "neutral", "displayName": "Bark Ink", "canonical": "#3f5a4f" },
+      "line": { "role": "neutral", "displayName": "Leaf Line", "canonical": "#d3e3d9" },
+      "line-soft": { "role": "neutral", "displayName": "Soft Line", "canonical": "#e3ece6" },
+      "danger": { "role": "status", "displayName": "Clay", "canonical": "#8e2f25" },
+      "warning": { "role": "status", "displayName": "Ochre", "canonical": "#5e4b2b" },
+      "file-pdf": { "role": "utility", "displayName": "PDF Terracotta", "canonical": "#9a3b2e" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Patient home greeting; at most once per screen." },
+      "headline": { "displayName": "Headline", "purpose": "Screen and dialog titles." },
+      "title": { "displayName": "Title", "purpose": "Card titles, large button labels." },
+      "body": { "displayName": "Body", "purpose": "All patient reading text and chat messages. Never below 16px for patients." },
+      "body-compact": { "displayName": "Body compact", "purpose": "Doctor-side lists and supporting lines." },
+      "label": { "displayName": "Label", "purpose": "Field labels, chips, doctor metadata." },
+      "caption": { "displayName": "Caption", "purpose": "Badges and tab labels." }
+    },
+    "shadows": [
+      { "name": "float", "value": "0 18px 40px -20px rgb(31 74 60 / 0.4)", "purpose": "Default for glass cards and the tab bar." },
+      { "name": "lift", "value": "0 8px 20px -14px rgb(31 74 60 / 0.45)", "purpose": "Small solid items sitting on glass." },
+      { "name": "cta", "value": "0 10px 24px -10px rgb(31 107 87 / 0.7)", "purpose": "Green glow under the single primary button only." },
+      { "name": "modal", "value": "0 40px 90px -30px rgb(20 40 32 / 0.55)", "purpose": "Dialogs and sheets." }
+    ],
+    "motion": [
+      { "name": "press", "value": "transform: scale(0.98)", "purpose": "Button active state." },
+      { "name": "reduced-motion", "value": "animation/transition: none", "purpose": "All motion disabled under prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "390px" },
+      { "name": "sm", "value": "640px" },
+      { "name": "desktop", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single main action on a screen.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Send message</button>",
+      "css": ".ds-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:48px; padding:0 20px; border:0; border-radius:9999px; font:600 15px/1 'Inter Variable', system-ui, sans-serif; cursor:pointer; transition:background-color .15s, box-shadow .15s, transform .1s; } .ds-btn:active { transform:scale(0.98); } .ds-btn:focus-visible { outline:2px solid #1f6b57; outline-offset:2px; } .ds-btn-primary { background:#1f6b57; color:#fff; box-shadow:0 10px 24px -10px rgb(31 107 87 / 0.7); } .ds-btn-primary:hover { background:#17503f; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral glass action: Cancel, Download, Save draft.",
+      "html": "<button class=\"ds-btn2\">Download</button>",
+      "css": ".ds-btn2 { display:inline-flex; align-items:center; height:48px; padding:0 20px; border-radius:9999px; font:600 15px/1 'Inter Variable', system-ui, sans-serif; color:#26332f; background:rgb(255 255 255 / 0.6); backdrop-filter:blur(24px) saturate(150%); border:1px solid rgb(255 255 255 / 0.85); cursor:pointer; transition:background-color .15s; } .ds-btn2:hover { background:rgb(255 255 255 / 0.85); } .ds-btn2:focus-visible { outline:2px solid #1f6b57; outline-offset:2px; }"
+    },
+    {
+      "name": "Soft Button",
+      "kind": "button",
+      "refersTo": "button-soft",
+      "description": "Brand action that must not compete with primary.",
+      "html": "<button class=\"ds-btn-soft\">New prescription</button>",
+      "css": ".ds-btn-soft { height:48px; padding:0 20px; border:0; border-radius:9999px; font:600 15px/1 'Inter Variable', system-ui, sans-serif; background:#dcebe2; color:#1f6b57; cursor:pointer; transition:background-color .15s; } .ds-btn-soft:hover { background:#cfe3d6; } .ds-btn-soft:focus-visible { outline:2px solid #1f6b57; outline-offset:2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Label + white field with a soft eucalyptus focus halo.",
+      "html": "<label class=\"ds-field\"><span>Your email</span><input class=\"ds-input\" placeholder=\"you@example.com\"></label>",
+      "css": ".ds-field { display:flex; flex-direction:column; gap:6px; font:600 13px 'Inter Variable', system-ui, sans-serif; color:#26332f; } .ds-input { height:48px; padding:0 16px; border:1px solid #d3e3d9; border-radius:14px; background:#fff; font:400 16px 'Inter Variable', system-ui, sans-serif; color:#26332f; } .ds-input::placeholder { color:rgb(79 95 88 / 0.7); } .ds-input:focus { outline:none; border-color:#1f6b57; box-shadow:0 0 0 4px rgb(31 107 87 / 0.1); }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Single-choice quick pick; selected shows a check.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\">Once a day</button><button class=\"ds-chip ds-chip-on\" aria-pressed=\"true\">✓ Twice a day</button></div>",
+      "css": ".ds-chips { display:flex; gap:6px; flex-wrap:wrap; } .ds-chip { height:40px; padding:0 14px; border-radius:9999px; border:1px solid #d3e3d9; background:rgb(255 255 255 / 0.8); color:#26332f; font:400 13px 'Inter Variable', system-ui, sans-serif; cursor:pointer; } .ds-chip:hover { background:#fff; } .ds-chip-on { background:#1f6b57; border-color:#1f6b57; color:#fff; font-weight:600; }"
+    },
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The default surface over the garden background.",
+      "html": "<div class=\"ds-card\"><strong>Dr. [NAME]</strong><p>Your doctor usually replies within a day.</p></div>",
+      "css": ".ds-card { padding:20px; border-radius:28px; background:rgb(255 255 255 / 0.6); backdrop-filter:blur(24px) saturate(150%); border:1px solid rgb(255 255 255 / 0.85); box-shadow:0 18px 40px -20px rgb(31 74 60 / 0.4); font:400 16px/1.5 'Inter Variable', system-ui, sans-serif; color:#26332f; } .ds-card strong { font-size:17px; } .ds-card p { margin:4px 0 0; color:#4f5f58; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-brand",
+      "description": "Status pill: always words, ideally an icon.",
+      "html": "<span class=\"ds-badge\">● Active</span> <span class=\"ds-badge ds-badge-pending\">Invite pending</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:9999px; background:#dcebe2; color:#1f6b57; font:600 12px 'Inter Variable', system-ui, sans-serif; } .ds-badge-pending { background:transparent; border:1px dashed #8faf9b; color:#4f5f58; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-active",
+      "description": "Floating glass pill navigation, icon over label.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-tab-on\">Home</a><a class=\"ds-tab\">Chat</a><a class=\"ds-tab\">Prescriptions</a><a class=\"ds-tab\">Profile</a></nav>",
+      "css": ".ds-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; height:70px; padding:6px; border-radius:9999px; background:rgb(255 255 255 / 0.6); backdrop-filter:blur(24px); border:1px solid rgb(255 255 255 / 0.85); box-shadow:0 18px 40px -20px rgb(31 74 60 / 0.4); } .ds-tab { display:flex; align-items:center; justify-content:center; border-radius:9999px; font:500 12px 'Inter Variable', system-ui, sans-serif; color:#4f5f58; cursor:pointer; } .ds-tab:hover { color:#26332f; } .ds-tab-on { background:#dcebe2; color:#1f6b57; font-weight:600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Clinic Garden",
+    "overview": "CareConnect should feel like a waiting room you'd actually want to sit in. The screen rests on a pale mint ground, washed with soft sage and ivory light and a faint pattern of line-drawn leaves. Content sits on panes of frosted glass, so the garden shows through without competing. Nothing is loud. One deep eucalyptus green does the work of saying \"this is the thing to tap\", and everything else stays quiet. The patient side is spacious and obvious; the doctor side reuses the same materials more densely. Both are the same garden, seen from a different chair.",
+    "keyCharacteristics": [
+      "A single warm-green accent against soft mint neutrals.",
+      "Frosted-glass surfaces over a fixed, softly lit background.",
+      "Generous radii: pills for actions, 28px for cards.",
+      "Long, soft, green-tinted shadows rather than grey ones.",
+      "Inter throughout, with tight tracking on headings and plain sentence-case copy."
+    ],
+    "rules": [
+      { "name": "The One Green Voice Rule", "body": "Eucalyptus is the only saturated colour on a screen, and only one filled-eucalyptus button appears per screen.", "section": "colors" },
+      { "name": "The Tokens-Only Rule", "body": "Every colour is a token in src/app/globals.css. A hex value in a component is a bug.", "section": "colors" },
+      { "name": "The Words-With-Colour Rule", "body": "Status is never colour alone. Every badge carries text, and ideally an icon.", "section": "colors" },
+      { "name": "The 16px Patient Floor Rule", "body": "Patient reading text is never below 16px.", "section": "typography" },
+      { "name": "The Indic Headroom Rule", "body": "Never fix line heights or clip text in a way that would cut off Kannada or Hindi.", "section": "typography" },
+      { "name": "The Three Panes Rule", "body": "Use the glass utilities or Card, never a hand-written backdrop-filter.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use exactly one variant=\"primary\" button per screen.",
+      "Do keep patient text at 16px or more and patient targets at 44px or more, and pair every icon with a text label.",
+      "Do build surfaces from Card or the glass, glass-subtle and glass-strong utilities.",
+      "Do use green-tinted shadows from the token set.",
+      "Do write status as badge text plus an icon."
+    ],
+    "donts": [
+      "Don't write hex colours or backdrop-filter in components.",
+      "Don't make it look like hospital software: cold blue and white, dense clinical tables for patients, jargon.",
+      "Don't make it look like generic SaaS: purple or rainbow gradients, dashboard-card grids, marketing hero styling.",
+      "Don't copy WhatsApp's green-and-beige chat look.",
+      "Don't add background blobs or patterns inside pages. BackgroundScene owns that.",
+      "Don't introduce a second typeface or colour accent."
+    ]
+  }
+}

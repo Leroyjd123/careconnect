@@ -3,13 +3,13 @@
 Doctor–patient messaging MVP. Patients chat with their doctor, send reports and see prescriptions.
 The doctor manages conversations, reviews reports, issues prescriptions and invites patients.
 
-Read before any task: this file, `docs/COMPONENTS.md`, and the phase you are on in `docs/PROMPTS.md`.
+Read before any task: this file, `docs/WORKLOG.md` (where the build is right now) and `docs/COMPONENTS.md`.
 Product detail lives in `docs/SPEC.md`. Setup lives in `docs/SETUP.md`.
 
 ## Stack (do not change without asking)
 
 - Next.js 15 App Router, React 19, TypeScript strict. One app, one repo, deployed to Vercel.
-- Supabase: Postgres + RLS, email OTP auth, private Storage, Realtime. Schema: `supabase/migrations/`.
+- Supabase: Postgres + RLS, email + password auth (invite email sets the password), private Storage, Realtime. Schema: `supabase/migrations/`.
 - Tailwind CSS v4. Tokens in `src/app/globals.css`. Icons: `lucide-react` only. Font: Inter (self-hosted).
 - No other runtime dependencies. Do NOT add: UI kits (shadcn, MUI, Radix), state libraries (Redux, Zustand,
   React Query), ORMs (Prisma, Drizzle), date libraries, form libraries, CSS-in-JS. Ask first if you think one is needed.

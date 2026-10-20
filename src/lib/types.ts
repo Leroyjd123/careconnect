@@ -60,6 +60,9 @@ export type Message = {
 
 export type PrescriptionStatus = "draft" | "issued";
 
+/** One editable medicine row. Shared by the composer and the saveDraft action. */
+export type DraftItem = { medicine: string; dose: string; frequency: string; duration: string; timing: string | null };
+
 export type PrescriptionItem = {
   id: string;
   prescription_id: string;
@@ -85,6 +88,13 @@ export type Prescription = {
   updated_at: string;
   prescription_items?: PrescriptionItem[];
 };
+
+/**
+ * Rows joined with the people on them. Declared here (not in data.ts) so Client
+ * Components can use the type without importing the server-only module.
+ */
+export type PrescriptionWithPeople = Prescription & { doctor: Profile; patient: Profile };
+export type ConversationWithPeople = Conversation & { doctor: Profile; patient: Profile };
 
 /** Shape every server action returns, so forms handle errors the same way. */
 export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string };

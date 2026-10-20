@@ -10,6 +10,9 @@ export const LANGUAGES: { value: Language; label: string; english: string }[] = 
 ];
 
 /** Storage bucket from the migration. Files live under <conversation_id>/<uuid>-<name>. */
+/** Loose email shape check; Supabase does the real validation. */
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const ATTACHMENTS_BUCKET = "attachments";
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_FILE_TYPES = "application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif";

@@ -5,26 +5,25 @@ import { usePathname } from "next/navigation";
 import { Inbox, LogOut, UserPlus, Users } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { CountBadge } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
+import { TabBar, type TabItem } from "@/components/layout/TabBar";
 import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+const NAV: TabItem[] = [
   { href: "/doctor", label: "Inbox", Icon: Inbox, exact: true },
   { href: "/doctor/patients", label: "Patients", Icon: Users },
-  { href: "/doctor/patients?invite=1", label: "Invite patient", Icon: UserPlus },
+  { href: "/doctor/patients?invite=1", label: "Invite patient", shortLabel: "Invite", Icon: UserPlus },
 ];
 
 /**
- * Doctor navigation. Glass sidebar on desktop, floating bottom bar on phones.
+ * Doctor navigation. Glass sidebar on desktop, the shared TabBar on phones.
  * unread = total unread messages across the inbox.
  */
 export function DoctorSidebar({ name, unread = 0 }: { name: string; unread?: number }) {
   const pathname = usePathname();
-  const isActive = (href: string, exact?: boolean) => {
-    const path = href.split("?")[0];
-    return exact ? pathname === path : pathname.startsWith(path) && !href.includes("?");
-  };
+  const items = NAV.map((item) => (item.label === "Inbox" ? { ...item, badge: unread } : item));
 
   return (
     <>
@@ -32,7 +31,8 @@ export function DoctorSidebar({ name, unread = 0 }: { name: string; unread?: num
       <nav aria-label="Main" className="glass hidden w-[232px] shrink-0 flex-col gap-1.5 rounded-card p-3.5 shadow-float lg:flex">
         <Logo className="px-2 pt-2 pb-5" />
         {NAV.map(({ href, label, Icon, exact }) => {
-          const active = isActive(href, exact);
+          const path = href.split("?")[0];
+          const active = !href.includes("?") && (exact ? pathname === path : pathname.startsWith(path));
           return (
             <Link
               key={href}
@@ -54,37 +54,13 @@ export function DoctorSidebar({ name, unread = 0 }: { name: string; unread?: num
           <Avatar name={name} doctor size="sm" />
           <span className="min-w-0 flex-1 truncate text-sm font-semibold">{name}</span>
           <form action={signOut}>
-            <button type="submit" aria-label="Sign out" title="Sign out" className="flex size-9 items-center justify-center rounded-full text-ink-2 hover:bg-white/70">
-              <LogOut aria-hidden="true" className="size-[18px]" />
-            </button>
+            <IconButton type="submit" label="Sign out" icon={<LogOut className="size-[18px]" />} className="size-10" />
           </form>
         </div>
       </nav>
 
       {/* Phone */}
-      <nav
-        aria-label="Main"
-        className="glass fixed inset-x-4 bottom-[max(16px,env(safe-area-inset-bottom))] z-20 mx-auto grid h-[70px] max-w-md grid-cols-3 gap-1 rounded-full p-1.5 shadow-float lg:hidden"
-      >
-        {NAV.map(({ href, label, Icon, exact }) => {
-          const active = isActive(href, exact);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "relative flex flex-col items-center justify-center gap-0.5 rounded-full text-xs no-underline",
-                active ? "bg-mint-200 font-semibold text-forest hover:text-forest" : "font-medium text-ink-2 hover:text-ink",
-              )}
-            >
-              <Icon aria-hidden="true" className="size-[22px]" />
-              {label === "Invite patient" ? "Invite" : label}
-              {label === "Inbox" ? <CountBadge count={unread} className="absolute top-1.5 right-[calc(50%-24px)]" /> : null}
-            </Link>
-          );
-        })}
-      </nav>
+      <TabBar items={items} className="lg:hidden" />
     </>
   );
 }

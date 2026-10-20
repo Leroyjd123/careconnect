@@ -1,8 +1,13 @@
 # Build plan for Claude Code
 
-Run one phase per Claude Code session (or `/clear` between phases). Paste the prompt as-is.
-Each phase ends with `npm run typecheck && npm run lint && npm run build` passing and a quick manual test.
-Commit after every phase.
+**Status: phases 1–6 are built.** This file is kept as the record of what each phase covered and what
+to test. For what exists now, read `docs/COMPONENTS.md` and open `/styleguide`.
+
+Still outstanding, because they need a running Supabase project (`docs/SETUP.md`):
+
+- End-to-end test with two browsers (doctor + patient): invite, chat, upload, prescribe, correct.
+- `supabase/tests/rls_smoke.sql` on a throwaway local Postgres.
+- Deploy (SETUP.md step 7) and walk the PRD acceptance criteria on a real phone.
 
 ---
 

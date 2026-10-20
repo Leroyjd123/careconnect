@@ -8,16 +8,17 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 ## Roles and access
 
 - One doctor account (created by hand, see SETUP.md). Schema already supports more doctors later.
-- Patients exist only by invitation. Sign-up is disabled. An unknown email gets "We couldn't find this email…".
+- Patients exist only by invitation. Sign-up is disabled. A wrong email or password gets "That email and password don’t match. Please try again."
 - Each patient has one ongoing conversation with their doctor. No new thread per question.
-- Sign-in for everyone: email → 6-digit code by email. Phone OTP replaces email later (see SETUP.md, "Switching to phone").
+- Sign-in for everyone: email + password. The only email the app sends is the patient invite; its link signs them in and asks them to choose a password (`/set-password`).
 
 ## Routes
 
 | Route | Who | Screen (canvas ref) |
 |---|---|---|
-| `/login` | all | Email → code (A1, A2, A3 states) ✅ |
-| `/auth/confirm` | all | Invite / magic-link landing ✅ |
+| `/login` | all | Email + password ✅ |
+| `/set-password` | all | Choose a password after opening an invite link ✅ |
+| `/auth/confirm` | all | Invite link landing → `/set-password` ✅ |
 | `/home` | patient | Doctor card, latest message, Chat CTA, Prescriptions + Send a report tiles (B1) ✅ |
 | `/chat` | patient | Conversation with the doctor (B2), attach flow (B3, B4), states (B5) |
 | `/prescriptions` | patient | Issued list, newest first, "Replaced" marked (C1, C4) |
@@ -62,7 +63,7 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 ## Invites
 
 - Doctor enters full name + email → `invitePatient()` → Supabase invite email → patient appears in inbox as "Invite pending" (dashed avatar).
-- Patient joins by clicking the email link or by signing in with the code. First sign-in flips status to Active.
+- Patient joins by clicking the invite link and choosing a password. First sign-in flips status to Active.
 - Patients page shows Active / Invite pending, with Resend for pending and Open chat for active.
 - "Email not delivered" from the hi-fi is out of scope for the MVP (needs delivery webhooks).
 

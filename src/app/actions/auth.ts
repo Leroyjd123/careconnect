@@ -2,65 +2,58 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { EMAIL_RE } from "@/lib/constants";
 
 export type LoginState = {
-  step: "email" | "code";
   email: string;
   error?: string;
-  notice?: string;
 };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export type SetPasswordState = {
+  error?: string;
+};
 
-/**
- * One action drives the whole sign-in form:
- *   step "email" → email a 6-digit code (invite-only: unknown emails are refused, never signed up)
- *   step "code"  → verify it, then go home. intent=resend / intent=change are the two links.
- */
-export async function login(prev: LoginState, formData: FormData): Promise<LoginState> {
-  const intent = formData.get("intent");
-  if (intent === "change") return { step: "email", email: prev.email };
-  if (prev.step === "email" || intent === "resend") return sendCode(String(formData.get("email") ?? prev.email));
-  return verifyCode(prev.email, String(formData.get("code") ?? ""));
-}
+const MIN_PASSWORD = 8;
 
-async function sendCode(rawEmail: string): Promise<LoginState> {
-  const email = rawEmail.trim().toLowerCase();
-  if (!EMAIL_RE.test(email)) {
-    return { step: "email", email, error: "Enter the email address your doctor's clinic has." };
+/** Email + password sign-in for doctors and patients. Accounts only exist by invitation. */
+export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!EMAIL_RE.test(email) || !password) {
+    return { email, error: "Enter your email and password." };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     if (error.status === 429) {
-      return { step: "email", email, error: "Too many attempts. Please wait a minute and try again." };
+      return { email, error: "Too many attempts. Please wait a minute and try again." };
     }
-    if (error.status === 400 || error.status === 422 || /signups? not allowed|not found/i.test(error.message)) {
-      return {
-        step: "email",
-        email,
-        error: "We couldn't find this email. CareConnect works by invitation, so ask your doctor's clinic to invite you.",
-      };
-    }
-    console.error("signInWithOtp failed", error);
-    return { step: "email", email, error: "We couldn't send the code. Please try again." };
+    return { email, error: "That email and password don't match. Please try again." };
   }
 
-  return { step: "code", email, notice: `We sent a 6-digit code to ${email}.` };
+  redirect("/");
 }
 
-async function verifyCode(email: string, rawCode: string): Promise<LoginState> {
-  const token = rawCode.replace(/\D/g, "");
-  if (token.length !== 6) {
-    return { step: "code", email, error: "Enter all 6 digits from the email." };
-  }
+/** After opening the invite link the user is signed in; they choose a password here. */
+export async function setPassword(_prev: SetPasswordState, formData: FormData): Promise<SetPasswordState> {
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  if (password.length < MIN_PASSWORD) return { error: `Use at least ${MIN_PASSWORD} characters.` };
+  if (password !== confirm) return { error: "The two passwords don't match." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?error=link");
+
+  const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    return { step: "code", email, error: "That code doesn't match or has expired. Check the email and try again." };
+    if (/same|different/i.test(error.message)) return { error: "Choose a different password from your current one." };
+    if (/weak|short|characters/i.test(error.message)) return { error: "That password is too easy to guess. Try a longer one." };
+    console.error("updateUser password failed", error);
+    return { error: "We couldn't save your password. Please try again." };
   }
 
   redirect("/");

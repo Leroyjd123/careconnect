@@ -3,9 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { ActionResult } from "@/lib/types";
-
-export type DraftItem = { medicine: string; dose: string; frequency: string; duration: string; timing?: string | null };
+import type { ActionResult, DraftItem } from "@/lib/types";
 
 export type DraftInput = {
   id?: string; // omit to create a new draft

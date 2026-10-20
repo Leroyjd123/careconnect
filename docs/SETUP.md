@@ -12,19 +12,17 @@ About 30 minutes. Everything below is on free tiers.
 ## 2. Auth settings (Authentication → …)
 
 - **Sign In / Providers → Email:** enabled. **Allow new users to sign up: OFF** (invite-only).
-  Confirm email: ON. **Email OTP length: 6**. OTP expiry: 3600 seconds.
+  Confirm email: ON. Email OTP expiry (how long invite links work): 86400 seconds.
 - **URL Configuration:** Site URL = your Vercel URL (`http://localhost:3000` while developing).
   Redirect URLs: add `http://localhost:3000/**` and `https://YOUR-APP.vercel.app/**`.
 - **Emails → Templates.** Replace two templates so they match the app:
 
-**Magic Link** (used for sign-in codes and "resend invite"):
+**Magic Link** (used only for "resend invite"):
 
 ```html
-<h2>Your CareConnect code</h2>
-<p>Enter this code to sign in:</p>
-<p style="font-size:28px;font-weight:700;letter-spacing:6px">{{ .Token }}</p>
-<p>Or <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">sign in with one tap</a>.</p>
-<p>The code expires in 1 hour. If you didn't ask for it, you can ignore this email.</p>
+<h2>You're invited to CareConnect</h2>
+<p>Your doctor has invited you to message the clinic, share reports and get your prescriptions.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">Join CareConnect</a></p>
 ```
 
 **Invite user:**
@@ -33,7 +31,7 @@ About 30 minutes. Everything below is on free tiers.
 <h2>You're invited to CareConnect</h2>
 <p>Your doctor has invited you to message the clinic, share reports and get your prescriptions.</p>
 <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite">Join CareConnect</a></p>
-<p>If the link has expired, open {{ .SiteURL }} and sign in with this email address. We'll send you a code.</p>
+<p>You'll choose a password after you open the link. If it has expired, ask your doctor to send a new invitation.</p>
 ```
 
 ## 3. Email delivery (required before real patients)
@@ -59,7 +57,7 @@ npm run dev
 
 ## 5. Create the doctor account
 
-1. Supabase **Authentication → Users → Add user → Create new user**: the doctor's email, tick "Auto confirm".
+1. Supabase **Authentication → Users → Add user → Create new user**: the doctor's email and a password, tick "Auto confirm".
 2. SQL Editor:
 
 ```sql
@@ -69,7 +67,7 @@ set role = 'doctor', status = 'active',
 where email = 'doctor@example.com';
 ```
 
-3. Open http://localhost:3000, enter the doctor's email, enter the code. You land on `/doctor`.
+3. Open http://localhost:3000 and sign in with that email and password. You land on `/doctor`.
 
 ## 6. Check it
 
@@ -86,11 +84,3 @@ where email = 'doctor@example.com';
 Notes:
 - Supabase free projects pause after a week without activity. Open the app weekly, or upgrade before launch.
 - Vercel's request body limit (4.5 MB) doesn't matter: files upload straight from the browser to Supabase Storage.
-
-## Switching to phone OTP later
-
-1. Pick an SMS provider (Twilio, MessageBird, Vonage or Textlocal in Supabase settings; for India, DLT registration is required).
-2. Supabase **Providers → Phone**: enable and add the provider keys.
-3. Code changes: `login()` in `src/app/actions/auth.ts` uses `signInWithOtp({ phone })` and `verifyOtp({ phone, token, type: "sms" })`;
-   the login form gets the `+91` `InputAddon`; `invitePatient()` creates the user with `admin.createUser({ phone, phone_confirm: true })`
-   and sends the invite SMS. Keep email as a fallback field on the profile.
