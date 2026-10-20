@@ -60,6 +60,8 @@ Newest last. Never delete an entry; add a superseding one instead.
 - **Release notes are code, not a table** (`src/lib/releases.ts`). They change only when the app is deployed, so a DB table would add RLS and admin UI for nothing. `package.json` version must match `RELEASES[0].version`.
 - **Doctor got a Settings page** (`/doctor/settings`) to hold account details and release notes; it is the 4th nav item. Profile fields are read-only there until an edit flow is specced.
 
+- **Search: noindex everywhere, previews on** (v0.3.1). It is a private medical app, so `robots.ts` disallows all and metadata says noindex; Open Graph + `opengraph-image.tsx` still give a branded card when the link is shared. Metadata image routes are listed in `PUBLIC_FILES` in `middleware.ts` so crawlers reach them signed out. `app/brand-mark.tsx` repeats brand hex values because generated images cannot read CSS tokens.
+
 ## Known gaps — deliberate, not bugs
 
 - No forgot-password flow yet. Reset a password in Supabase (Authentication → Users) until it exists.

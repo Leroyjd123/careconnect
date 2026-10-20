@@ -15,6 +15,16 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.3.1",
+    date: "2026-10-20",
+    title: "Icons and link previews",
+    added: [
+      "Home-screen icon: patients can add CareConnect to their phone like an app.",
+      "A branded preview card when the website link is shared in WhatsApp or email.",
+    ],
+    changed: ["Clearer browser tab title and description."],
+  },
+  {
     version: "0.3.0",
     date: "2026-10-20",
     title: "Version and release notes",
