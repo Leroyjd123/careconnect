@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { Banner } from "@/components/ui/Feedback";
 import { Conversation } from "@/components/chat/Conversation";
 import { FileViewer } from "@/components/chat/FileViewer";
+import { removeReport } from "@/app/actions/messages";
 import { PatientPanel } from "@/components/doctor/PatientPanel";
 import { PrescriptionComposer } from "@/components/rx/PrescriptionComposer";
 import { PrescriptionView } from "@/components/rx/PrescriptionView";
@@ -82,7 +83,7 @@ export default async function DoctorConversation({
             }}
           />
         </Card>
-        {openFile ? <FileViewer message={openFile} backHref={base} replyHref={base} className="absolute inset-0 z-10" /> : null}
+        {openFile ? <FileViewer message={openFile} backHref={base} replyHref={base} onRemove={removeReport.bind(null, openFile.id, conversationId)} className="absolute inset-0 z-10" /> : null}
       </div>
 
       <div className={cn("min-h-0 w-full shrink-0 flex-col lg:w-[380px] lg:flex", rx ? "flex" : "hidden")}>
@@ -118,7 +119,7 @@ export default async function DoctorConversation({
             patient={patient}
             prescriptions={prescriptions}
             replacedRxIds={replaced}
-            reports={[...messages].reverse().filter((m) => m.kind === "file")}
+            reports={[...messages].reverse().filter((m) => m.kind === "file" && !m.deleted_at)}
           />
         )}
       </div>

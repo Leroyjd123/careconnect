@@ -24,7 +24,7 @@ export function DoseSchedule({ frequency }: { frequency: string }) {
           <li
             key={label}
             className={cn(
-              "flex flex-col items-center gap-1 rounded-[14px] px-1.5 py-2 text-xs",
+              "flex flex-col items-center gap-1 rounded-field px-1.5 py-2 text-xs",
               on ? "bg-forest font-semibold text-white" : "border border-dashed border-sage bg-mint/90 text-ink-2",
             )}
           >

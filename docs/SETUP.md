@@ -7,6 +7,7 @@ About 30 minutes. Everything below is on free tiers.
 1. Create a project at supabase.com. Pick the region closest to your users (Mumbai `ap-south-1` for India).
 2. **SQL Editor → New query →** paste `supabase/migrations/0001_init.sql` → Run. It creates the tables, RLS policies,
    triggers, the private `attachments` bucket and Realtime publication.
+   Then run every later file in `supabase/migrations/` in order (`0002_push_subscriptions.sql`, `0003_invite_links_and_report_delete.sql`, …).
 3. **Project Settings → API:** copy the Project URL, the anon (or publishable) key and the service_role key.
 
 ## 2. Auth settings (Authentication → …)
@@ -78,9 +79,26 @@ where email = 'doctor@example.com';
 
 1. Push the repo to GitHub. Vercel → **Add New Project** → import it. Framework: Next.js (auto).
 2. Environment variables (Production + Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL=https://YOUR-APP.vercel.app`.
+   `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL=https://YOUR-APP.vercel.app`,
+   and for notifications `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (see §8).
 3. Deploy. Then set Supabase Site URL to the Vercel URL (step 2).
 
 Notes:
 - Supabase free projects pause after a week without activity. Open the app weekly, or upgrade before launch.
 - Vercel's request body limit (4.5 MB) doesn't matter: files upload straight from the browser to Supabase Storage.
+
+## 8. Web push notifications
+
+1. Run `supabase/migrations/0002_push_subscriptions.sql` in the SQL Editor.
+2. Generate a key pair once: `npx web-push generate-vapid-keys`. Put it in `.env.local` and in Vercel
+   (Production + Preview), then redeploy:
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` = the public key
+   - `VAPID_PRIVATE_KEY` = the private key (secret)
+   - `VAPID_SUBJECT` = `mailto:` + an address you own, e.g. `mailto:support@yourclinic.com`
+   Use the SAME pair everywhere. Changing it later silently breaks every existing subscription.
+3. Each person turns notifications on themselves: patients in **Profile**, the doctor in **Settings**.
+
+Notes:
+- iPhone: only works once CareConnect is added to the Home Screen (iOS 16.4+), and opened from there.
+- Notifications say who sent something, never what it says. They show on lock screens.
+- Without the keys the app works normally and the Notifications card says the browser can't show them.

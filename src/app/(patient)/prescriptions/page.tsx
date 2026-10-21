@@ -35,7 +35,7 @@ export default async function PrescriptionsPage() {
                 replaced={replaced.has(rx.id)}
                 latest={rx.id === latestId}
                 actions={
-                  <ButtonLink href={`/prescriptions/${rx.id}`} variant="secondary">
+                  <ButtonLink href={`/prescriptions/${rx.id}`} variant="outline">
                     View prescription
                   </ButtonLink>
                 }

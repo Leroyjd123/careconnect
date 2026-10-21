@@ -22,8 +22,10 @@ export type TabItem = {
  * The floating glass bottom bar. One implementation for both apps: the patient tabs
  * and the doctor's phone navigation differ only in their items.
  */
-export function TabBar({ items, className }: { items: TabItem[]; className?: string }) {
-  const pathname = usePathname();
+/** currentPath overrides the router's path (styleguide only), to show which tab is active. */
+export function TabBar({ items, className, currentPath }: { items: TabItem[]; className?: string; currentPath?: string }) {
+  const routerPath = usePathname();
+  const pathname = currentPath ?? routerPath;
 
   return (
     <nav

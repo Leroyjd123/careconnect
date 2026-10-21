@@ -211,6 +211,7 @@ export function Conversation({
             file_type: p.file?.type ?? null,
             prescription_id: null,
             read_at: null,
+            deleted_at: null,
             created_at: p.createdAt,
           },
         }))),

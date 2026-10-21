@@ -9,7 +9,8 @@ export const metadata: Metadata = { title: "Styleguide" };
  * Before building a new component, check here first. If it exists, reuse it.
  * When you add a shared component, add it here too.
  */
-export default function StyleguidePage() {
+export default async function StyleguidePage({ searchParams }: { searchParams: Promise<{ frame?: string }> }) {
   if (process.env.NODE_ENV === "production") notFound();
-  return <Styleguide />;
+  const { frame } = await searchParams;
+  return <Styleguide framed={frame === "1"} />;
 }

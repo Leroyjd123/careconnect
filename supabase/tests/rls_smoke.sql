@@ -75,3 +75,44 @@ begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0
 select 'Q sees ravi msgs', count(*) from messages;
 select 'Q sees rx', count(*) from prescriptions;
 rollback;
+
+-- ===== push subscriptions (0002) =====
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+insert into push_subscriptions (user_id,endpoint,p256dh,auth) values ('00000000-0000-0000-0000-000000000001','https://push.example/ravi','k','a');
+select 'P push own ok';
+commit;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+insert into push_subscriptions (user_id,endpoint,p256dh,auth) values ('00000000-0000-0000-0000-00000000000d','https://push.example/fake','k','a'); -- expect RLS error
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000d';
+select 'D sees P subs directly (expect 0)', count(*) from push_subscriptions;
+select 'D push_targets conv1 (expect 1)', count(*) from push_targets('10000000-0000-0000-0000-000000000001');
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000e';
+select 'other doctor push_targets conv1 (expect 0)', count(*) from push_targets('10000000-0000-0000-0000-000000000001');
+rollback;
+
+-- ===== invite links + report removal (0003) =====
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000d';
+insert into invite_links (token, doctor_id) values ('tok-doc', '00000000-0000-0000-0000-00000000000d');
+select 'D link ok';
+commit;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+insert into invite_links (token, doctor_id) values ('tok-pat', '00000000-0000-0000-0000-000000000001'); -- expect RLS error (not a doctor)
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+select 'P sees links (expect 0)', count(*) from invite_links;
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000d';
+update invite_links set used_at = now() where token = 'tok-doc'; -- expect permission denied (only revoked_at)
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000e';
+insert into messages (conversation_id,sender_id,kind,file_path,file_name) values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000e','file','10000000-0000-0000-0000-000000000002/x.pdf','x.pdf');
+commit;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000d';
+select remove_report((select id from messages where file_name='x.pdf')); -- expect error: not this doctor's conversation
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000e';
+select 'D2 removes own report', remove_report((select id from messages where file_name='x.pdf'));
+select 'tombstone', deleted_at is not null, file_path is null from messages where kind='file' and conversation_id='10000000-0000-0000-0000-000000000002';
+rollback;

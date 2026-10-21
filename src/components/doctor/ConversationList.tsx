@@ -19,7 +19,8 @@ import type { InboxRow } from "@/lib/types";
  * The doctor's inbox column. Rendered once by the inbox layout, so it stays put while
  * conversations open beside it. On a phone it hides itself when one is open.
  */
-export function ConversationList({ rows }: { rows: InboxRow[] }) {
+/** live=false (styleguide only) skips the realtime subscription. */
+export function ConversationList({ rows, live = true }: { rows: InboxRow[]; live?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const activeId = pathname.startsWith("/doctor/c/") ? pathname.split("/")[3] : null;
@@ -29,6 +30,7 @@ export function ConversationList({ rows }: { rows: InboxRow[] }) {
   const unreadTotal = rows.reduce((n, r) => n + r.unread_count, 0);
 
   useEffect(() => {
+    if (!live) return;
     const supabase = getBrowserClient();
     const channel = supabase
       .channel("inbox")
@@ -37,7 +39,7 @@ export function ConversationList({ rows }: { rows: InboxRow[] }) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [router, live]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -95,7 +97,7 @@ export function ConversationList({ rows }: { rows: InboxRow[] }) {
                   href={`/doctor/c/${c.id}`}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex gap-3 rounded-[18px] p-3 text-ink no-underline hover:text-ink",
+                    "flex gap-3 rounded-tile p-3 text-ink no-underline hover:text-ink",
                     active ? "bg-white/90 shadow-lift" : "hover:bg-white/70",
                   )}
                 >

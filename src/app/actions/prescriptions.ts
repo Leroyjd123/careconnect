@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { notifyConversation } from "@/lib/push";
 import type { ActionResult, DraftItem } from "@/lib/types";
 
 export type DraftInput = {
@@ -81,6 +82,7 @@ export async function issuePrescription(id: string, conversationId: string): Pro
   }
   revalidatePath(`/doctor/c/${conversationId}`);
   revalidatePath("/prescriptions");
+  await notifyConversation(conversationId, "prescription");
   return { ok: true };
 }
 

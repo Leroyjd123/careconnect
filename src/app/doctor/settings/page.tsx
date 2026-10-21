@@ -7,13 +7,14 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ReleaseNotes } from "@/components/doctor/ReleaseNotes";
+import { NotificationToggle } from "@/components/layout/NotificationToggle";
 
 export const metadata: Metadata = { title: "Settings" };
 
 function Detail({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-[13px] font-semibold text-ink-3">{label}</dt>
+      <dt className="text-[13px] font-semibold text-ink-label">{label}</dt>
       <dd className={value ? "text-[15px]" : "text-[15px] text-ink-2"}>{value || "Not set"}</dd>
     </div>
   );
@@ -48,6 +49,8 @@ export default async function SettingsPage() {
           </Button>
         </form>
       </Card>
+
+      <NotificationToggle audience="doctor" />
 
       <section aria-labelledby="releases" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

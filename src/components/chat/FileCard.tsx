@@ -13,7 +13,7 @@ export function FileTypeTile({ type, className }: { type: string | null; classNa
     <span
       aria-hidden="true"
       className={cn(
-        "inline-flex h-11 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold",
+        "inline-flex h-11 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
         isPdf ? "bg-file-pdf-bg text-file-pdf" : isImage ? "bg-mint-200 text-forest" : "border border-dashed border-sage bg-white/80 text-ink-2",
         className,
       )}
@@ -46,7 +46,7 @@ export function FileCard({ name, size, type, meta, href, action, className }: Fi
     <>
       <FileTypeTile type={type} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-[15px] font-semibold">{name}</span>
+        <span className="truncate text-base font-semibold">{name}</span>
         <span className="text-[13px] text-ink-2">
           {meta ?? (size ? formatBytes(size) : null)}
           {!previewable && !meta ? " \u00b7 Can't preview, download to open" : null}

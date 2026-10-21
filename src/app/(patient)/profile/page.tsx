@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/releases";
@@ -9,6 +8,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { SettingsRow } from "@/components/layout/SettingsRow";
+import { NotificationToggle } from "@/components/layout/NotificationToggle";
 import { LanguagePicker } from "./LanguagePicker";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -30,32 +31,20 @@ export default async function ProfilePage() {
         </div>
       </Card>
 
+      <NotificationToggle audience="patient" />
+
       <Card className="flex flex-col gap-3 p-5">
         <h2 className="text-[17px] font-semibold">Language</h2>
         <LanguagePicker value={profile.language} />
       </Card>
 
-      <Card as={Link} href="/privacy" className="flex items-center gap-3.5 p-5 text-ink no-underline hover:text-ink">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-mint-200 text-forest">
-          <ShieldCheck aria-hidden="true" className="size-[22px]" />
-        </span>
-        <span className="flex flex-col">
-          <span className="font-semibold">Privacy notice</span>
-          <span className="text-[13px] text-ink-2">What we keep and who can see it.</span>
-        </span>
-      </Card>
-
-      <Card as={Link} href="/chat" className="flex items-center gap-3.5 p-5 text-ink no-underline hover:text-ink">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-mint-200 text-forest">
-          <LifeBuoy aria-hidden="true" className="size-[22px]" />
-        </span>
-        <span className="flex flex-col">
-          <span className="font-semibold">Help</span>
-          <span className="text-[13px] text-ink-2">
-            {inbox ? `Message ${inbox.other_name} and they'll help.` : "Contact your doctor's clinic."}
-          </span>
-        </span>
-      </Card>
+      <SettingsRow href="/privacy" icon={ShieldCheck} title="Privacy notice" hint="What we keep and who can see it." />
+      <SettingsRow
+        href="/chat"
+        icon={LifeBuoy}
+        title="Help"
+        hint={inbox ? `Message ${inbox.other_name} and they'll help.` : "Contact your doctor's clinic."}
+      />
 
       <form action={signOut}>
         <Button type="submit" variant="danger" size="lg" block>

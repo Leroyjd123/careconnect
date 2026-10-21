@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { FileText, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { cn, formatDate } from "@/lib/utils";
+import { Card } from "@/components/ui/Card";
+import { IconTile } from "@/components/ui/IconTile";
+import { formatDate } from "@/lib/utils";
 
 type PrescriptionCardProps = {
   /** Left out for a draft, which has no issue date yet. */
@@ -24,21 +26,11 @@ export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced
   const count = `${medicines.length} ${medicines.length === 1 ? "medicine" : "medicines"}`;
 
   return (
-    <div
-      className={cn(
-        "flex w-full flex-col gap-3 rounded-[22px] border p-4",
-        draft ? "border-dashed border-sage bg-white/70" : "border-white bg-white/90 shadow-lift",
-      )}
-    >
+    <Card tone={draft ? "dashed" : "solid"} radius="tile" className="flex w-full flex-col gap-3 p-4">
       <div className="flex items-center gap-3">
-        <span
-          className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-[14px]",
-            draft ? "bg-mint-200 text-forest" : "bg-forest text-white",
-          )}
-        >
+        <IconTile tone={draft ? "soft" : "solid"}>
           <FileText aria-hidden="true" className="size-5" strokeWidth={1.75} />
-        </span>
+        </IconTile>
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-base font-semibold">{draft ? "Draft prescription" : "Prescription"}</span>
           <span className="text-[13px] text-ink-2">{issuedAt ? `${formatDate(issuedAt)} · ${count}` : count}</span>
@@ -58,13 +50,14 @@ export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced
       {medicines.length > 0 ? (
         <ul className="flex flex-wrap gap-1.5">
           {medicines.map((m) => (
-            <li key={m} className="rounded-[10px] bg-mint px-2.5 py-1 text-[13px]">
+            <li key={m} className="rounded-field bg-mint px-3 py-1 text-base">
               {m}
             </li>
           ))}
         </ul>
       ) : null}
-      {actions ? <div className="flex gap-2 [&>*]:flex-1">{actions}</div> : null}
-    </div>
+      {/* Side by side when they fit, stacked full-width when they don't. */}
+      {actions ? <div className="flex flex-wrap gap-2 [&>*]:min-w-[9.5rem] [&>*]:flex-1 [&>*]:whitespace-nowrap">{actions}</div> : null}
+    </Card>
   );
 }

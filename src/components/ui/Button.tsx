@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "soft" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "soft" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 type StyleProps = { variant?: Variant; size?: Size; block?: boolean };
@@ -13,7 +13,7 @@ const base =
   "disabled:opacity-50 disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:pointer-events-none";
 
 const sizes: Record<Size, string> = {
-  sm: "h-10 px-4 text-sm",
+  sm: "h-11 px-4 text-sm",
   md: "h-12 px-5 text-[15px]",
   lg: "h-14 px-6 text-[17px]",
 };
@@ -23,6 +23,8 @@ const variants: Record<Variant, string> = {
   primary: "bg-forest text-white shadow-cta hover:bg-forest-700 hover:text-white",
   // Neutral glass button: Cancel, Save draft, Download.
   secondary: "glass text-ink hover:bg-white/85 hover:text-ink",
+  // Secondary on a solid white surface (prescription card), where glass would vanish.
+  outline: "bg-white border border-line text-ink hover:bg-mint hover:text-ink",
   // Secondary brand action that must not compete with primary: New prescription, Add another.
   soft: "bg-mint-200 text-forest hover:bg-mint-300 hover:text-forest",
   ghost: "bg-transparent text-forest hover:bg-white/60 hover:text-forest-700",

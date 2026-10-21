@@ -10,13 +10,15 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 - One doctor account (created by hand, see SETUP.md). Schema already supports more doctors later.
 - Patients exist only by invitation. Sign-up is disabled. A wrong email or password gets "That email and password don’t match. Please try again."
 - Each patient has one ongoing conversation with their doctor. No new thread per question.
-- Sign-in for everyone: email + password. The only email the app sends is the patient invite; its link signs them in and asks them to choose a password (`/set-password`).
+- Sign-in for everyone: email or mobile number + password.
+- Joining, two ways: (1) **Share a link** (default): the doctor creates a one-time link (7 days) and shares it anywhere; the patient opens `/join/<token>` and gives name, email and/or mobile (at least one), and a password. No email, no code. (2) **Send by email**: Supabase invite email → `/set-password`.
 
 ## Routes
 
 | Route | Who | Screen (canvas ref) |
 |---|---|---|
 | `/login` | all | Email + password ✅ |
+| `/join/[token]` | patient | Make an account from the doctor's shared link ✅ |
 | `/set-password` | all | Choose a password after opening an invite link ✅ |
 | `/auth/confirm` | all | Invite link landing → `/set-password` ✅ |
 | `/home` | patient | Doctor card, latest message, Chat CTA, Prescriptions + Send a report tiles (B1) ✅ |
@@ -47,6 +49,12 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 - Patient flow: Attach → sheet (Take a photo / Choose a photo / Choose a file / Cancel) → preview with optional note → "Send to Dr. …" → bubble with progress → done or failed.
 - Doctor sees attachments in chat and in PatientPanel → Reports. Opens in FileViewer (PDF/image preview, Download, "Reply about this report"). Unsupported types show "Can't preview, download to open".
 
+## Removing reports
+
+- The doctor can remove a report from the file viewer ("Remove report", with a confirmation).
+- The file is deleted from Storage; the chat keeps a "Report removed by the doctor" line so the record stays honest.
+- Limits: 10 MB per file (bucket setting). Total storage is set by the Supabase plan.
+
 ## Prescriptions
 
 - Doctor writes from the conversation (desktop: right-hand panel; phone: full screen). Same component.
@@ -71,6 +79,15 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 ## Patient profile & language
 
 - Language switch saves to `profiles.language`. All copy stays English this round; the switch is wired for later translation.
+
+## Notifications
+
+- Web push, opt-in per device: patients in Profile, the doctor in Settings ("Turn on notifications").
+- Sent when the other person sends a message, a file, or (to the patient) issues a prescription.
+- Text: "New message from Dr. Rao." / "Dr. Rao sent a file." / "Dr. Rao sent you a prescription." Never the content.
+- Tapping opens the chat (patient), the prescriptions list (patient, for a prescription) or the conversation (doctor).
+- States: on, off, blocked by the browser, iPhone not on the Home Screen (explains how), unsupported browser.
+- Signing out removes this device, so the next person on a shared phone doesn't get alerts.
 
 ## Accessibility & copy
 

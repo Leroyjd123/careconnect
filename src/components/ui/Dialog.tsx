@@ -43,8 +43,8 @@ export function Dialog({ open, onClose, title, description, variant = "modal", c
       className={cn(
         "glass-strong text-ink shadow-modal",
         variant === "modal"
-          ? "m-auto w-[calc(100%-32px)] max-w-xl rounded-[32px] p-0"
-          : "mx-0 mt-auto mb-0 w-full max-w-none rounded-t-[32px] rounded-b-none p-0 sm:mx-auto sm:max-w-md",
+          ? "m-auto w-[calc(100%-32px)] max-w-xl rounded-card p-0"
+          : "mx-0 mt-auto mb-0 w-full max-w-none rounded-t-card rounded-b-none p-0 sm:mx-auto sm:max-w-md",
         className,
       )}
     >

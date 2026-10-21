@@ -23,13 +23,13 @@ export function EmptyState({
     <div className={cn("mx-auto flex max-w-sm flex-col items-center gap-3 px-4 py-10 text-center", className)}>
       <div
         className={cn(
-          "glass mb-3 flex size-24 items-center justify-center rounded-[34px] shadow-float",
+          "glass mb-3 flex size-24 items-center justify-center rounded-card shadow-float",
           tone === "danger" ? "text-danger" : "text-forest",
         )}
       >
         <Icon aria-hidden="true" strokeWidth={1.5} className="size-10" />
       </div>
-      <h2 className="text-[21px] font-semibold tracking-tight">{title}</h2>
+      <h2 className="text-[22px] font-semibold tracking-tight">{title}</h2>
       {children ? <p className="text-[15px] leading-relaxed text-ink-2">{children}</p> : null}
       {action ? <div className="mt-3">{action}</div> : null}
     </div>
@@ -49,7 +49,7 @@ const bannerTones: Record<BannerTone, { cls: string; icon: LucideIcon }> = {
 export function Banner({ tone = "info", children, action, className }: { tone?: BannerTone; children: ReactNode; action?: ReactNode; className?: string }) {
   const { cls, icon: Icon } = bannerTones[tone];
   return (
-    <div role={tone === "danger" ? "alert" : "status"} className={cn("flex items-center gap-3 rounded-[18px] px-4 py-3 text-sm backdrop-blur-xl", cls, className)}>
+    <div role={tone === "danger" ? "alert" : "status"} className={cn("flex items-center gap-3 rounded-tile px-4 py-3 text-sm backdrop-blur-xl", cls, className)}>
       <Icon aria-hidden="true" className="size-5 shrink-0" />
       <span className="flex-1 leading-snug">{children}</span>
       {action}

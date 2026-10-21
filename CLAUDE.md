@@ -11,6 +11,7 @@ Product detail lives in `docs/SPEC.md`. Setup lives in `docs/SETUP.md`.
 - Next.js 15 App Router, React 19, TypeScript strict. One app, one repo, deployed to Vercel.
 - Supabase: Postgres + RLS, email + password auth (invite email sets the password), private Storage, Realtime. Schema: `supabase/migrations/`.
 - Tailwind CSS v4. Tokens in `src/app/globals.css`. Icons: `lucide-react` only. Font: Inter (self-hosted).
+- Web push: `web-push` (server only, `src/lib/push.ts`) + `public/sw.js`. Approved 2026-10-20.
 - No other runtime dependencies. Do NOT add: UI kits (shadcn, MUI, Radix), state libraries (Redux, Zustand,
   React Query), ORMs (Prisma, Drizzle), date libraries, form libraries, CSS-in-JS. Ask first if you think one is needed.
 
@@ -31,7 +32,7 @@ src/app/doctor/…           doctor screens: /doctor /doctor/c/[id] /doctor/pati
 src/app/actions/*.ts       ALL writes. Server actions, grouped by domain. Return ActionResult.
 src/lib/data.ts            ALL server reads. Pages call these; no inline queries in pages.
 src/lib/supabase/*         server.ts (default), client.ts (browser: realtime + uploads only), admin.ts (invites only)
-src/lib/{types,constants,utils,auth,upload}.ts
+src/lib/{types,constants,utils,auth,upload,push,releases}.ts
 src/components/ui/*        design-system primitives (Button, Card, Field, Dialog…)
 src/components/chat/*      chat pieces shared by doctor AND patient
 src/components/rx/*        prescription pieces shared by doctor AND patient
@@ -65,10 +66,13 @@ src/components/patient/*   patient-only composites (only if not shareable)
 ## Data and security
 
 - RLS is the security boundary. Never rely on hiding UI. Every table has policies in the migration.
-- `createAdminClient()` (service role) is allowed ONLY in `src/app/actions/patients.ts`, after `requireProfile("doctor")`.
+- `createAdminClient()` (service role) is allowed ONLY in `src/app/actions/patients.ts`: after `requireProfile("doctor")`,
+  or in the invite-link functions (`checkInviteLink`, `joinWithInviteLink`) where the one-time token is the boundary.
 - Files are private. Show them with `getFileUrl()` (5-minute signed URL). Never make the bucket public or store URLs.
 - Uploads go browser → Storage via `lib/upload.ts`, then `sendAttachment()`. Never send file bytes through a server action.
 - Issued prescriptions are immutable (DB trigger). Corrections = new draft with `replacesId`, then issue.
+- Notifications go through `notifyConversation()` in `lib/push.ts`. Never put message text or medical detail in a
+  notification: it shows on lock screens. Name the sender only.
 - Schema changes: add a new numbered file in `supabase/migrations/`, update `src/lib/types.ts` in the same change,
   and extend `supabase/tests/rls_smoke.sql` if you add a policy.
 - Server components: `requireProfile()` at the top of every layout/page that needs a user.

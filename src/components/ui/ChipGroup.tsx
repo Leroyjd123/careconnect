@@ -46,7 +46,7 @@ export function ChipGroup({ label, options, value, onChange, allowCustom, custom
               }}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 transition-colors",
-                size === "sm" ? "h-10 text-[13px]" : "h-11 text-sm",
+                size === "sm" ? "h-11 text-[13px]" : "h-12 text-sm",
                 selected ? "bg-forest font-semibold text-white" : "border border-line bg-white/80 text-ink hover:bg-white",
               )}
             >

@@ -18,8 +18,9 @@ function Submit() {
   );
 }
 
-export function SetPasswordForm({ email }: { email: string }) {
-  const [state, action] = useActionState(setPassword, initial);
+/** saveAction is only overridden by /styleguide. */
+export function SetPasswordForm({ email, saveAction = setPassword }: { email: string; saveAction?: typeof setPassword }) {
+  const [state, action] = useActionState(saveAction, initial);
 
   return (
     <Card className="mt-10 p-5 sm:p-6">

@@ -52,7 +52,7 @@ export function ReviewIssueDialog({ open, onClose, patient, items, advice, issui
 
         <div className="overflow-x-auto rounded-tile border border-line-soft bg-white">
           <table className="w-full text-left text-[15px]">
-            <thead className="bg-mint/70 text-[13px] text-ink-3">
+            <thead className="bg-mint/70 text-[13px] text-ink-label">
               <tr>
                 <th scope="col" className="px-3 py-2 font-semibold">
                   Medicine
@@ -86,7 +86,7 @@ export function ReviewIssueDialog({ open, onClose, patient, items, advice, issui
 
         {advice?.trim() ? (
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold tracking-wider text-ink-3 uppercase">Advice</p>
+            <p className="text-[13px] font-semibold tracking-wider text-ink-label uppercase">Advice</p>
             <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{advice}</p>
           </div>
         ) : null}

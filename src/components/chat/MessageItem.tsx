@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { FileX } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { FileCard } from "@/components/chat/FileCard";
@@ -38,12 +39,17 @@ export function MessageItem({
   correctHref,
   actions,
 }: MessageItemProps) {
-  const bare = message.kind !== "text";
+  const bare = message.kind !== "text" && !message.deleted_at;
 
   return (
     <MessageBubble mine={mine} createdAt={message.created_at} status={status} tone={tone} bare={bare}>
       {message.kind === "text" ? (
         message.body
+      ) : message.kind === "file" && message.deleted_at ? (
+        <p className="flex items-center gap-2 text-[15px] text-ink-2 italic">
+          <FileX aria-hidden="true" className="size-4 shrink-0" />
+          Report removed by the doctor
+        </p>
       ) : message.kind === "file" ? (
         <div className="flex flex-col gap-2">
           <FileCard name={message.file_name ?? "Attachment"} size={message.file_size} type={message.file_type} href={fileHref} />
@@ -57,7 +63,7 @@ export function MessageItem({
           actions={
             <>
               {rxHref ? (
-                <ButtonLink href={rxHref} variant="secondary">
+                <ButtonLink href={rxHref} variant="outline">
                   View prescription
                 </ButtonLink>
               ) : null}

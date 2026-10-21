@@ -4,46 +4,188 @@
   "title": "Design System: CareConnect",
   "extensions": {
     "colorMeta": {
-      "forest": { "role": "primary", "displayName": "Eucalyptus", "canonical": "#1f6b57", "tonalRamp": ["#0b2a22", "#123d32", "#17503f", "#1f6b57", "#3f8a74", "#6fab98", "#a8cfc1", "#dcefe8"] },
-      "forest-700": { "role": "primary", "displayName": "Eucalyptus Deep", "canonical": "#17503f" },
-      "sage": { "role": "secondary", "displayName": "Sage", "canonical": "#8faf9b", "tonalRamp": ["#2c3d33", "#43594b", "#5c7865", "#76947f", "#8faf9b", "#adc6b5", "#cbdcd1", "#e8f0eb"] },
-      "mint": { "role": "neutral", "displayName": "Mint Mist", "canonical": "#eaf3ee" },
-      "mint-200": { "role": "neutral", "displayName": "Mint Leaf", "canonical": "#dcebe2" },
-      "mint-300": { "role": "neutral", "displayName": "Mint Bud", "canonical": "#cfe3d6" },
-      "ivory": { "role": "neutral", "displayName": "Ivory", "canonical": "#f8f8f4" },
-      "ground": { "role": "neutral", "displayName": "Garden Ground", "canonical": "#edf4ef" },
-      "ink": { "role": "neutral", "displayName": "Forest Ink", "canonical": "#26332f" },
-      "ink-2": { "role": "neutral", "displayName": "Moss Ink", "canonical": "#4f5f58" },
-      "ink-3": { "role": "neutral", "displayName": "Bark Ink", "canonical": "#3f5a4f" },
-      "line": { "role": "neutral", "displayName": "Leaf Line", "canonical": "#d3e3d9" },
-      "line-soft": { "role": "neutral", "displayName": "Soft Line", "canonical": "#e3ece6" },
-      "danger": { "role": "status", "displayName": "Clay", "canonical": "#8e2f25" },
-      "warning": { "role": "status", "displayName": "Ochre", "canonical": "#5e4b2b" },
-      "file-pdf": { "role": "utility", "displayName": "PDF Terracotta", "canonical": "#9a3b2e" }
+      "forest": {
+        "role": "primary",
+        "displayName": "Eucalyptus",
+        "canonical": "#1f6b57",
+        "tonalRamp": [
+          "#0b2a22",
+          "#123d32",
+          "#17503f",
+          "#1f6b57",
+          "#3f8a74",
+          "#6fab98",
+          "#a8cfc1",
+          "#dcefe8"
+        ]
+      },
+      "forest-700": {
+        "role": "primary",
+        "displayName": "Eucalyptus Deep",
+        "canonical": "#17503f"
+      },
+      "sage": {
+        "role": "secondary",
+        "displayName": "Sage",
+        "canonical": "#8faf9b",
+        "tonalRamp": [
+          "#2c3d33",
+          "#43594b",
+          "#5c7865",
+          "#76947f",
+          "#8faf9b",
+          "#adc6b5",
+          "#cbdcd1",
+          "#e8f0eb"
+        ]
+      },
+      "mint": {
+        "role": "neutral",
+        "displayName": "Mint Mist",
+        "canonical": "#eaf3ee"
+      },
+      "mint-200": {
+        "role": "neutral",
+        "displayName": "Mint Leaf",
+        "canonical": "#dcebe2"
+      },
+      "mint-300": {
+        "role": "neutral",
+        "displayName": "Mint Bud",
+        "canonical": "#cfe3d6"
+      },
+      "ivory": {
+        "role": "neutral",
+        "displayName": "Ivory",
+        "canonical": "#f8f8f4"
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Garden Ground",
+        "canonical": "#edf4ef"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Forest Ink",
+        "canonical": "#26332f"
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Moss Ink",
+        "canonical": "#4f5f58"
+      },
+      "ink-label": {
+        "role": "neutral",
+        "displayName": "Bark Ink",
+        "canonical": "#3f5a4f"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Leaf Line",
+        "canonical": "#d3e3d9"
+      },
+      "line-soft": {
+        "role": "neutral",
+        "displayName": "Soft Line",
+        "canonical": "#e3ece6"
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Clay",
+        "canonical": "#8e2f25"
+      },
+      "warning": {
+        "role": "status",
+        "displayName": "Ochre",
+        "canonical": "#5e4b2b"
+      },
+      "file-pdf": {
+        "role": "utility",
+        "displayName": "PDF Terracotta",
+        "canonical": "#9a3b2e"
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Patient home greeting; at most once per screen." },
-      "headline": { "displayName": "Headline", "purpose": "Screen and dialog titles." },
-      "title": { "displayName": "Title", "purpose": "Card titles, large button labels." },
-      "body": { "displayName": "Body", "purpose": "All patient reading text and chat messages. Never below 16px for patients." },
-      "body-compact": { "displayName": "Body compact", "purpose": "Doctor-side lists and supporting lines." },
-      "label": { "displayName": "Label", "purpose": "Field labels, chips, doctor metadata." },
-      "caption": { "displayName": "Caption", "purpose": "Badges and tab labels." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Patient home greeting; at most once per screen."
+      },
+      "display-sm": {
+        "displayName": "Display small",
+        "purpose": "The patient's name on Home; one large personal line."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Screen and dialog titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, large button labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All patient reading text and chat messages. Never below 16px for patients."
+      },
+      "body-compact": {
+        "displayName": "Body compact",
+        "purpose": "Doctor-side lists and supporting lines."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, chips, doctor metadata."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Badges and tab labels."
+      }
     },
     "shadows": [
-      { "name": "float", "value": "0 18px 40px -20px rgb(31 74 60 / 0.4)", "purpose": "Default for glass cards and the tab bar." },
-      { "name": "lift", "value": "0 8px 20px -14px rgb(31 74 60 / 0.45)", "purpose": "Small solid items sitting on glass." },
-      { "name": "cta", "value": "0 10px 24px -10px rgb(31 107 87 / 0.7)", "purpose": "Green glow under the single primary button only." },
-      { "name": "modal", "value": "0 40px 90px -30px rgb(20 40 32 / 0.55)", "purpose": "Dialogs and sheets." }
+      {
+        "name": "float",
+        "value": "0 18px 40px -20px rgb(31 74 60 / 0.4)",
+        "purpose": "Default for glass cards and the tab bar."
+      },
+      {
+        "name": "lift",
+        "value": "0 8px 20px -14px rgb(31 74 60 / 0.45)",
+        "purpose": "Small solid items sitting on glass."
+      },
+      {
+        "name": "cta",
+        "value": "0 10px 24px -10px rgb(31 107 87 / 0.7)",
+        "purpose": "Green glow under the single primary button only."
+      },
+      {
+        "name": "modal",
+        "value": "0 40px 90px -30px rgb(20 40 32 / 0.55)",
+        "purpose": "Dialogs and sheets."
+      }
     ],
     "motion": [
-      { "name": "press", "value": "transform: scale(0.98)", "purpose": "Button active state." },
-      { "name": "reduced-motion", "value": "animation/transition: none", "purpose": "All motion disabled under prefers-reduced-motion." }
+      {
+        "name": "press",
+        "value": "transform: scale(0.98)",
+        "purpose": "Button active state."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation/transition: none",
+        "purpose": "All motion disabled under prefers-reduced-motion."
+      }
     ],
     "breakpoints": [
-      { "name": "phone", "value": "390px" },
-      { "name": "sm", "value": "640px" },
-      { "name": "desktop", "value": "1440px" }
+      {
+        "name": "phone",
+        "value": "390px"
+      },
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "desktop",
+        "value": "1440px"
+      }
     ]
   },
   "components": [
@@ -123,12 +265,41 @@
       "Inter throughout, with tight tracking on headings and plain sentence-case copy."
     ],
     "rules": [
-      { "name": "The One Green Voice Rule", "body": "Eucalyptus is the only saturated colour on a screen, and only one filled-eucalyptus button appears per screen.", "section": "colors" },
-      { "name": "The Tokens-Only Rule", "body": "Every colour is a token in src/app/globals.css. A hex value in a component is a bug.", "section": "colors" },
-      { "name": "The Words-With-Colour Rule", "body": "Status is never colour alone. Every badge carries text, and ideally an icon.", "section": "colors" },
-      { "name": "The 16px Patient Floor Rule", "body": "Patient reading text is never below 16px.", "section": "typography" },
-      { "name": "The Indic Headroom Rule", "body": "Never fix line heights or clip text in a way that would cut off Kannada or Hindi.", "section": "typography" },
-      { "name": "The Three Panes Rule", "body": "Use the glass utilities or Card, never a hand-written backdrop-filter.", "section": "elevation" }
+      {
+        "name": "The One Green Voice Rule",
+        "body": "Eucalyptus is the only saturated colour on a screen, and only one filled-eucalyptus button appears per screen.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tokens-Only Rule",
+        "body": "Every colour is a token in src/app/globals.css. A hex value in a component is a bug.",
+        "section": "colors"
+      },
+      {
+        "name": "The Words-With-Colour Rule",
+        "body": "Status is never colour alone. Every badge carries text, and ideally an icon.",
+        "section": "colors"
+      },
+      {
+        "name": "The 16px Patient Floor Rule",
+        "body": "Patient reading text is never below 16px.",
+        "section": "typography"
+      },
+      {
+        "name": "The Indic Headroom Rule",
+        "body": "Never fix line heights or clip text in a way that would cut off Kannada or Hindi.",
+        "section": "typography"
+      },
+      {
+        "name": "The Three Panes Rule",
+        "body": "Use the glass utilities or Card, never a hand-written backdrop-filter.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Scale-Only Rule",
+        "body": "These eight sizes are the whole scale (plus 11px for the unread counter only). A new size gets added on purpose, or it does not ship.",
+        "section": "typography"
+      }
     ],
     "dos": [
       "Do use exactly one variant=\"primary\" button per screen.",

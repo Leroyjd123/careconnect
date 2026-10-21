@@ -55,6 +55,8 @@ export type Message = {
   file_type: string | null;
   prescription_id: string | null;
   read_at: string | null;
+  /** Set when the doctor removed a report; the file fields are then null (0003). */
+  deleted_at: string | null;
   created_at: string;
 };
 
@@ -97,4 +99,30 @@ export type PrescriptionWithPeople = Prescription & { doctor: Profile; patient: 
 export type ConversationWithPeople = Conversation & { doctor: Profile; patient: Profile };
 
 /** Shape every server action returns, so forms handle errors the same way. */
+/** Row in invite_links (0003). A one-time link the doctor shares; the patient makes their own account. */
+export type InviteLink = {
+  id: string;
+  token: string;
+  doctor_id: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+  used_by: string | null;
+  revoked_at: string | null;
+};
+
+/** Row in push_subscriptions (0002). One per browser/device with notifications on. */
+export type PushSubscriptionRow = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+};
+
+/** What the browser hands us after PushManager.subscribe(), via toJSON(). */
+export type PushSubscriptionInput = { endpoint: string; keys: { p256dh: string; auth: string } };
+
 export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string };

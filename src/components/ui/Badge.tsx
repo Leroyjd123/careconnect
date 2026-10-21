@@ -6,7 +6,7 @@ type Tone = "brand" | "solid" | "neutral" | "warning" | "danger" | "outline";
 const tones: Record<Tone, string> = {
   brand: "bg-mint-200 text-forest",
   solid: "bg-forest text-white",
-  neutral: "bg-mint text-ink-3",
+  neutral: "bg-mint text-ink-label",
   warning: "bg-warning-bg text-warning",
   danger: "bg-danger-bg text-danger",
   outline: "border border-dashed border-sage text-ink-2",

@@ -41,7 +41,7 @@ export function Composer({ value, onChange, onSend, onAttach, offline, placehold
   return (
     <div className="flex flex-col gap-2 pt-2">
       {offline ? <Banner tone="offline">You&apos;re offline. Messages will send when you&apos;re back online.</Banner> : null}
-      <div className="glass flex items-end gap-1.5 rounded-[26px] p-1.5 shadow-float">
+      <div className="glass flex items-end gap-1.5 rounded-card p-1.5 shadow-float">
         {onAttach ? (
           <IconButton label="Attach a photo or file" tone="soft" icon={<Paperclip className="size-5" />} onClick={onAttach} />
         ) : null}

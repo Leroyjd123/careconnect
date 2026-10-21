@@ -1,8 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { EMAIL_RE } from "@/lib/constants";
+import { EMAIL_RE, PHONE_EMAIL_DOMAIN, PUSH_COOKIE } from "@/lib/constants";
+import { normalizePhone } from "@/lib/utils";
 
 export type LoginState = {
   email: string;
@@ -15,21 +17,26 @@ export type SetPasswordState = {
 
 const MIN_PASSWORD = 8;
 
-/** Email + password sign-in for doctors and patients. Accounts only exist by invitation. */
+/**
+ * Email-or-mobile + password sign-in for doctors and patients. Accounts only exist by invitation.
+ * A mobile number maps to the account made for it at join time (see PHONE_EMAIL_DOMAIN).
+ */
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const typed = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  if (!EMAIL_RE.test(email) || !password) {
-    return { email, error: "Enter your email and password." };
+  const phone = typed.includes("@") ? null : normalizePhone(typed);
+  const email = phone ? `${phone.slice(1)}@${PHONE_EMAIL_DOMAIN}` : typed;
+  if ((!phone && !EMAIL_RE.test(email)) || !password) {
+    return { email: typed, error: "Enter your email or mobile number, and your password." };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     if (error.status === 429) {
-      return { email, error: "Too many attempts. Please wait a minute and try again." };
+      return { email: typed, error: "Too many attempts. Please wait a minute and try again." };
     }
-    return { email, error: "That email and password don't match. Please try again." };
+    return { email: typed, error: "That email or number and password don't match. Please try again." };
   }
 
   redirect("/");
@@ -61,6 +68,13 @@ export async function setPassword(_prev: SetPasswordState, formData: FormData): 
 
 export async function signOut() {
   const supabase = await createClient();
+  // Stop notifications on this device so the next person to use it doesn't get them.
+  const cookieStore = await cookies();
+  const endpoint = cookieStore.get(PUSH_COOKIE)?.value;
+  if (endpoint) {
+    await supabase.from("push_subscriptions").delete().eq("endpoint", decodeURIComponent(endpoint));
+    cookieStore.delete(PUSH_COOKIE);
+  }
   await supabase.auth.signOut();
   redirect("/login");
 }

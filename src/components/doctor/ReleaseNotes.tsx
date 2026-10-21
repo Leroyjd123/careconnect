@@ -24,7 +24,7 @@ export function ReleaseNotes({ releases }: { releases: Release[] }) {
           {GROUPS.map(({ key, label, Icon }) =>
             r[key]?.length ? (
               <div key={key} className="mt-3">
-                <h4 className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-3">
+                <h4 className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-label">
                   <Icon aria-hidden="true" className="size-4" />
                   {label}
                 </h4>

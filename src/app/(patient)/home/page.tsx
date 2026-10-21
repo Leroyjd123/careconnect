@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { CountBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { IconTile } from "@/components/ui/IconTile";
 import { EmptyState } from "@/components/ui/Feedback";
 
 export const metadata: Metadata = { title: "Home" };
@@ -38,13 +39,13 @@ export default async function PatientHome() {
             <div className="flex items-center gap-3.5">
               <Avatar name={doctor.other_name} doctor size="lg" ring />
               <div className="flex flex-col">
-                <span className="text-xs font-semibold tracking-wider text-ink-3 uppercase">Your doctor</span>
+                <span className="text-xs font-semibold tracking-wider text-ink-label uppercase">Your doctor</span>
                 <span className="text-xl font-semibold">{doctor.other_name}</span>
                 {doctor.other_specialty ? <span className="text-sm text-ink-2">{doctor.other_specialty}</span> : null}
               </div>
             </div>
             {doctor.last_message_preview && doctor.last_message_at ? (
-              <div className="flex flex-col gap-1.5 rounded-[20px] bg-mint/85 px-4 py-3.5">
+              <div className="flex flex-col gap-1.5 rounded-tile bg-mint/85 px-4 py-3.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-ink-2">Latest message · {formatRelative(doctor.last_message_at)}</span>
                   <CountBadge count={doctor.unread_count} />
@@ -60,17 +61,13 @@ export default async function PatientHome() {
 
           <div className="grid grid-cols-2 gap-3">
             <Card as={Link} href="/prescriptions" radius="tile" className="flex min-h-32 flex-col gap-2 p-4 text-ink no-underline hover:text-ink">
-              <span className="flex size-11 items-center justify-center rounded-[14px] bg-mint-200 text-forest">
-                <FileText aria-hidden="true" className="size-[22px]" />
-              </span>
+              <IconTile><FileText aria-hidden="true" className="size-[22px]" /></IconTile>
               <span className="font-semibold">My prescriptions</span>
             </Card>
             <Card as={Link} href="/chat?attach=1" radius="tile" className="flex min-h-32 flex-col gap-2 p-4 text-ink no-underline hover:text-ink">
-              <span className="flex size-11 items-center justify-center rounded-[14px] bg-mint-200 text-forest">
-                <Upload aria-hidden="true" className="size-[22px]" />
-              </span>
+              <IconTile><Upload aria-hidden="true" className="size-[22px]" /></IconTile>
               <span className="font-semibold">Send a report</span>
-              <span className="text-[13px] text-ink-2">Photo or PDF</span>
+              <span className="text-[15px] text-ink-2">Photo or PDF</span>
             </Card>
           </div>
         </>

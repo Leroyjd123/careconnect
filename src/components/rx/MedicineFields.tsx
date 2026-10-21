@@ -28,7 +28,7 @@ export function MedicineFields({ index, item, onChange, onRemove, suggestionsId 
     <Card tone="solid" as="fieldset" className="flex flex-col gap-4 p-4">
       <legend className="sr-only">Medicine {index}</legend>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[13px] font-semibold tracking-wider text-ink-3 uppercase">Medicine {index}</span>
+        <span className="text-[13px] font-semibold tracking-wider text-ink-label uppercase">Medicine {index}</span>
         {onRemove ? (
           <Button variant="ghost" size="sm" onClick={onRemove}>
             <Trash2 aria-hidden="true" className="size-4" />

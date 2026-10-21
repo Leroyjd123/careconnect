@@ -66,3 +66,15 @@ export function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/**
+ * Indian mobile numbers to one form: +91 and 10 digits. Accepts spaces, dashes, a leading 0 or 91.
+ * Returns null when it isn't a plausible number.
+ */
+export function normalizePhone(raw: string): string | null {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+  if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
+  if (digits.length !== 10 || !/^[6-9]/.test(digits)) return null;
+  return `+91${digits}`;
+}

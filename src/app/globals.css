@@ -21,7 +21,7 @@
   /* Text */
   --color-ink: #26332f;         /* primary text */
   --color-ink-2: #4f5f58;       /* secondary text (≥ 4.5:1 on white and mint) */
-  --color-ink-3: #3f5a4f;       /* labels, eyebrows */
+  --color-ink-label: #3f5a4f;       /* labels, eyebrows */
 
   /* Lines & states */
   --color-line: #d3e3d9;

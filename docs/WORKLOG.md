@@ -17,6 +17,8 @@ Rules for whoever edits this file:
 - `npm run typecheck && npm run lint && npm run build` pass. 16 routes compile.
 - Connected to a Supabase project. Verified by hand: doctor and patient password sign-in, patient invite (existing-account path).
 - Sign-in switched from email OTP to email + password (see Decisions log). Invite email → `/set-password`.
+- v0.5.0: invite links (`/join`), mobile-number sign-in, doctor can remove reports. Migration 0003 applied on the Supabase project (2026-10-21). Doctor profile set to Dr. Vipin John, General Medicine.
+- v0.4.0: web push notifications (needs migration 0002 + VAPID env on Vercel). Not yet tested on real devices.
 - v0.3.0: `/doctor/settings` with version + release notes; version on patient Profile.
 - `PRODUCT.md` and `DESIGN.md` added (product record and visual system).
 - Not verified: chat both ways + realtime, uploads, prescriptions, invite email to a new address, 390px/1440px pass.
@@ -62,12 +64,32 @@ Newest last. Never delete an entry; add a superseding one instead.
 
 - **Search: noindex everywhere, previews on** (v0.3.1). It is a private medical app, so `robots.ts` disallows all and metadata says noindex; Open Graph + `opengraph-image.tsx` still give a branded card when the link is shared. Metadata image routes are listed in `PUBLIC_FILES` in `middleware.ts` so crawlers reach them signed out. `app/brand-mark.tsx` repeats brand hex values because generated images cannot read CSS tokens.
 
+- **Web push via `web-push` + a plain `public/sw.js`** (v0.4.0, dependency approved by the owner). No push vendor (OneSignal, Firebase): one small server library, keys in env, works on Chrome/Edge/Firefox/Safari and iOS Home Screen apps.
+- **Senders read devices through `push_targets()`**, a security-definer RPC that returns only the other member's subscriptions for a conversation the caller is in. Keeps `createAdminClient()` confined to `patients.ts`. Dead endpoints (404/410) are pruned via `prune_push_subscription()`.
+- **Push is sent with `after()`**, so it never delays or fails a message send; `notifyConversation()` swallows all errors.
+- **Sign-out forgets the device** using the `cc_push_ep` cookie set when notifications are turned on.
+
+- **`/styleguide` is the design-system review page**: foundations (colour swatches read live from CSS tokens, type scale, radius, shadow, glass, icons), every primitive and composite with real states and demo data (`app/styleguide/demo.ts`), and a "Merge & fix list" of candidates. Still dev-only.
+- **`Button variant="outline"`** for secondary actions on solid white surfaces (PrescriptionCard), where glass is invisible. Card action rows wrap instead of squeezing text.
+
+- **Styleguide is side-effect free.** Composites that call server actions or open realtime take an override used only by `/styleguide`: `DoctorSidebar.signOutAction`, `PatientsTable.onResend`, `ConversationList.live`, `NotificationToggle.preview`/`previewError`, `InviteDialog.inviteAction`, `FileViewer.getUrl`, `LoginForm.loginAction`, `SetPasswordForm.saveAction`. `Conversation` and `PrescriptionComposer` are not on the page (too many live actions); the Coverage table says so. Production call sites pass nothing, so app behaviour is unchanged.
+
+- **Styleguide phone preview is an iframe of itself** (`/styleguide?frame=1`), not a narrow box: Tailwind breakpoints follow the viewport, so only an iframe shows real 390px behaviour. Live-data boxes are drag-resizable instead of clipping.
+
+- **`ink-3` renamed to `ink-label`** (2026-10-20). It is darker than `ink-2`, so a number implied the wrong order. Names now say the job. No colour changed.
+- **Type scale is closed**: 34 / 28 / 22 / 17 / 16 / 15 / 14 / 13 / 12, plus 11 for the unread counter. 10, 19 and 21px were folded in (owner decision).
+
+- **Review list applied** (v0.4.1): `IconTile`, `SettingsRow`, `ErrorScreen` and `Card tone="dashed"` replace hand-built copies; PrescriptionCard is a Card; small buttons and chips 44px; patient file and medicine names 16px; every radius is a token. Only the Hindi/Kannada check stays open (needs real translations).
+
+- **Invite links** (v0.5.0): one-time token in `invite_links`, 7 days. `/join/<token>` is public; `joinWithInviteLink` claims the link atomically, creates a confirmed account with the service role, links the conversation, signs in. Email invite kept as the second option.
+- **Phone sign-in without SMS**: phone-only patients get an auth email `<91number>@phone.careconnect.invalid` that never receives mail; `login()` maps a typed mobile number to it. Real phone OTP would need an SMS provider + DLT (India). `profiles.email` stays null for them; `profiles.phone` holds +91….
+- **Reports are removed, not erased from history**: `remove_report()` clears the file fields and sets `deleted_at`; the chat shows "Report removed by the doctor". The patient sees it after a refresh (no realtime UPDATE handling yet).
+
 ## Known gaps — deliberate, not bugs
 
+- No way to list or cancel invite links in the UI yet (`revokeInviteLink` exists). Links expire after 7 days.
 - No forgot-password flow yet. Reset a password in Supabase (Authentication → Users) until it exists.
 
-- `FileCard` renders the file name at 15px; the patient body-text rule is ≥16px. Left alone rather than shifting the starter's type scale.
-- `Button size="sm"` is 40px, under the 44px minimum. Only used on doctor-only surfaces. Patient-facing controls use the default size; `Segmented` was raised to 44px for `/profile`.
 - `/privacy` is a placeholder — needs the clinic's reviewed notice before launch.
 - Prescriptions print `[REG NO]` until `profiles.reg_no` is filled for the doctor.
 - `themeColor` in `app/layout.tsx` is a raw hex. It duplicates `--color-forest`; viewport metadata cannot take a Tailwind class.

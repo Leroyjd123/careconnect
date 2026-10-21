@@ -12,7 +12,7 @@ colors:
   ground: "#edf4ef"
   ink: "#26332f"
   ink-2: "#4f5f58"
-  ink-3: "#3f5a4f"
+  ink-label: "#3f5a4f"
   line: "#d3e3d9"
   line-soft: "#e3ece6"
   danger: "#8e2f25"
@@ -29,6 +29,11 @@ typography:
   display:
     fontFamily: "Inter Variable, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "34px"
+    fontWeight: 600
+    letterSpacing: "-0.025em"
+  display-sm:
+    fontFamily: "Inter Variable, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "28px"
     fontWeight: 600
     letterSpacing: "-0.025em"
   headline:
@@ -56,6 +61,10 @@ typography:
   caption:
     fontFamily: "Inter Variable, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "12px"
+    fontWeight: 600
+  counter:
+    fontFamily: "Inter Variable, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "11px"
     fontWeight: 600
 rounded:
   field: "14px"
@@ -160,7 +169,7 @@ Token keys match the Tailwind classes (`bg-forest`, `text-ink-2`); the descripti
 - **Ivory** (`ivory`): sheets and dialogs, at the strong-glass level.
 - **Forest Ink** (`ink`): primary text.
 - **Moss Ink** (`ink-2`): secondary text, at a contrast of 4.5:1 or more on white and mint.
-- **Bark Ink** (`ink-3`): labels and small headings.
+- **Bark Ink** (`ink-label`): labels and small headings.
 - **Leaf Line / Soft Line** (`line`, `line-soft`): input borders and dividers.
 
 ### Status and Utility
@@ -184,12 +193,15 @@ Token keys match the Tailwind classes (`bg-forest`, `text-ink-2`); the descripti
 
 ### Hierarchy
 - **Display** (600, 34px, tracking -0.025em): the patient home greeting. Used at most once per screen.
-- **Headline** (600, 22px): screen and dialog titles such as "Check your email" or "Choose a password".
-- **Title** (600, 17px): card titles and large button labels.
+- **Display small** (600, 28px, tracking -0.025em): the patient's name on Home. Between Display and Headline, for one large personal line.
+- **Headline** (600, 22px): screen and dialog titles such as "Choose a password", and empty-state titles such as "No prescriptions yet".
+- **Title** (600, 17px): card titles, people's names in panels and on prescriptions, and large button labels.
 - **Body** (400, 16px, line-height 1.5): all patient-facing reading text, including chat messages.
 - **Body compact** (400, 15px): doctor-side lists, supporting lines, medium button labels.
 - **Label** (600, 13px): field labels, chip text, metadata on the doctor side.
-- **Caption** (600, 12px): badges and tab labels.
+- **Caption** (600, 12px): badges, tab labels and the file-type tile ("PDF").
+
+**The Scale-Only Rule.** These eight sizes are the whole scale (plus 11px for the unread counter only). A new size gets added here on purpose, or it does not ship.
 
 ### Named Rules
 **The 16px Patient Floor Rule.** Patient reading text is never below 16px. The smaller sizes are for the doctor's screens, labels and metadata.
@@ -218,20 +230,24 @@ Depth comes from layers of glass over the garden, lifted by long, low-opacity sh
 
 ## Shapes
 
-Everything is softly rounded and nothing is sharp. Actions, chips, badges, tabs and avatars are full pills or circles. Containers step up in radius as they grow: fields 14px, tiles 20px, cards and panels 28px. Borders are hairline: white at high opacity on glass, the Leaf Line colour on inputs, and dashed sage for pending.
+Everything is softly rounded and nothing is sharp. **The Three Corners Rule:** only field (14px), tile (20px), card (28px) and full pills. A message bubble may tighten one corner toward its sender. Actions, chips, badges, tabs and avatars are full pills or circles. Containers step up in radius as they grow: fields 14px, tiles 20px, cards and panels 28px. Borders are hairline: white at high opacity on glass, the Leaf Line colour on inputs, and dashed sage for pending.
 
 ## Components
 
 ### Buttons
 Rounded, tactile, quietly confident.
-- **Shape:** full pill. Heights are 40px (sm, doctor-side only), 48px (md) and 56px (lg, patient main actions).
+- **Shape:** full pill. Heights are 44px (sm), 48px (md) and 56px (lg, patient main actions). Nothing tappable is under 44px.
 - **Primary:** eucalyptus with white semibold text and the green CTA glow. One per screen.
-- **Secondary:** a glass pill with ink text, for Cancel, Download or Save draft.
+- **Secondary:** a glass pill with ink text, for Cancel, Download or Save draft, on glass surfaces.
+- **Outline:** white with a Leaf Line border. The secondary button on solid white surfaces (prescription card), where glass would vanish.
 - **Soft:** a mint-leaf fill with eucalyptus text, for brand actions that mustn't compete with the primary.
 - **Ghost:** transparent with eucalyptus text, for links such as "Change email".
 - **Danger:** glass with clay text.
 - **States:** hover deepens the fill; pressing scales the button to 0.98. A focus ring of 2px eucalyptus with a 2px offset. Loading shows an inline spinner and sets `aria-busy`.
 - **IconButton:** a 44px circle that always carries an accessible label.
+
+### Icon tile
+A 44px square at field radius holding one icon: mint with eucalyptus (soft) or eucalyptus with white (solid). Always `IconTile`.
 
 ### Chips
 - **Style:** a 40px or 44px pill on white with a Leaf Line border.
@@ -239,7 +255,7 @@ Rounded, tactile, quietly confident.
 
 ### Cards / Containers
 - **Corner style:** 28px (card) or 20px (tile).
-- **Tones:** glass (default), subtle (large panels), strong (dialogs) and solid (content on glass).
+- **Tones:** glass (default), subtle (large panels), strong (dialogs), solid (content on glass) and dashed (not sent yet: draft prescriptions).
 - **Shadow:** Float by default, Modal for strong, Lift for solid.
 - **Padding:** 20px on phone, 24px from `sm` up.
 

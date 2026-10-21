@@ -7,8 +7,9 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 
 | Component | File | Use for | Status |
 |---|---|---|---|
-| `Button`, `ButtonLink`, `IconButton`, `Spinner`, `buttonStyles()` | `ui/Button.tsx` | Every button and button-styled link. Variants: primary, secondary, soft, ghost, danger. | ✅ |
-| `Card` | `ui/Card.tsx` | Every surface. Tones: glass, subtle, strong, solid. `as={Link}` for clickable tiles. | ✅ |
+| `Button`, `ButtonLink`, `IconButton`, `Spinner`, `buttonStyles()` | `ui/Button.tsx` | Every button and button-styled link. Variants: primary, secondary (glass), outline (on solid white, e.g. PrescriptionCard), soft, ghost, danger. | ✅ |
+| `IconTile` | `ui/IconTile.tsx` | The 44px rounded icon square. `tone`: soft (mint) or solid (forest). Never hand-build it. | ✅ |
+| `Card` | `ui/Card.tsx` | Every surface. Tones: glass, subtle, strong, solid, dashed (not sent yet). `as={Link}` for clickable tiles. | ✅ |
 | `Field`, `TextInput`, `TextArea`, `InputAddon`, `FieldError` | `ui/Field.tsx` | Every form control with label, hint and error. | ✅ |
 | `Segmented` | `ui/Segmented.tsx` | Exactly-one-of switches: All/Unread, Reports/Prescriptions, language. | ✅ |
 | `ChipGroup` | `ui/ChipGroup.tsx` | Quick picks: frequency, duration, timing, patient filters. `allowCustom` adds a "Custom…" chip with a text input. | ✅ |
@@ -26,6 +27,9 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `TabBar` | `layout/TabBar.tsx` | The floating glass bottom bar. ONE implementation: patient tabs and the doctor's phone nav differ only in `items`. | ✅ |
 | `PatientTabBar` | `layout/PatientTabBar.tsx` | Patient items for `TabBar` (Home, Prescriptions, Profile). Hides on /chat. | ✅ |
 | `DoctorSidebar` | `layout/DoctorSidebar.tsx` | Doctor nav: glass sidebar ≥1024px, `TabBar` below. | ✅ |
+| `NotificationToggle` | `layout/NotificationToggle.tsx` | Notifications card: turn web push on/off for this device. ONE component for patient Profile and doctor Settings (`audience`). `preview` pins a state for the styleguide. | ✅ |
+| `SettingsRow` | `layout/SettingsRow.tsx` | Tappable settings line: IconTile + title + hint. Patient Profile. | ✅ |
+| `ErrorScreen` | `layout/ErrorScreen.tsx` | What every `error.tsx` renders. Same wording in both apps; only the way back differs. | ✅ |
 | `PageHeader` | `layout/PageHeader.tsx` | Glass top bar: back, avatar, title, subtitle, actions. Chat + detail screens. | ✅ |
 
 ## Chat — `src/components/chat` (shared by doctor and patient)
@@ -38,7 +42,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `Composer` | `chat/Composer.tsx` | Floating input pill: attach button, auto-growing textarea, send. `offline` shows the banner. | ✅ |
 | `MessageItem` | `chat/MessageItem.tsx` | Switch on `message.kind` → text bubble / FileCard / PrescriptionCard. Also renders pending and failed sends. | ✅ |
 | `AttachSheet` | `chat/AttachSheet.tsx` | Dialog sheet: take photo / choose photo / choose file → preview → note → send. | ✅ |
-| `FileViewer` | `chat/FileViewer.tsx` | PDF/image viewer on a 5-minute signed URL, with Download. Opened by `?file=<messageId>`. | ✅ |
+| `FileViewer` | `chat/FileViewer.tsx` | PDF/image viewer on a 5-minute signed URL, with Download. Doctor gets `onRemove` (Remove report, with confirm). Opened by `?file=<messageId>`. | ✅ |
 
 ## Prescriptions — `src/components/rx` (shared)
 
@@ -57,7 +61,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 |---|---|---|---|
 | `ConversationList` | `doctor/ConversationList.tsx` | Inbox list with search + All/Unread. Rendered once by `doctor/(inbox)/layout.tsx`; hides itself on a phone when a conversation is open. | ✅ |
 | `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity, New prescription, Reports/Prescriptions tabs. | ✅ |
-| `InviteDialog` | `doctor/InviteDialog.tsx` | Name + email form → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
+| `InviteDialog` | `doctor/InviteDialog.tsx` | "Share a link" (one-time `/join` link, copy / share / WhatsApp) or "Send by email" → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
 | `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status + actions (resend, open chat). | ✅ |
 | `ReleaseNotes` | `doctor/ReleaseNotes.tsx` | Version history on `/doctor/settings`, from `RELEASES` in `lib/releases.ts`. First entry marked Current. | ✅ |
 
@@ -66,8 +70,9 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | Action | File |
 |---|---|
 | `login`, `setPassword`, `signOut` | `actions/auth.ts` |
-| `invitePatient`, `resendInvite` | `actions/patients.ts` |
-| `sendMessage`, `sendAttachment`, `getFileUrl`, `markRead` | `actions/messages.ts` |
+| `invitePatient`, `resendInvite`, `createInviteLink`, `revokeInviteLink`, `checkInviteLink`, `joinWithInviteLink` | `actions/patients.ts` |
+| `savePushSubscription`, `deletePushSubscription` | `actions/notifications.ts` |
+| `sendMessage`, `sendAttachment`, `getFileUrl`, `markRead`, `removeReport` | `actions/messages.ts` |
 | `saveDraft`, `issuePrescription`, `deleteDraft` | `actions/prescriptions.ts` |
 | `updateMyProfile` | `actions/profile.ts` |
 

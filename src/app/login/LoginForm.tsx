@@ -18,8 +18,9 @@ function Submit() {
   );
 }
 
-export function LoginForm({ linkError }: { linkError?: boolean }) {
-  const [state, action] = useActionState(login, initial);
+/** loginAction is only overridden by /styleguide, so its demo never signs anyone in. */
+export function LoginForm({ linkError, loginAction = login }: { linkError?: boolean; loginAction?: typeof login }) {
+  const [state, action] = useActionState(loginAction, initial);
 
   return (
     <Card className="mt-10 p-5 sm:p-6">
@@ -27,14 +28,14 @@ export function LoginForm({ linkError }: { linkError?: boolean }) {
         {linkError && !state.error ? (
           <FieldError>That invitation link has expired. Ask your doctor’s clinic to send a new one.</FieldError>
         ) : null}
-        <Field id="email" label="Your email" hint="Use the email your doctor's clinic has.">
+        <Field id="email" label="Email or mobile number" hint="The one you joined with.">
           <TextInput
             id="email"
             name="email"
-            type="email"
+            type="text"
             inputMode="email"
             autoComplete="username"
-            placeholder="you@example.com"
+            placeholder="you@example.com or 98765 43210"
             defaultValue={state.email}
             required
             className="h-14 text-lg"

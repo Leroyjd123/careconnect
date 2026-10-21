@@ -11,14 +11,23 @@ import { ChipGroup } from "@/components/ui/ChipGroup";
 import { Banner, EmptyState } from "@/components/ui/Feedback";
 import { TextInput } from "@/components/ui/Field";
 import { formatDate } from "@/lib/utils";
-import type { Profile } from "@/lib/types";
+import type { ActionResult, Profile } from "@/lib/types";
 
 type Row = { conversationId: string; patient: Profile };
 
 const FILTERS = ["All", "Active", "Invite pending"];
 
-/** Everyone this doctor has invited, with their status and the two actions that matter. */
-export function PatientsTable({ rows }: { rows: Row[] }) {
+/**
+ * Everyone this doctor has invited, with their status and the two actions that matter.
+ * onResend defaults to the real action; /styleguide passes a no-op.
+ */
+export function PatientsTable({
+  rows,
+  onResend = resendInvite,
+}: {
+  rows: Row[];
+  onResend?: (patientId: string) => Promise<ActionResult>;
+}) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -37,7 +46,7 @@ export function PatientsTable({ rows }: { rows: Row[] }) {
 
   async function resend(patient: Profile) {
     setBusyId(patient.id);
-    const result = await resendInvite(patient.id);
+    const result = await onResend(patient.id);
     setBusyId(null);
     setNotice(
       result.ok
@@ -78,7 +87,7 @@ export function PatientsTable({ rows }: { rows: Row[] }) {
       ) : (
         <div className="-mx-1 min-h-0 flex-1 overflow-auto px-1">
           <table className="w-full min-w-[620px] border-separate border-spacing-y-1.5 text-left">
-            <thead className="text-[13px] text-ink-3">
+            <thead className="text-[13px] text-ink-label">
               <tr>
                 <th scope="col" className="px-3 pb-1 font-semibold">
                   Patient

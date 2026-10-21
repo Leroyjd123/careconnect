@@ -13,6 +13,15 @@ export const LANGUAGES: { value: Language; label: string; english: string }[] = 
 /** Loose email shape check; Supabase does the real validation. */
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Patients who join with a phone number and no email still need an auth email, because phone
+ * sign-in in Supabase needs an SMS provider. We derive one from the number; it never receives mail.
+ */
+export const PHONE_EMAIL_DOMAIN = "phone.careconnect.invalid";
+
+/** Cookie holding this device's push endpoint, so sign-out can forget the device. */
+export const PUSH_COOKIE = "cc_push_ep";
+
 export const ATTACHMENTS_BUCKET = "attachments";
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_FILE_TYPES = "application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif";

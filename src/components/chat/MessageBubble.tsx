@@ -29,8 +29,8 @@ export function MessageBubble({ mine, createdAt, status, bare, tone = "default",
           "w-full backdrop-blur-lg",
           bare ? "p-2" : "px-4 py-2.5 text-base leading-relaxed whitespace-pre-wrap break-words",
           mine
-            ? "rounded-[20px] rounded-br-md border border-white/70 bg-mint-300/85"
-            : "rounded-[20px] rounded-bl-md border border-white/90 bg-white/85 shadow-lift",
+            ? "rounded-tile rounded-br-md border border-white/70 bg-mint-300/85"
+            : "rounded-tile rounded-bl-md border border-white/90 bg-white/85 shadow-lift",
           tone === "pending" && "border-dashed border-sage opacity-90",
           tone === "failed" && "border-[1.5px] border-danger/50 bg-white/90",
         )}
@@ -49,7 +49,7 @@ export function MessageBubble({ mine, createdAt, status, bare, tone = "default",
 export function ChatDivider({ children, tone = "date" }: { children: ReactNode; tone?: "date" | "new" }) {
   if (tone === "date") {
     return (
-      <div className="self-center rounded-xl border border-white/80 bg-white/60 px-3 py-1 text-xs font-medium text-ink-3">{children}</div>
+      <div className="self-center rounded-xl border border-white/80 bg-white/60 px-3 py-1 text-xs font-medium text-ink-label">{children}</div>
     );
   }
   return (

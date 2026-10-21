@@ -21,8 +21,17 @@ const NAV: TabItem[] = [
 /**
  * Doctor navigation. Glass sidebar on desktop, the shared TabBar on phones.
  * unread = total unread messages across the inbox.
+ * signOutAction is only overridden by /styleguide, so its demo can't sign anyone out.
  */
-export function DoctorSidebar({ name, unread = 0 }: { name: string; unread?: number }) {
+export function DoctorSidebar({
+  name,
+  unread = 0,
+  signOutAction = signOut,
+}: {
+  name: string;
+  unread?: number;
+  signOutAction?: () => void | Promise<void>;
+}) {
   const pathname = usePathname();
   const items = NAV.map((item) => (item.label === "Inbox" ? { ...item, badge: unread } : item));
 
@@ -51,10 +60,10 @@ export function DoctorSidebar({ name, unread = 0 }: { name: string; unread?: num
           );
         })}
         <div className="flex-1" />
-        <div className="flex items-center gap-2.5 rounded-[18px] bg-white/55 p-2">
+        <div className="flex items-center gap-2.5 rounded-tile bg-white/55 p-2">
           <Avatar name={name} doctor size="sm" />
           <span className="min-w-0 flex-1 truncate text-sm font-semibold">{name}</span>
-          <form action={signOut}>
+          <form action={signOutAction}>
             <IconButton type="submit" label="Sign out" icon={<LogOut className="size-[18px]" />} className="size-10" />
           </form>
         </div>

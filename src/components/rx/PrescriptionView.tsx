@@ -28,7 +28,7 @@ export function PrescriptionView({ prescription, replaced, variant = "screen", a
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col">
-            <span className="text-[19px] font-semibold tracking-tight">{doctor.full_name}</span>
+            <span className="text-[17px] font-semibold tracking-tight">{doctor.full_name}</span>
             {doctor.specialty ? <span className="text-sm text-ink-2">{doctor.specialty}</span> : null}
             <span className="text-sm text-ink-2">Reg. no. {doctor.reg_no || "[REG NO]"}</span>
           </div>
@@ -61,7 +61,7 @@ export function PrescriptionView({ prescription, replaced, variant = "screen", a
       </Card>
 
       <section className="flex flex-col gap-3" aria-label="Medicines">
-        <h2 className="px-1 text-[13px] font-semibold tracking-wider text-ink-3 uppercase">
+        <h2 className="px-1 text-[13px] font-semibold tracking-wider text-ink-label uppercase">
           {items.length} {items.length === 1 ? "medicine" : "medicines"}
         </h2>
         {items.map((item) => (
@@ -81,7 +81,7 @@ export function PrescriptionView({ prescription, replaced, variant = "screen", a
 
       {prescription.advice ? (
         <Card tone={print ? "solid" : "glass"} className={cn("flex flex-col gap-1 p-5", print && "shadow-none")}>
-          <p className="text-[13px] font-semibold tracking-wider text-ink-3 uppercase">Doctor&apos;s advice</p>
+          <p className="text-[13px] font-semibold tracking-wider text-ink-label uppercase">Doctor&apos;s advice</p>
           <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{prescription.advice}</p>
         </Card>
       ) : null}

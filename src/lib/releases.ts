@@ -15,6 +15,38 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.5.0",
+    date: "2026-10-21",
+    title: "Invite links and removing reports",
+    added: [
+      "Invite a patient with a link: create it, then copy it or share it on WhatsApp. It works once and lasts 7 days.",
+      "Patients join from the link with their name, email or mobile number, and a password. No email code needed.",
+      "Patients can sign in with their mobile number as well as their email.",
+      "The doctor can remove a report. The chat shows “Report removed by the doctor”.",
+    ],
+  },
+  {
+    version: "0.4.1",
+    date: "2026-10-20",
+    title: "Easier to read and tap",
+    changed: [
+      "File names and medicine names are larger for patients.",
+      "Small buttons and quick-pick chips are a little taller, so they're easier to tap.",
+      "Corners, icon squares and error screens look the same everywhere.",
+    ],
+  },
+  {
+    version: "0.4.0",
+    date: "2026-10-20",
+    title: "Notifications",
+    added: [
+      "Notifications on your phone or computer when a new message, file or prescription arrives.",
+      "Turn them on or off in Profile (patients) or Settings (doctor), separately for each device.",
+      "Alerts name who sent something, never what it says, so nothing private shows on a lock screen.",
+    ],
+    changed: ["Signing out turns off notifications on that device."],
+  },
+  {
     version: "0.3.1",
     date: "2026-10-20",
     title: "Icons and link previews",

@@ -33,8 +33,8 @@ export function PatientPanel({ conversationId, patient, prescriptions, replacedR
       <div className="flex flex-col items-center gap-2 text-center">
         <Avatar name={patient.full_name} seed={patient.id} size="lg" ring pending={invited} />
         <div className="flex flex-col">
-          <span className="text-[19px] font-semibold tracking-tight">{patient.full_name}</span>
-          {patient.email ? <span className="text-[13px] text-ink-2">{patient.email}</span> : null}
+          <span className="text-[17px] font-semibold tracking-tight">{patient.full_name}</span>
+          {patient.email || patient.phone ? <span className="text-[13px] text-ink-2">{patient.email ?? patient.phone}</span> : null}
           <span className="text-[13px] text-ink-2">
             {invited ? "Invite pending" : `Joined ${formatDate(patient.activated_at ?? patient.created_at)}`}
           </span>
@@ -89,7 +89,7 @@ export function PatientPanel({ conversationId, patient, prescriptions, replacedR
                 replaced={replaced.has(rx.id)}
                 actions={
                   <>
-                    <ButtonLink href={`/doctor/c/${conversationId}?rx=${rx.id}`} variant="secondary" size="sm">
+                    <ButtonLink href={`/doctor/c/${conversationId}?rx=${rx.id}`} variant="outline" size="sm">
                       {isDraft ? "Continue draft" : "View"}
                     </ButtonLink>
                     {isDraft || replaced.has(rx.id) ? null : (
