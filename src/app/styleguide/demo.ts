@@ -4,7 +4,7 @@ import type { DraftItem, InboxRow, Message, PrescriptionWithPeople, Profile } fr
 export const NOW = "2026-10-12T04:50:00.000Z";
 export const EARLIER = "2026-10-08T09:15:00.000Z";
 
-const base = { phone: null, language: "en" as const, invited_by: null, created_at: EARLIER };
+const base = { phone: null, language: "en" as const, invited_by: null, created_at: EARLIER, date_of_birth: null, height_cm: null, weight_kg: null, blocked_at: null };
 
 export const doctor: Profile = {
   ...base,
@@ -28,6 +28,10 @@ export const patient: Profile = {
   reg_no: null,
   status: "active",
   activated_at: NOW,
+  date_of_birth: "1988-04-12",
+  height_cm: 172,
+  weight_kg: 74.5,
+  phone: "+919876543210",
 };
 
 export const pendingPatient: Profile = { ...patient, id: "demo-pending", full_name: "Kavya Nair", email: "kavya@example.com", status: "invited", activated_at: null };

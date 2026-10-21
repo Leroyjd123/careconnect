@@ -19,12 +19,15 @@ function Submit() {
 }
 
 /** loginAction is only overridden by /styleguide, so its demo never signs anyone in. */
-export function LoginForm({ linkError, loginAction = login }: { linkError?: boolean; loginAction?: typeof login }) {
+export function LoginForm({ linkError, blocked, loginAction = login }: { linkError?: boolean; blocked?: boolean; loginAction?: typeof login }) {
   const [state, action] = useActionState(loginAction, initial);
 
   return (
     <Card className="mt-10 p-5 sm:p-6">
       <form action={action} className="flex flex-col gap-4" noValidate>
+        {blocked && !state.error ? (
+          <FieldError>Your account has been paused by your doctor&apos;s clinic. Please contact the clinic.</FieldError>
+        ) : null}
         {linkError && !state.error ? (
           <FieldError>That invitation link has expired. Ask your doctor’s clinic to send a new one.</FieldError>
         ) : null}

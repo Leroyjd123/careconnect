@@ -68,6 +68,7 @@ src/components/patient/*   patient-only composites (only if not shareable)
 - RLS is the security boundary. Never rely on hiding UI. Every table has policies in the migration.
 - `createAdminClient()` (service role) is allowed ONLY in `src/app/actions/patients.ts`: after `requireProfile("doctor")`,
   or in the invite-link functions (`checkInviteLink`, `joinWithInviteLink`) where the one-time token is the boundary.
+  One more: `emailForPhone()` in `actions/auth.ts` (not exported), so a mobile number can sign in to an email account.
 - Files are private. Show them with `getFileUrl()` (5-minute signed URL). Never make the bucket public or store URLs.
 - Uploads go browser → Storage via `lib/upload.ts`, then `sendAttachment()`. Never send file bytes through a server action.
 - Issued prescriptions are immutable (DB trigger). Corrections = new draft with `replacesId`, then issue.

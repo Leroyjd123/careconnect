@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const profile = await getProfile();
-  if (profile) redirect(homeFor(profile.role));
+  if (profile && !profile.blocked_at) redirect(homeFor(profile.role));
   const { error } = await searchParams;
 
   return (
@@ -19,11 +19,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <Logo size="lg" />
         <p className="mt-2 text-[15px] text-ink-2">{TAGLINE}</p>
       </div>
-      <LoginForm linkError={error === "link"} />
+      <LoginForm linkError={error === "link"} blocked={error === "blocked"} />
       <p className="mt-auto pt-8 text-center text-[13px] leading-relaxed text-ink-2">
         For doctors and invited patients.
         <br />
-        By continuing you agree to the <Link href="/privacy">Privacy notice</Link>.
+        By continuing you agree to the <Link href="/terms">Terms of use</Link> and <Link href="/privacy">Privacy notice</Link>.
       </p>
     </main>
   );

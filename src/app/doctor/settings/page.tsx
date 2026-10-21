@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LogOut } from "lucide-react";
+import { LogOut, Pill } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
 import { signOut } from "@/app/actions/auth";
 import { APP_VERSION, RELEASES } from "@/lib/releases";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ReleaseNotes } from "@/components/doctor/ReleaseNotes";
 import { NotificationToggle } from "@/components/layout/NotificationToggle";
+import { SettingsRow } from "@/components/layout/SettingsRow";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -49,6 +50,8 @@ export default async function SettingsPage() {
           </Button>
         </form>
       </Card>
+
+      <SettingsRow href="/doctor/settings/medicines" icon={Pill} title="Master medicines" hint="Add, edit, deactivate or merge the medicines you prescribe." />
 
       <NotificationToggle audience="doctor" />
 

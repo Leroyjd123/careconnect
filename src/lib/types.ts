@@ -15,6 +15,12 @@ export type Profile = {
   reg_no: string | null;
   language: Language;
   status: ProfileStatus;
+  /** Recorded by the doctor (0004). */
+  date_of_birth: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  /** Set when the doctor blocks the account (0004). */
+  blocked_at: string | null;
   invited_by: string | null;
   activated_at: string | null;
   created_at: string;
@@ -99,6 +105,21 @@ export type PrescriptionWithPeople = Prescription & { doctor: Profile; patient: 
 export type ConversationWithPeople = Conversation & { doctor: Profile; patient: Profile };
 
 /** Shape every server action returns, so forms handle errors the same way. */
+/** Row in medicines (0004): the doctor's master list. Never deleted; deactivated or merged. */
+export type Medicine = {
+  id: string;
+  doctor_id: string;
+  name: string;
+  default_dose: string | null;
+  active: boolean;
+  merged_into: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** What the prescription composer needs from the master list. */
+export type MedicineOption = { name: string; default_dose: string | null };
+
 /** Row in invite_links (0003). A one-time link the doctor shares; the patient makes their own account. */
 export type InviteLink = {
   id: string;

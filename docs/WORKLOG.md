@@ -17,6 +17,7 @@ Rules for whoever edits this file:
 - `npm run typecheck && npm run lint && npm run build` pass. 16 routes compile.
 - Connected to a Supabase project. Verified by hand: doctor and patient password sign-in, patient invite (existing-account path).
 - Sign-in switched from email OTP to email + password (see Decisions log). Invite email → `/set-password`.
+- v0.6.0: collapsible menu, hide patient column, edit patient details (+ DOB, height, weight), block/activate, master medicines. Migration 0004 applied (2026-10-21).
 - v0.5.0: invite links (`/join`), mobile-number sign-in, doctor can remove reports. Migration 0003 applied on the Supabase project (2026-10-21). Doctor profile set to Dr. Vipin John, General Medicine.
 - v0.4.0: web push notifications (needs migration 0002 + VAPID env on Vercel). Not yet tested on real devices.
 - v0.3.0: `/doctor/settings` with version + release notes; version on patient Profile.
@@ -85,12 +86,19 @@ Newest last. Never delete an entry; add a superseding one instead.
 - **Phone sign-in without SMS**: phone-only patients get an auth email `<91number>@phone.careconnect.invalid` that never receives mail; `login()` maps a typed mobile number to it. Real phone OTP would need an SMS provider + DLT (India). `profiles.email` stays null for them; `profiles.phone` holds +91….
 - **Reports are removed, not erased from history**: `remove_report()` clears the file fields and sets `deleted_at`; the chat shows "Report removed by the doctor". The patient sees it after a refresh (no realtime UPDATE handling yet).
 
+- **Doctor edits patients via service role** (v0.6.0) in `patients.ts`, after checking the doctor shares a conversation with the patient. Changing email/mobile also updates the auth email so sign-in follows.
+- **Block = auth ban + `blocked_at` + RLS** (`is_blocked()` in messages/uploads policies) + `requireProfile` redirect, so an open session is stopped too. Activate reverses all three.
+- **Mobile sign-in for email accounts**: `login()` falls back to `emailForPhone()` (service role, server-only) when a patient has both. Previously a mobile number only worked for phone-only accounts.
+- **Master medicines never delete** (no delete policy, delete revoked). Merge sets `active=false, merged_into`. Seeded from past prescriptions in 0004. Composer suggests active ones and pre-fills the usual dose.
+- **Layout choices in cookies** (`cc_nav`, `cc_panel`) so the server renders the collapsed menu / hidden panel without a flash.
+
 ## Known gaps — deliberate, not bugs
 
+- Blocked status isn't shown in the inbox list yet (my_conversations RPC doesn't return it); it shows in the panel and Patients.
 - No way to list or cancel invite links in the UI yet (`revokeInviteLink` exists). Links expire after 7 days.
 - No forgot-password flow yet. Reset a password in Supabase (Authentication → Users) until it exists.
 
-- `/privacy` is a placeholder — needs the clinic's reviewed notice before launch.
+- `/privacy` and `/terms` are plain-language drafts (v0.5.1). Need the clinic's contact (`CLINIC.contact` in `lib/constants.ts`) and a legal review (DPDP Act 2023) before launch.
 - Prescriptions print `[REG NO]` until `profiles.reg_no` is filled for the doctor.
 - `themeColor` in `app/layout.tsx` is a raw hex. It duplicates `--color-forest`; viewport metadata cannot take a Tailwind class.
 - "Email not delivered" from the hi-fi is out of scope for the MVP (needs delivery webhooks) — see `docs/SPEC.md`.

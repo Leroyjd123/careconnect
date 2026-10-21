@@ -13,7 +13,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MedicineFields } from "@/components/rx/MedicineFields";
 import { ReviewIssueDialog } from "@/components/rx/ReviewIssueDialog";
 import { formatDate, formatTime } from "@/lib/utils";
-import type { DraftItem, PrescriptionWithPeople, Profile } from "@/lib/types";
+import type { DraftItem, MedicineOption, PrescriptionWithPeople, Profile } from "@/lib/types";
+import { addMedicine } from "@/app/actions/medicines";
 
 const EMPTY_ITEM: DraftItem = { medicine: "", dose: "", frequency: "", duration: "", timing: null };
 const SUGGESTIONS_ID = "medicine-suggestions";
@@ -26,7 +27,8 @@ type PrescriptionComposerProps = {
   /** Issued prescription this one corrects: its contents are prefilled. */
   replaces?: PrescriptionWithPeople | null;
   /** Medicine names this doctor has used before. */
-  suggestions: string[];
+  /** The doctor's active master medicines (Settings → Master medicines). */
+  suggestions: MedicineOption[];
   /** Back link and where to go after issuing, e.g. /doctor/c/<id>. */
   closeHref: string;
 };
@@ -51,6 +53,8 @@ function isComplete(item: DraftItem) {
  * Autosaves 1.5 s after the doctor stops typing; nothing reaches the patient until "Issue".
  */
 export function PrescriptionComposer({ conversationId, patient, draft, replaces, suggestions, closeHref }: PrescriptionComposerProps) {
+  // Names saved to the master list from here, so "Save to my medicines" disappears straight away.
+  const [options, setOptions] = useState<MedicineOption[]>(suggestions);
   const router = useRouter();
   const source = draft ?? replaces ?? null;
   const [items, setItems] = useState<DraftItem[]>(() => itemsFrom(source));
@@ -178,8 +182,10 @@ export function PrescriptionComposer({ conversationId, patient, draft, replaces,
         </Field>
 
         <datalist id={SUGGESTIONS_ID}>
-          {suggestions.map((s) => (
-            <option key={s} value={s} />
+          {options.map((s) => (
+            <option key={s.name} value={s.name}>
+              {s.default_dose ?? undefined}
+            </option>
           ))}
         </datalist>
 
@@ -189,6 +195,12 @@ export function PrescriptionComposer({ conversationId, patient, draft, replaces,
             index={i + 1}
             item={item}
             suggestionsId={SUGGESTIONS_ID}
+            options={options}
+            onSaveToList={async (name, dose) => {
+              const result = await addMedicine({ name, defaultDose: dose });
+              if (result.ok) setOptions((prev) => [...prev, { name, default_dose: dose || null }]);
+              return result;
+            }}
             onChange={(next) => change(() => setItems((prev) => prev.map((p, j) => (j === i ? next : p))))}
             onRemove={items.length > 1 ? () => change(() => setItems((prev) => prev.filter((_, j) => j !== i))) : undefined}
           />

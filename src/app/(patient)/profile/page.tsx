@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
+import { FileText, LifeBuoy, LogOut, ShieldCheck } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/releases";
 import { getMyConversations } from "@/lib/data";
@@ -39,6 +39,7 @@ export default async function ProfilePage() {
       </Card>
 
       <SettingsRow href="/privacy" icon={ShieldCheck} title="Privacy notice" hint="What we keep and who can see it." />
+      <SettingsRow href="/terms" icon={FileText} title="Terms of use" hint="The short version of the rules." />
       <SettingsRow
         href="/chat"
         icon={LifeBuoy}

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { LayoutToggle } from "@/components/layout/LayoutToggle";
+import { LAYOUT_COOKIES } from "@/lib/constants";
 import { requireProfile } from "@/lib/auth";
 import { getConversation, getMedicineSuggestions, getMessages, getPrescriptions, replacedIds } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
@@ -14,6 +17,7 @@ import { PatientPanel } from "@/components/doctor/PatientPanel";
 import { PrescriptionComposer } from "@/components/rx/PrescriptionComposer";
 import { PrescriptionView } from "@/components/rx/PrescriptionView";
 import { cn } from "@/lib/utils";
+import type { MedicineOption } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Conversation" };
 
@@ -40,7 +44,7 @@ export default async function DoctorConversation({
   const [messages, prescriptions, suggestions] = await Promise.all([
     getMessages(conversationId),
     getPrescriptions(conversationId),
-    rx ? getMedicineSuggestions() : Promise.resolve<string[]>([]),
+    rx ? getMedicineSuggestions() : Promise.resolve<MedicineOption[]>([]),
   ]);
 
   const patient = conversation.patient;
@@ -52,6 +56,8 @@ export default async function DoctorConversation({
   const openRx = rx && rx !== "new" ? prescriptions.find((p) => p.id === rx) : undefined;
   const replacesRx = replaces ? prescriptions.find((p) => p.id === replaces) : undefined;
   const composing = rx === "new" || openRx?.status === "draft";
+  // Desktop: the doctor can hide the patient column to give the chat the full width.
+  const panelHidden = !rx && (await cookies()).get(LAYOUT_COOKIES.panel)?.value === "on";
 
   return (
     <div className="flex min-h-0 flex-1 gap-4">
@@ -75,10 +81,21 @@ export default async function DoctorConversation({
               title: patient.full_name,
               subtitle: patient.status === "invited" ? "Invite pending" : patient.email,
               actions: (
-                <ButtonLink href={`${base}?rx=new`} variant="soft" size="sm" className="lg:hidden">
-                  <FilePlus2 aria-hidden="true" className="size-4" />
-                  Prescribe
-                </ButtonLink>
+                <>
+                  <ButtonLink href={`${base}?rx=new`} variant="soft" size="sm" className="lg:hidden">
+                    <FilePlus2 aria-hidden="true" className="size-4" />
+                    Prescribe
+                  </ButtonLink>
+                  <LayoutToggle
+                    cookie={LAYOUT_COOKIES.panel}
+                    on={panelHidden}
+                    labelOn="Show patient details"
+                    labelOff="Hide patient details"
+                    iconOn={<PanelRightOpen className="size-5" />}
+                    iconOff={<PanelRightClose className="size-5" />}
+                    className="hidden lg:inline-flex"
+                  />
+                </>
               ),
             }}
           />
@@ -86,7 +103,7 @@ export default async function DoctorConversation({
         {openFile ? <FileViewer message={openFile} backHref={base} replyHref={base} onRemove={removeReport.bind(null, openFile.id, conversationId)} className="absolute inset-0 z-10" /> : null}
       </div>
 
-      <div className={cn("min-h-0 w-full shrink-0 flex-col lg:w-[380px] lg:flex", rx ? "flex" : "hidden")}>
+      <div className={cn("min-h-0 w-full shrink-0 flex-col lg:w-[380px]", rx ? "flex" : "hidden", panelHidden ? "lg:hidden" : "lg:flex")}>
         {composing ? (
           <PrescriptionComposer
             conversationId={conversationId}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Clock, UserPlus, Users } from "lucide-react";
+import { Ban, Check, Clock, UserPlus, Users } from "lucide-react";
 import { resendInvite } from "@/app/actions/patients";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -15,7 +15,7 @@ import type { ActionResult, Profile } from "@/lib/types";
 
 type Row = { conversationId: string; patient: Profile };
 
-const FILTERS = ["All", "Active", "Invite pending"];
+const FILTERS = ["All", "Active", "Invite pending", "Blocked"];
 
 /**
  * Everyone this doctor has invited, with their status and the two actions that matter.
@@ -37,7 +37,12 @@ export function PatientsTable({
     const q = query.trim().toLowerCase();
     return rows.filter(({ patient }) => {
       const matchesFilter =
-        filter === "All" || (filter === "Active" ? patient.status === "active" : patient.status === "invited");
+        filter === "All" ||
+        (filter === "Blocked"
+          ? !!patient.blocked_at
+          : filter === "Active"
+            ? patient.status === "active" && !patient.blocked_at
+            : patient.status === "invited");
       const matchesQuery =
         !q || patient.full_name.toLowerCase().includes(q) || (patient.email ?? "").toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
@@ -113,12 +118,16 @@ export function PatientsTable({
                         <Avatar name={patient.full_name} seed={patient.id} size="sm" pending={invited} />
                         <div className="flex min-w-0 flex-col">
                           <span className="truncate text-[15px] font-semibold">{patient.full_name}</span>
-                          <span className="truncate text-[13px] text-ink-2">{patient.email}</span>
+                          <span className="truncate text-[13px] text-ink-2">{patient.email ?? patient.phone}</span>
                         </div>
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      {invited ? (
+                      {patient.blocked_at ? (
+                        <Badge tone="danger" icon={<Ban aria-hidden="true" />}>
+                          Blocked
+                        </Badge>
+                      ) : invited ? (
                         <Badge tone="neutral" icon={<Clock aria-hidden="true" />}>
                           Invite pending
                         </Badge>

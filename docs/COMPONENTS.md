@@ -26,10 +26,12 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 |---|---|---|---|
 | `TabBar` | `layout/TabBar.tsx` | The floating glass bottom bar. ONE implementation: patient tabs and the doctor's phone nav differ only in `items`. | ✅ |
 | `PatientTabBar` | `layout/PatientTabBar.tsx` | Patient items for `TabBar` (Home, Prescriptions, Profile). Hides on /chat. | ✅ |
-| `DoctorSidebar` | `layout/DoctorSidebar.tsx` | Doctor nav: glass sidebar ≥1024px, `TabBar` below. | ✅ |
+| `DoctorSidebar` | `layout/DoctorSidebar.tsx` | Doctor nav: glass sidebar ≥1024px (collapsible to an icon rail, remembered in a cookie), `TabBar` below. | ✅ |
+| `LayoutToggle` | `layout/LayoutToggle.tsx` | Icon button that flips a remembered layout cookie and re-renders (hide/show patient details). | ✅ |
 | `NotificationToggle` | `layout/NotificationToggle.tsx` | Notifications card: turn web push on/off for this device. ONE component for patient Profile and doctor Settings (`audience`). `preview` pins a state for the styleguide. | ✅ |
 | `SettingsRow` | `layout/SettingsRow.tsx` | Tappable settings line: IconTile + title + hint. Patient Profile. | ✅ |
 | `ErrorScreen` | `layout/ErrorScreen.tsx` | What every `error.tsx` renders. Same wording in both apps; only the way back differs. | ✅ |
+| `LegalPage` | `layout/LegalPage.tsx` | Plain-language legal page shell: title, last-updated date, short sections. `/privacy` and `/terms`. | ✅ |
 | `PageHeader` | `layout/PageHeader.tsx` | Glass top bar: back, avatar, title, subtitle, actions. Chat + detail screens. | ✅ |
 
 ## Chat — `src/components/chat` (shared by doctor and patient)
@@ -52,7 +54,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `DoseSchedule` | `rx/DoseSchedule.tsx` | Morning / Afternoon / Night slots from "1-0-1". | ✅ |
 | `PrescriptionView` | `rx/PrescriptionView.tsx` | Full read-only prescription. Patient detail, doctor "View" and the print page (`variant="print"`). | ✅ |
 | `PrescriptionComposer` | `rx/PrescriptionComposer.tsx` | Draft editor: medicines, diagnosis, advice, 1.5 s autosave, review. ONE component for the desktop panel and the phone full screen. | ✅ |
-| `MedicineFields` | `rx/MedicineFields.tsx` | One medicine row inside the composer. | ✅ |
+| `MedicineFields` | `rx/MedicineFields.tsx` | One medicine row inside the composer. Suggests from the master list (fills the usual dose); "Save to my medicines" for new names. | ✅ |
 | `ReviewIssueDialog` | `rx/ReviewIssueDialog.tsx` | Dialog: patient identity strip + table + lock notice + Issue. | ✅ |
 
 ## Doctor-only — `src/components/doctor`
@@ -60,9 +62,11 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | Component | File | Use for | Status |
 |---|---|---|---|
 | `ConversationList` | `doctor/ConversationList.tsx` | Inbox list with search + All/Unread. Rendered once by `doctor/(inbox)/layout.tsx`; hides itself on a phone when a conversation is open. | ✅ |
-| `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity, New prescription, Reports/Prescriptions tabs. | ✅ |
+| `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity + age/height/weight, Edit details, Block/Activate, New prescription, Reports/Prescriptions tabs. Hideable on desktop. | ✅ |
 | `InviteDialog` | `doctor/InviteDialog.tsx` | "Share a link" (one-time `/join` link, copy / share / WhatsApp) or "Send by email" → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
-| `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status + actions (resend, open chat). | ✅ |
+| `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked) + actions (resend, open chat). | ✅ |
+| `PatientDetailsDialog` | `doctor/PatientDetailsDialog.tsx` | Doctor edits name, email, mobile, date of birth, height, weight. Opened from PatientPanel. | ✅ |
+| `MedicineList` | `doctor/MedicineList.tsx` | Master medicines: add, edit, deactivate, merge. No delete. `/doctor/settings/medicines`. | ✅ |
 | `ReleaseNotes` | `doctor/ReleaseNotes.tsx` | Version history on `/doctor/settings`, from `RELEASES` in `lib/releases.ts`. First entry marked Current. | ✅ |
 
 ## Server actions — `src/app/actions` (already written; build UI on these)
@@ -70,10 +74,11 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | Action | File |
 |---|---|
 | `login`, `setPassword`, `signOut` | `actions/auth.ts` |
-| `invitePatient`, `resendInvite`, `createInviteLink`, `revokeInviteLink`, `checkInviteLink`, `joinWithInviteLink` | `actions/patients.ts` |
+| `updatePatientDetails`, `setPatientBlocked`, `invitePatient`, `resendInvite`, `createInviteLink`, `revokeInviteLink`, `checkInviteLink`, `joinWithInviteLink` | `actions/patients.ts` |
 | `savePushSubscription`, `deletePushSubscription` | `actions/notifications.ts` |
 | `sendMessage`, `sendAttachment`, `getFileUrl`, `markRead`, `removeReport` | `actions/messages.ts` |
 | `saveDraft`, `issuePrescription`, `deleteDraft` | `actions/prescriptions.ts` |
+| `addMedicine`, `updateMedicine`, `setMedicineActive`, `mergeMedicine` | `actions/medicines.ts` |
 | `updateMyProfile` | `actions/profile.ts` |
 
 ## Reads — `src/lib/data.ts`

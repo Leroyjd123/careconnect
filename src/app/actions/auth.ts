@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { EMAIL_RE, PHONE_EMAIL_DOMAIN, PUSH_COOKIE } from "@/lib/constants";
 import { normalizePhone } from "@/lib/utils";
@@ -31,8 +32,16 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  let { error } = await supabase.auth.signInWithPassword({ email, password });
+  // A patient with an email AND a mobile signs in with the email account; find it from the number.
+  if (error && phone) {
+    const accountEmail = await emailForPhone(phone);
+    if (accountEmail) ({ error } = await supabase.auth.signInWithPassword({ email: accountEmail, password }));
+  }
   if (error) {
+    if (/banned/i.test(error.message)) {
+      return { email: typed, error: "Your account has been paused by your doctor's clinic. Please contact the clinic." };
+    }
     if (error.status === 429) {
       return { email: typed, error: "Too many attempts. Please wait a minute and try again." };
     }
@@ -40,6 +49,16 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   }
 
   redirect("/");
+}
+
+/**
+ * Server-only lookup, never returned to the browser: the account email behind a mobile number.
+ * Service role, because the person isn't signed in yet. Used only inside login().
+ */
+async function emailForPhone(phone: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data } = await admin.from("profiles").select("email").eq("phone", phone).not("email", "is", null).limit(2);
+  return data?.length === 1 ? (data[0].email as string) : null;
 }
 
 /** After opening the invite link the user is signed in; they choose a password here. */

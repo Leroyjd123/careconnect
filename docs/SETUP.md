@@ -7,7 +7,7 @@ About 30 minutes. Everything below is on free tiers.
 1. Create a project at supabase.com. Pick the region closest to your users (Mumbai `ap-south-1` for India).
 2. **SQL Editor → New query →** paste `supabase/migrations/0001_init.sql` → Run. It creates the tables, RLS policies,
    triggers, the private `attachments` bucket and Realtime publication.
-   Then run every later file in `supabase/migrations/` in order (`0002_push_subscriptions.sql`, `0003_invite_links_and_report_delete.sql`, …).
+   Then run every later file in `supabase/migrations/` in order (`0002_push_subscriptions.sql`, `0003_invite_links_and_report_delete.sql`, `0004_patient_details_block_medicines.sql`, …).
 3. **Project Settings → API:** copy the Project URL, the anon (or publishable) key and the service_role key.
 
 ## 2. Auth settings (Authentication → …)

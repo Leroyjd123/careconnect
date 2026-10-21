@@ -28,8 +28,10 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/profile` | patient | Name, email, language (EN/ಕನ್ನಡ/हिन्दी), privacy, help, sign out (C3) |
 | `/doctor` | doctor | Inbox. Desktop: list + empty conversation pane. Phone: list (D2, E1, D9) |
 | `/doctor/c/[id]` | doctor | Same 3 columns with conversation open + PatientPanel (D2, D3, D6, E2) |
+| `/doctor/settings/medicines` | doctor | Master medicines: add, edit, deactivate, merge (never delete) ✅ |
 | `/doctor/settings` | doctor | Account details (name, email, specialty, reg no), current version, release notes ✅ |
 | `/doctor/patients` | doctor | Patients + invite status, `?invite=1` opens InviteDialog (D7, D8) |
+| `/privacy`, `/terms` | all | Plain-language privacy notice and terms of use (public) ✅ |
 | `/rx/[id]/print` | both | Print-friendly prescription; browser "Save as PDF" (C2 Download) |
 | `/styleguide` | dev only | All shared components |
 
@@ -48,6 +50,19 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 - PDF, JPG, PNG, WEBP, HEIC. Max 10 MB. Private bucket, signed URLs (5 min).
 - Patient flow: Attach → sheet (Take a photo / Choose a photo / Choose a file / Cancel) → preview with optional note → "Send to Dr. …" → bubble with progress → done or failed.
 - Doctor sees attachments in chat and in PatientPanel → Reports. Opens in FileViewer (PDF/image preview, Download, "Reply about this report"). Unsupported types show "Can't preview, download to open".
+
+## Doctor workspace
+
+- Desktop menu collapses to an icon rail; the patient column can be hidden to widen the chat. Both remembered per browser.
+- Patient details the doctor can edit: name, email, mobile (changing either changes what the patient signs in with), date of birth (age shown), height (cm), weight (kg).
+- Block / Activate a patient. Blocked: can't sign in, message or upload (auth ban + RLS); history stays; shown as "Blocked" with icon.
+
+## Master medicines
+
+- Settings → Master medicines. Each doctor's own list: name + strength, optional usual dose.
+- Add, edit, deactivate (stops suggesting), merge duplicates (the duplicate becomes inactive and points at the kept one). No delete, so nothing is lost.
+- The prescription medicine field suggests active medicines and fills the usual dose. Free text still works; "Save to my medicines" adds a new name.
+- Issued prescriptions keep the name they were written with; editing the master list never changes them.
 
 ## Removing reports
 

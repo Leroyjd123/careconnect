@@ -211,3 +211,98 @@ export async function joinWithInviteLink(token: string, _prev: JoinState, formDa
   if (signInError) redirect("/login");
   redirect("/home");
 }
+
+// ─────────────────────────────────────────────────────────────
+// Doctor edits a patient's details, and blocks / reactivates them (0004).
+// Service role, because these touch another person's row and their sign-in (auth email, ban).
+// The doctor check plus "shares a conversation with this patient" is the boundary.
+// ─────────────────────────────────────────────────────────────
+
+async function requireOwnPatient(patientId: string) {
+  const doctor = await requireProfile("doctor");
+  const supabase = await createClient();
+  const { data } = await supabase.from("conversations").select("id").eq("doctor_id", doctor.id).eq("patient_id", patientId).maybeSingle();
+  return data ? { doctor, conversationId: data.id as string } : null;
+}
+
+export type PatientDetailsInput = {
+  fullName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  heightCm: string;
+  weightKg: string;
+};
+
+export async function updatePatientDetails(patientId: string, input: PatientDetailsInput): Promise<ActionResult> {
+  const own = await requireOwnPatient(patientId);
+  if (!own) return { ok: false, error: "Patient not found." };
+
+  const fullName = input.fullName.trim();
+  const email = input.email.trim().toLowerCase();
+  const phone = input.phone.trim() ? normalizePhone(input.phone) : null;
+  if (fullName.length < 2) return { ok: false, error: "Enter the patient's full name." };
+  if (email && !EMAIL_RE.test(email)) return { ok: false, error: "That email doesn't look right." };
+  if (input.phone.trim() && !phone) return { ok: false, error: "Enter a 10-digit Indian mobile number." };
+  if (!email && !phone) return { ok: false, error: "Keep an email or a mobile number, so the patient can sign in." };
+
+  const dob = input.dateOfBirth.trim() || null;
+  if (dob && (Number.isNaN(Date.parse(dob)) || dob > new Date().toISOString().slice(0, 10) || dob < "1900-01-01")) {
+    return { ok: false, error: "Check the date of birth." };
+  }
+  const num = (v: string, min: number, max: number) => {
+    if (!v.trim()) return { value: null as number | null, ok: true };
+    const n = Number(v.replace(",", "."));
+    return { value: Math.round(n * 10) / 10, ok: Number.isFinite(n) && n >= min && n <= max };
+  };
+  const height = num(input.heightCm, 30, 260);
+  const weight = num(input.weightKg, 1, 400);
+  if (!height.ok) return { ok: false, error: "Height should be in centimetres, between 30 and 260." };
+  if (!weight.ok) return { ok: false, error: "Weight should be in kilograms, between 1 and 400." };
+
+  const admin = createAdminClient();
+  // Sign-in follows the details: email if there is one, otherwise the mobile number.
+  const authEmail = email || `${phone!.slice(1)}@${PHONE_EMAIL_DOMAIN}`;
+  const { data: authUser } = await admin.auth.admin.getUserById(patientId);
+  if (authUser.user && authUser.user.email !== authEmail) {
+    const { error } = await admin.auth.admin.updateUserById(patientId, { email: authEmail, email_confirm: true });
+    if (error) {
+      if (/already|exists|registered/i.test(error.message)) return { ok: false, error: "Another account already uses this email or number." };
+      console.error("updatePatientDetails auth email failed", error);
+      return { ok: false, error: "We couldn't save these details. Please try again." };
+    }
+  }
+
+  const { error } = await admin
+    .from("profiles")
+    .update({ full_name: fullName, email: email || null, phone, date_of_birth: dob, height_cm: height.value, weight_kg: weight.value })
+    .eq("id", patientId)
+    .eq("role", "patient");
+  if (error) {
+    console.error("updatePatientDetails failed", error);
+    return { ok: false, error: "We couldn't save these details. Please try again." };
+  }
+
+  revalidatePath("/doctor", "layout");
+  return { ok: true };
+}
+
+/**
+ * Block: the patient can't sign in, send messages or upload (auth ban + RLS). Their history stays.
+ * Activate: undoes it.
+ */
+export async function setPatientBlocked(patientId: string, blocked: boolean): Promise<ActionResult> {
+  const own = await requireOwnPatient(patientId);
+  if (!own) return { ok: false, error: "Patient not found." };
+
+  const admin = createAdminClient();
+  const { error: banError } = await admin.auth.admin.updateUserById(patientId, { ban_duration: blocked ? "876000h" : "none" });
+  if (banError) {
+    console.error("setPatientBlocked ban failed", banError);
+    return { ok: false, error: blocked ? "We couldn't block this patient. Please try again." : "We couldn't reactivate this patient. Please try again." };
+  }
+  await admin.from("profiles").update({ blocked_at: blocked ? new Date().toISOString() : null }).eq("id", patientId).eq("role", "patient");
+
+  revalidatePath("/doctor", "layout");
+  return { ok: true };
+}

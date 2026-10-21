@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CircleAlert } from "lucide-react";
 import { checkInviteLink } from "@/app/actions/patients";
@@ -44,6 +45,9 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
           </EmptyState>
         </Card>
       )}
+      <p className="mt-auto pt-8 text-center text-[13px] leading-relaxed text-ink-2">
+        By joining you agree to the <Link href="/terms">Terms of use</Link> and <Link href="/privacy">Privacy notice</Link>.
+      </p>
     </main>
   );
 }

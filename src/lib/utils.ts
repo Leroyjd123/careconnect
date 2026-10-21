@@ -78,3 +78,11 @@ export function normalizePhone(raw: string): string | null {
   if (digits.length !== 10 || !/^[6-9]/.test(digits)) return null;
   return `+91${digits}`;
 }
+
+/** Whole years since a YYYY-MM-DD date of birth, today in the app time zone. */
+export function ageFrom(dob: string, now = new Date()): number {
+  const today = dayKey(now);
+  const [y, m, d] = dob.split("-").map(Number);
+  const [ty, tm, td] = today.split("-").map(Number);
+  return ty - y - (tm < m || (tm === m && td < d) ? 1 : 0);
+}

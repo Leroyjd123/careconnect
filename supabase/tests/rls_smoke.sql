@@ -116,3 +116,21 @@ begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0
 select 'D2 removes own report', remove_report((select id from messages where file_name='x.pdf'));
 select 'tombstone', deleted_at is not null, file_path is null from messages where kind='file' and conversation_id='10000000-0000-0000-0000-000000000002';
 rollback;
+
+-- ===== patient details, blocking, master medicines (0004) =====
+update profiles set blocked_at = now() where id = '00000000-0000-0000-0000-000000000001';
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+insert into messages (conversation_id,sender_id,body) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','blocked'); -- expect RLS error
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+update profiles set height_cm = 170 where id = '00000000-0000-0000-0000-000000000001'; -- expect permission denied (doctor-only field)
+rollback;
+update profiles set blocked_at = null where id = '00000000-0000-0000-0000-000000000001';
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-00000000000d';
+insert into medicines (doctor_id, name) values ('00000000-0000-0000-0000-00000000000d', 'Paracetamol 650 mg');
+select 'D medicine ok';
+delete from medicines where name = 'Paracetamol 650 mg'; -- expect permission denied (never deleted)
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+insert into medicines (doctor_id, name) values ('00000000-0000-0000-0000-000000000001', 'Sneaky'); -- expect RLS error (not a doctor)
+rollback;

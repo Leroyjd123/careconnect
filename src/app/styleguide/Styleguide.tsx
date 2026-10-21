@@ -80,6 +80,7 @@ import { ConversationList } from "@/components/doctor/ConversationList";
 import { PatientPanel } from "@/components/doctor/PatientPanel";
 import { PatientsTable } from "@/components/doctor/PatientsTable";
 import { ReleaseNotes } from "@/components/doctor/ReleaseNotes";
+import { MedicineList } from "@/components/doctor/MedicineList";
 import { InviteDialog } from "@/components/doctor/InviteDialog";
 import { FileViewer } from "@/components/chat/FileViewer";
 import { LoginForm } from "@/app/login/LoginForm";
@@ -87,7 +88,7 @@ import { SetPasswordForm } from "@/app/set-password/SetPasswordForm";
 import { JoinForm } from "@/app/join/[token]/JoinForm";
 import { APP_VERSION, RELEASES } from "@/lib/releases";
 import { DURATION_OPTIONS, FREQUENCY_OPTIONS, LANGUAGES, TIMING_OPTIONS } from "@/lib/constants";
-import type { ActionResult, DraftItem } from "@/lib/types";
+import type { ActionResult, DraftItem, Medicine } from "@/lib/types";
 import * as demo from "./demo";
 
 /* ───────────────────────── page scaffolding ───────────────────────── */
@@ -100,7 +101,7 @@ const GROUPS: { group: string; items: [id: string, title: string][] }[] = [
   { group: "Navigation", items: [["nav", "Tab bar & sidebar"], ["header", "Page header"]] },
   { group: "Chat", items: [["bubbles", "Bubbles & dividers"], ["files", "File cards"], ["messages", "Message rows"], ["composer", "Composer"], ["viewer", "File viewer"]] },
   { group: "Prescriptions", items: [["rxcards", "Prescription cards"], ["dose", "Dose schedule"], ["medicine", "Medicine row"], ["rxview", "Full prescription"], ["print", "Print / PDF"]] },
-  { group: "Doctor", items: [["inbox", "Conversation list"], ["panel", "Patient panel"], ["table", "Patients table"], ["releases", "Release notes"]] },
+  { group: "Doctor", items: [["inbox", "Conversation list"], ["panel", "Patient panel"], ["table", "Patients table"], ["medicines", "Master medicines"], ["releases", "Release notes"]] },
   { group: "Account", items: [["signin", "Sign in & password"], ["notifications", "Notifications"]] },
   { group: "Edge cases", items: [["edges", "Long, empty, many"]] },
   { group: "Review", items: [["coverage", "Coverage"], ["review", "Merge & fix list"]] },
@@ -270,6 +271,34 @@ async function demoRemove(): Promise<ActionResult> {
   return { ok: false, error: "Example only: nothing was removed." };
 }
 
+async function demoSave(): Promise<ActionResult> {
+  return { ok: false, error: "Example only: nothing was saved." };
+}
+const demoSave2 = demoSave;
+
+async function demoAddMedicine(): Promise<ActionResult<{ id: string }>> {
+  return { ok: false, error: "Example only: not added." };
+}
+
+const DEMO_MED_OPTIONS = [
+  { name: "Paracetamol 650 mg", default_dose: "1 tablet" },
+  { name: "Pantoprazole 40 mg", default_dose: "1 tablet" },
+];
+
+const DEMO_MEDICINES: Medicine[] = [
+  { id: "m1", doctor_id: "demo", name: "Paracetamol 650 mg", default_dose: "1 tablet", active: true, merged_into: null, created_at: demo.NOW, updated_at: demo.NOW },
+  { id: "m2", doctor_id: "demo", name: "Pantoprazole 40 mg", default_dose: "1 tablet", active: true, merged_into: null, created_at: demo.NOW, updated_at: demo.NOW },
+  { id: "m3", doctor_id: "demo", name: "Dolo 650", default_dose: null, active: false, merged_into: "m1", created_at: demo.NOW, updated_at: demo.NOW },
+  { id: "m4", doctor_id: "demo", name: "Cough syrup (old brand)", default_dose: "5 ml", active: false, merged_into: null, created_at: demo.NOW, updated_at: demo.NOW },
+];
+
+const DEMO_MED_ACTIONS = {
+  add: async () => ({ ok: false as const, error: "Example only: not added." }),
+  update: async () => ({ ok: false as const, error: "Example only: not saved." }),
+  setActive: async () => ({ ok: false as const, error: "Example only: not changed." }),
+  merge: async () => ({ ok: false as const, error: "Example only: not merged." }),
+};
+
 async function demoFileUrl(path: string): Promise<ActionResult<{ url: string }>> {
   return path.endsWith(".png") ? { ok: true, data: { url: "/apple-icon" } } : { ok: false, error: "demo" };
 }
@@ -299,7 +328,10 @@ const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = 
   ["MessageBubble, ChatDivider, MessageItem, FileCard, Composer", "#bubbles", "shown"],
   ["FileViewer", "#viewer", "shown"],
   ["PrescriptionCard, DoseSchedule, MedicineFields, PrescriptionView", "#rxcards", "shown"],
-  ["ConversationList, PatientPanel, PatientsTable, ReleaseNotes", "#inbox", "shown"],
+  ["ConversationList, PatientPanel, PatientDetailsDialog, PatientsTable, ReleaseNotes", "#inbox", "shown"],
+  ["MedicineList (master medicines)", "#medicines", "shown"],
+  ["LayoutToggle (hide patient details)", "/doctor/c/[id]", "app"],
+  ["LegalPage", "/privacy · /terms", "app"],
   ["LoginForm, JoinForm, SetPasswordForm, NotificationToggle", "#signin", "shown"],
   ["Logo, LogoMark", "#brand", "shown"],
   ["Conversation (live chat: realtime, sending queue, offline)", "/chat · /doctor/c/[id]", "app"],
@@ -990,7 +1022,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
         <div className="flex flex-col gap-10">
           <GroupTitle>Navigation</GroupTitle>
           <Section id="nav" title="Tab bar & sidebar" file="layout/TabBar.tsx · PatientTabBar.tsx · DoctorSidebar.tsx" use="One TabBar for both apps; items differ. The doctor sidebar shows at ≥1024px.">
-            <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+            <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
               <div className="flex flex-col gap-4">
                 <Spec label="Patient tabs">
                   <Frame className="h-28">
@@ -1021,6 +1053,8 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
               <Spec label="Doctor sidebar (desktop)">
                 <Frame className="flex h-[460px] resize-y overflow-auto p-3">
                   <DoctorSidebar name="Dr. Sharma" unread={3} signOutAction={noop} />
+                  <span className="w-3" />
+                  <DoctorSidebar name="Dr. Sharma" unread={3} signOutAction={noop} collapsed />
                 </Frame>
               </Spec>
             </div>
@@ -1153,7 +1187,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
 
           <Section id="medicine" title="Medicine row" file="rx/MedicineFields.tsx" use="One row inside the prescription composer.">
             <div className="max-w-2xl">
-              <MedicineFields index={1} item={medicine} onChange={setMedicine} onRemove={() => {}} />
+              <MedicineFields index={1} item={medicine} onChange={setMedicine} onRemove={() => {}} options={DEMO_MED_OPTIONS} onSaveToList={demoAddMedicine} />
             </div>
           </Section>
 
@@ -1182,13 +1216,19 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
 
           <Section id="panel" title="Patient panel" file="doctor/PatientPanel.tsx" use="Right column next to the doctor's chat.">
             <Stage size="panel" height="tall">
-              <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} />
+              <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} saveAction={demoSave} blockAction={demoSave2} />
             </Stage>
           </Section>
 
           <Section id="table" title="Patients table" file="doctor/PatientsTable.tsx" use="The app's only data table. Scrolls sideways on phones.">
             <Stage size="full" height="tall">
               <PatientsTable rows={demo.patientRows} onResend={demoResend} />
+            </Stage>
+          </Section>
+
+          <Section id="medicines" title="Master medicines" file="doctor/MedicineList.tsx · /doctor/settings/medicines" use="Add, edit, deactivate, merge. No delete. Here every action is faked.">
+            <Stage size="full" height="tall">
+              <MedicineList medicines={DEMO_MEDICINES} actions={DEMO_MED_ACTIONS} />
             </Stage>
           </Section>
 

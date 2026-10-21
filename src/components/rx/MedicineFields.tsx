@@ -1,12 +1,13 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ListPlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { Field, TextInput } from "@/components/ui/Field";
 import { DURATION_OPTIONS, FREQUENCY_OPTIONS, TIMING_OPTIONS } from "@/lib/constants";
-import type { DraftItem } from "@/lib/types";
+import type { ActionResult, DraftItem, MedicineOption } from "@/lib/types";
 
 type MedicineFieldsProps = {
   /** 1-based, shown as "Medicine 1". */
@@ -17,11 +18,33 @@ type MedicineFieldsProps = {
   onRemove?: () => void;
   /** id of the shared <datalist> of medicines this doctor has prescribed before. */
   suggestionsId?: string;
+  /** The master list. Picking a name from it fills in its usual dose when the dose is empty. */
+  options?: MedicineOption[];
+  /** Shows "Save to my medicines" for a typed name that isn't in the master list yet. */
+  onSaveToList?: (name: string, dose: string) => Promise<ActionResult<{ id: string }>>;
 };
 
 /** One medicine inside the prescription composer. Quick picks first, "Custom…" when they don't fit. */
-export function MedicineFields({ index, item, onChange, onRemove, suggestionsId }: MedicineFieldsProps) {
+export function MedicineFields({ index, item, onChange, onRemove, suggestionsId, options = [], onSaveToList }: MedicineFieldsProps) {
   const set = (patch: Partial<DraftItem>) => onChange({ ...item, ...patch });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const typed = item.medicine.trim();
+  const known = options.some((o) => o.name.toLowerCase() === typed.toLowerCase());
+
+  function pickName(medicine: string) {
+    const match = options.find((o) => o.name.toLowerCase() === medicine.trim().toLowerCase());
+    onChange({ ...item, medicine, dose: !item.dose && match?.default_dose ? match.default_dose : item.dose });
+    setSaveError(null);
+  }
+
+  async function save() {
+    if (!onSaveToList) return;
+    setSaving(true);
+    const result = await onSaveToList(typed, item.dose.trim());
+    setSaving(false);
+    setSaveError(result.ok ? null : result.error);
+  }
   const id = `medicine-${index}`;
 
   return (
@@ -43,7 +66,7 @@ export function MedicineFields({ index, item, onChange, onRemove, suggestionsId 
             id={`${id}-name`}
             list={suggestionsId}
             value={item.medicine}
-            onChange={(e) => set({ medicine: e.target.value })}
+            onChange={(e) => pickName(e.target.value)}
             placeholder="Start typing"
             autoComplete="off"
           />
@@ -52,6 +75,16 @@ export function MedicineFields({ index, item, onChange, onRemove, suggestionsId 
           <TextInput id={`${id}-dose`} value={item.dose} onChange={(e) => set({ dose: e.target.value })} placeholder="1 tablet" />
         </Field>
       </div>
+
+      {onSaveToList && typed.length >= 2 && !known ? (
+        <div className="-mt-2 flex flex-col gap-1">
+          <Button variant="ghost" size="sm" onClick={save} loading={saving} className="self-start">
+            <ListPlus aria-hidden="true" className="size-4" />
+            Save “{typed}” to my medicines
+          </Button>
+          {saveError ? <p className="text-[13px] text-danger">{saveError}</p> : null}
+        </div>
+      ) : null}
 
       <ChipGroup
         label="How often"

@@ -15,6 +15,25 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.6.0",
+    date: "2026-10-21",
+    title: "Patient details, blocking and master medicines",
+    added: [
+      "Collapse the side menu, and hide the patient details, to give the chat more room.",
+      "Edit a patient's name, email and mobile, and record date of birth (age shown), height and weight.",
+      "Block a patient, or activate them again. Their history stays on record.",
+      "Master medicines in Settings: add, edit, deactivate or merge the medicines you use. Nothing is ever deleted.",
+      "Prescriptions suggest from your master medicines and fill in the usual dose. New names can be saved to the list.",
+    ],
+    fixed: ["Patients who joined with both an email and a mobile number can now sign in with either."],
+  },
+  {
+    version: "0.5.1",
+    date: "2026-10-21",
+    title: "Privacy notice and terms",
+    added: ["A plain-language privacy notice and terms of use, linked from sign-in, joining and Profile."],
+  },
+  {
     version: "0.5.0",
     date: "2026-10-21",
     title: "Invite links and removing reports",

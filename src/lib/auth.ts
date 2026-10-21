@@ -20,6 +20,8 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 export async function requireProfile(role?: Role): Promise<Profile> {
   const profile = await getProfile();
   if (!profile) redirect("/login");
+  // Blocked by the doctor: the auth ban stops new sign-ins; this stops a session that is still open.
+  if (profile.blocked_at) redirect("/login?error=blocked");
   if (role && profile.role !== role) redirect(homeFor(profile.role));
   return profile;
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import type { ConversationWithPeople, InboxRow, Message, Prescription, PrescriptionWithPeople, Profile } from "@/lib/types";
+import type { ConversationWithPeople, InboxRow, Medicine, MedicineOption, Message, Prescription, PrescriptionWithPeople, Profile } from "@/lib/types";
 
 // All server-side reads live here. Pages call these; they never build queries inline.
 // Every query runs as the signed-in user, so RLS decides what comes back.
@@ -86,12 +86,18 @@ export const getPrescription = cache(async (id: string): Promise<PrescriptionWit
   return data ? sortItems(data as unknown as PrescriptionWithPeople) : null;
 });
 
-/** Medicine names this doctor has prescribed before, for the composer's suggestions. */
-export async function getMedicineSuggestions(): Promise<string[]> {
+/** The doctor's active master medicines, for the composer's suggestions (0004). */
+export async function getMedicineSuggestions(): Promise<MedicineOption[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("prescription_items").select("medicine").limit(500);
-  const names = new Set(((data ?? []) as { medicine: string }[]).map((r) => r.medicine.trim()).filter(Boolean));
-  return [...names].sort((a, b) => a.localeCompare(b));
+  const { data } = await supabase.from("medicines").select("name, default_dose").eq("active", true).order("name");
+  return (data ?? []) as MedicineOption[];
+}
+
+/** Every medicine in the doctor's master list, including inactive and merged ones (Settings). */
+export async function getMyMedicines(): Promise<Medicine[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("medicines").select("*").order("name");
+  return (data ?? []) as Medicine[];
 }
 
 /** IDs of prescriptions that a newer issued one replaces (to show "Replaced"). */

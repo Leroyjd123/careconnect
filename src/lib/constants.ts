@@ -3,6 +3,9 @@ import type { Language } from "@/lib/types";
 export const APP_NAME = "CareConnect";
 export const TAGLINE = "Better care starts with a conversation.";
 
+/** Shown on the legal pages. Replace contact with the clinic's real email or phone before launch. */
+export const CLINIC = { doctor: "Dr. Vipin John", contact: "the clinic at [CLINIC EMAIL OR PHONE]" };
+
 export const LANGUAGES: { value: Language; label: string; english: string }[] = [
   { value: "en", label: "English", english: "English" },
   { value: "kn", label: "ಕನ್ನಡ", english: "Kannada" },
@@ -18,6 +21,9 @@ export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * sign-in in Supabase needs an SMS provider. We derive one from the number; it never receives mail.
  */
 export const PHONE_EMAIL_DOMAIN = "phone.careconnect.invalid";
+
+/** Remembered layout choices (doctor desktop). Cookies, so the server renders the right layout first time. */
+export const LAYOUT_COOKIES = { nav: "cc_nav", panel: "cc_panel" } as const;
 
 /** Cookie holding this device's push endpoint, so sign-out can forget the device. */
 export const PUSH_COOKIE = "cc_push_ep";
