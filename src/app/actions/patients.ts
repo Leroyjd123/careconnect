@@ -157,7 +157,7 @@ export type AcceptState = { error?: string };
  * Claims the link and connects them to that doctor. The one-time token is the boundary (service role),
  * plus the signed-in patient: the link can only ever be used by the person holding the session.
  */
-export async function acceptInviteLink(token: string, _prev: AcceptState): Promise<AcceptState> {
+export async function acceptInviteLink(token: string): Promise<AcceptState> {
   const patient = await requireProfile("patient");
   const status = await checkInviteLink(token);
   if (!status.ok) return { error: status.reason === "used" ? "This link has already been used." : "This link has expired. Ask your doctor for a new one." };
