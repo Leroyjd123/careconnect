@@ -4,7 +4,7 @@ import type { DraftItem, InboxRow, Message, PrescriptionWithPeople, Profile } fr
 export const NOW = "2026-10-12T04:50:00.000Z";
 export const EARLIER = "2026-10-08T09:15:00.000Z";
 
-const base = { phone: null, language: "en" as const, invited_by: null, created_at: EARLIER, date_of_birth: null, height_cm: null, weight_kg: null, blocked_at: null };
+const base = { phone: null, language: "en" as const, invited_by: null, created_at: EARLIER, date_of_birth: null, height_cm: null, weight_kg: null, blocked_at: null, clinic_id: null, show_other_doctors: null, meeting_auto_complete: true, deactivated_at: null, terms_accepted_at: EARLIER };
 
 export const doctor: Profile = {
   ...base,
@@ -51,6 +51,12 @@ export const fileMessage: Message = {
   prescription_id: null,
   read_at: null,
   deleted_at: null,
+  meeting_id: null,
+  check_in_id: null,
+  sender_role: "patient",
+  edited_at: null,
+  removed_at: null,
+  removed_by: null,
   created_at: NOW,
 };
 
@@ -66,6 +72,8 @@ export const prescription: PrescriptionWithPeople = {
   advice: "Drink plenty of water. Come back if the fever lasts more than 3 days.",
   replaces_id: null,
   issued_at: NOW,
+  cancelled_at: null,
+  cancelled_by: null,
   created_at: NOW,
   updated_at: NOW,
   doctor,

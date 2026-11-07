@@ -27,5 +27,6 @@ export async function requireProfile(role?: Role): Promise<Profile> {
 }
 
 export function homeFor(role: Role) {
+  if (role === "admin") return "/admin"; // built in Phase E (docs/PLAN.md)
   return role === "doctor" ? "/doctor" : "/home";
 }

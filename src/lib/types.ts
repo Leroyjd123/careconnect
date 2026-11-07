@@ -1,8 +1,8 @@
-// Domain types. Mirror supabase/migrations/0001_init.sql.
+// Domain types. Mirror supabase/migrations/0001…0005.
 // If you change the schema, change these in the same commit.
 
-export type Role = "doctor" | "patient";
-export type Language = "en" | "kn" | "hi";
+export type Role = "doctor" | "patient" | "admin";
+export type Language = "en" | "kn" | "ml";
 export type ProfileStatus = "invited" | "active";
 
 export type Profile = {
@@ -19,8 +19,18 @@ export type Profile = {
   date_of_birth: string | null;
   height_cm: number | null;
   weight_kg: number | null;
-  /** Set when the doctor blocks the account (0004). */
+  /** Account-wide block, set by the admin only (0005; per-doctor blocks live on conversations). */
   blocked_at: string | null;
+  /** Doctors: their clinic (0005). */
+  clinic_id: string | null;
+  /** "Also consults" visibility; null = inherit (patient → doctor → clinic → false) (0005). */
+  show_other_doctors: boolean | null;
+  /** Doctors: mark meetings complete 15 min after start (0005). */
+  meeting_auto_complete: boolean;
+  /** Doctors: deactivated by the admin; their conversations become read-only (0005). */
+  deactivated_at: string | null;
+  /** Accepted the privacy notice and terms (0005). */
+  terms_accepted_at: string | null;
   invited_by: string | null;
   activated_at: string | null;
   created_at: string;
@@ -32,8 +42,13 @@ export type Conversation = {
   patient_id: string;
   last_message_at: string | null;
   last_message_preview: string | null;
+  /** The doctor blocked this patient in this conversation only (0005). */
+  blocked_at: string | null;
   created_at: string;
 };
+
+/** Row in clinics (0005). */
+export type Clinic = { id: string; name: string; show_other_doctors: boolean | null; created_at: string };
 
 /** Row returned by the my_conversations() RPC. "other" = the person you're talking to. */
 export type InboxRow = {
@@ -47,7 +62,8 @@ export type InboxRow = {
   unread_count: number;
 };
 
-export type MessageKind = "text" | "file" | "prescription";
+export type MessageKind = "text" | "file" | "prescription" | "meeting" | "check_in";
+export type SenderRole = "doctor" | "patient" | "admin";
 
 export type Message = {
   id: string;
@@ -63,8 +79,67 @@ export type Message = {
   read_at: string | null;
   /** Set when the doctor removed a report; the file fields are then null (0003). */
   deleted_at: string | null;
+  /** 0005: appointment cards, who sent it, admin edits and removals. */
+  meeting_id: string | null;
+  check_in_id: string | null;
+  sender_role: SenderRole;
+  edited_at: string | null;
+  removed_at: string | null;
+  removed_by: string | null;
   created_at: string;
 };
+
+export type MeetingStatus = "scheduled" | "completed" | "cancelled";
+export type CheckInStatus = "scheduled" | "done" | "cancelled";
+
+/** Row in meetings (0005). A video meeting by pasted link. */
+export type Meeting = {
+  id: string;
+  conversation_id: string;
+  doctor_id: string;
+  patient_id: string;
+  starts_at: string;
+  duration_min: number;
+  meet_url: string;
+  note: string | null;
+  status: MeetingStatus;
+  reminded_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Row in check_ins (0005). A reminder to meet again on a date. */
+export type CheckIn = {
+  id: string;
+  conversation_id: string;
+  doctor_id: string;
+  patient_id: string;
+  /** YYYY-MM-DD. Format via lib/utils, never parse by hand. */
+  due_on: string;
+  reason: string;
+  status: CheckInStatus;
+  meeting_id: string | null;
+  reminded_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Row in audit_log (0005). Admin-only. */
+export type AuditEntry = {
+  id: string;
+  actor_id: string | null;
+  actor_role: Role | "system";
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+};
+
+/** Row returned by other_doctors() (0005). */
+export type OtherDoctor = { id: string; full_name: string; specialty: string | null };
 
 export type PrescriptionStatus = "draft" | "issued";
 
@@ -92,6 +167,9 @@ export type Prescription = {
   advice: string | null;
   replaces_id: string | null;
   issued_at: string | null;
+  /** Cancelled by the admin (0005). Stays on record; a correction replaces it. */
+  cancelled_at: string | null;
+  cancelled_by: string | null;
   created_at: string;
   updated_at: string;
   prescription_items?: PrescriptionItem[];
@@ -105,10 +183,11 @@ export type PrescriptionWithPeople = Prescription & { doctor: Profile; patient: 
 export type ConversationWithPeople = Conversation & { doctor: Profile; patient: Profile };
 
 /** Shape every server action returns, so forms handle errors the same way. */
-/** Row in medicines (0004): the doctor's master list. Never deleted; deactivated or merged. */
+/** Row in medicines (0004, shared since 0005). Never deleted; deactivated or merged. */
 export type Medicine = {
   id: string;
-  doctor_id: string;
+  /** Who added it (0005: the list is shared by all doctors). */
+  doctor_id: string | null;
   name: string;
   default_dose: string | null;
   active: boolean;
@@ -124,7 +203,9 @@ export type MedicineOption = { name: string; default_dose: string | null };
 export type InviteLink = {
   id: string;
   token: string;
-  doctor_id: string;
+  /** null for doctor invites (0005). */
+  doctor_id: string | null;
+  role: "patient" | "doctor";
   created_at: string;
   expires_at: string;
   used_at: string | null;

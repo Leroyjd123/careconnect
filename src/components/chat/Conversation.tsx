@@ -212,6 +212,13 @@ export function Conversation({
             prescription_id: null,
             read_at: null,
             deleted_at: null,
+            meeting_id: null,
+            check_in_id: null,
+            // Local-only row; bubbles use `mine`, not sender_role. Phase E passes the real viewer role.
+            sender_role: "patient" as const,
+            edited_at: null,
+            removed_at: null,
+            removed_by: null,
             created_at: p.createdAt,
           },
         }))),

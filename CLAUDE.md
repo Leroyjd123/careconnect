@@ -3,7 +3,8 @@
 Doctor–patient messaging MVP. Patients chat with their doctor, send reports and see prescriptions.
 The doctor manages conversations, reviews reports, issues prescriptions and invites patients.
 
-Read before any task: this file, `docs/WORKLOG.md` (where the build is right now) and `docs/COMPONENTS.md`.
+Read before any task: this file, `docs/PLAN.md` (current build plan, decisions, approval rules),
+`docs/WORKLOG.md` (where the build is right now) and `docs/COMPONENTS.md`.
 Product detail lives in `docs/SPEC.md`. Setup lives in `docs/SETUP.md`.
 
 ## Stack (do not change without asking)
@@ -69,9 +70,14 @@ src/components/patient/*   patient-only composites (only if not shareable)
 - `createAdminClient()` (service role) is allowed ONLY in `src/app/actions/patients.ts`: after `requireProfile("doctor")`,
   or in the invite-link functions (`checkInviteLink`, `joinWithInviteLink`) where the one-time token is the boundary.
   One more: `emailForPhone()` in `actions/auth.ts` (not exported), so a mobile number can sign in to an email account.
+  Since 0005 also: `src/app/actions/admin.ts` (every function starts with `requireProfile("admin")`) and
+  `src/app/api/cron/reminders/route.ts` (after checking `CRON_SECRET`).
+- Every service-role write that changes a meeting, check-in, block, patient details, message or prescription
+  must insert its own `audit_log` row. DB triggers only log writes made with a user session (`auth.uid()` set).
 - Files are private. Show them with `getFileUrl()` (5-minute signed URL). Never make the bucket public or store URLs.
 - Uploads go browser → Storage via `lib/upload.ts`, then `sendAttachment()`. Never send file bytes through a server action.
 - Issued prescriptions are immutable (DB trigger). Corrections = new draft with `replacesId`, then issue.
+  Only exception: the admin may set `cancelled_at`/`cancelled_by` once (service role); nothing else changes.
 - Notifications go through `notifyConversation()` in `lib/push.ts`. Never put message text or medical detail in a
   notification: it shows on lock screens. Name the sender only.
 - Schema changes: add a new numbered file in `supabase/migrations/`, update `src/lib/types.ts` in the same change,

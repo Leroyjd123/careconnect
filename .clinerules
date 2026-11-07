@@ -1,0 +1,21 @@
+# CareConnect: rules for Cline (and any other coding agent)
+
+Before ANY task, read in this order and follow them exactly:
+1. CLAUDE.md            (stack, structure, styling, security, definition of done; applies to every agent)
+2. docs/PLAN.md         (current build plan, decisions, approved components, progress tracker)
+3. docs/WORKLOG.md      (where the build is right now)
+4. docs/COMPONENTS.md   (existing components: reuse or extend, never copy)
+
+Hard rules:
+- Work on ONE phase of docs/PLAN.md per task, on branch feature/multi-doctor. Stop at the end and report.
+- Only use existing components or ones marked ✅ in docs/PLAN.md §6. Any other NEW component file: stop and ask Leroy.
+- No new dependencies. No hex colours, no backdrop-filter, no raw styled <button>: use the primitives.
+- No invented placeholders (contacts, copy, images): ask Leroy.
+- Never write or log secrets (admin password, CRON_SECRET, service-role key).
+- Never change a decision in docs/PLAN.md §3; add the question to §8 and ask.
+- Never apply migrations to the live Supabase project yourself.
+
+When a phase is done:
+- Tick its boxes in docs/PLAN.md (§2 and §7), update docs/WORKLOG.md, COMPONENTS.md, /styleguide, SPEC.md, src/lib/releases.ts as relevant.
+- Run: npm run typecheck && npm run lint && npm run build (all must pass).
+- Commit, then list every file you created or changed.

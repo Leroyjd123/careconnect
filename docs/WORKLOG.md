@@ -11,6 +11,11 @@ Rules for whoever edits this file:
 
 ---
 
+## State — 2026-11-07
+
+- New plan: `docs/PLAN.md` (multi-doctor, meetings, check-ins, superadmin, landing). Branch `feature/multi-doctor`.
+- Phase A written: migration 0005 + types. NOT applied to Supabase yet; waiting for Leroy's review.
+
 ## State — 2026-10-20
 
 - Phases 1–6 of `docs/PROMPTS.md` are built. Every route in `docs/SPEC.md` exists; no placeholders left.

@@ -9,7 +9,7 @@ export const CLINIC = { doctor: "Dr. Vipin John", contact: "the clinic at [CLINI
 export const LANGUAGES: { value: Language; label: string; english: string }[] = [
   { value: "en", label: "English", english: "English" },
   { value: "kn", label: "ಕನ್ನಡ", english: "Kannada" },
-  { value: "hi", label: "हिन्दी", english: "Hindi" },
+  { value: "ml", label: "മലയാളം", english: "Malayalam" },
 ];
 
 /** Storage bucket from the migration. Files live under <conversation_id>/<uuid>-<name>. */
