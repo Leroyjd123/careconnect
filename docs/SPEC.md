@@ -19,7 +19,7 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | Route | Who | Screen (canvas ref) |
 |---|---|---|
 | `/login` | all | Email + password ✅ |
-| `/join/[token]` | patient | Make an account from the doctor's shared link ✅ |
+| `/join/[token]` | patient | Make an account from the doctor's shared link ✅. A doctor link (from the admin) opens "Join as a doctor" instead ✅ |
 | `/set-password` | all | Choose a password after opening an invite link ✅ |
 | `/auth/confirm` | all | Invite link landing → `/set-password` ✅ |
 | `/home` | patient | One card per doctor (name, specialty, latest message, unread count, "Open chat"), Prescriptions + Send a report tiles (B1) ✅ |
@@ -35,6 +35,10 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/doctor/patients` | doctor | Patients + invite status, `?invite=1` opens InviteDialog (D7, D8) |
 | `/privacy`, `/terms` | all | Plain-language privacy notice and terms of use (public) ✅ |
 | `/rx/[id]/print` | both | Print-friendly prescription; browser "Save as PDF" (C2 Download) |
+| `/admin` | admin | Overview: counts only — doctors, patients, chats, meetings this week. Four cards, no charts (56) ✅ |
+| `/admin/doctors` | admin | Every doctor: name, specialty, clinic, patient count, status badge (Active / Deactivated). Search, invite, edit, deactivate ✅ |
+| `/admin/patients` | admin | Every patient: name, contact, the doctors they see, status. Search by name, mobile number or email; `?doctor=<id>` filters to one doctor's patients ✅ |
+| `/admin/clinics` | admin | Clinics: create, rename, the "also consults" setting, and the doctors in each (Q-B) ✅ |
 | `/styleguide` | dev only | All shared components |
 
 ## Several doctors (Phase C, decisions 22–28)
@@ -122,6 +126,89 @@ Two kinds of appointment, one card and one popup, switched by `type`.
 ### Doctor copy
 
 - "Schedule a meeting", "Set a check-in", "Join meeting", "Meeting cancelled", "Check-in due", "Request a meeting", "Nothing scheduled", "Turn into a meeting", "Mark done", "Overdue", "Due today".
+
+## Superadmin (Phase E, part 1: decisions 43–46, 52, 54, 56, Q-B)
+
+One superadmin role (decision 8). The admin signs in with the same email + password as
+everyone else and lands on `/admin`. A doctor or a patient who opens `/admin` is sent back to
+their own home.
+
+### The screens
+
+- **`/admin` — Overview.** Counts only, no charts (decision 56): **Doctors**, **Patients**,
+  **Chats**, **Meetings this week**. Each card links to where that number can be acted on.
+- **`/admin/doctors` — Doctors.** Every doctor: name, specialty, clinic, how many patients
+  they have, and a status badge (**Active** / **Deactivated**, words + an icon). Search by
+  name, specialty or email. "Invite doctor" and "Manage" on each row.
+- **`/admin/patients` — Patients.** Every patient: name, email or mobile number, the doctors
+  they see, and a status badge (**Active** / **Invite pending** / **Account blocked**). Search by
+  name, mobile number or email. `?doctor=<id>` shows one doctor's patients only.
+- **`/admin/clinics` — Clinics.** A clinic has a name, an "also consults" setting and its
+  doctors. A doctor belongs to one clinic at most (Q-B).
+
+### What the admin can do
+
+- **Invite a doctor** (decisions 18, 44): a one-time link or an email. Only the admin can
+  invite doctors. The doctor opens the link, adds their name, specialty, registration number,
+  email or mobile number, and a password, and lands on `/doctor`. No patient, no chat.
+- **Edit a doctor**: name, specialty, registration number, clinic.
+- **Deactivate a doctor** (decision 52): their patients can still read their history, but
+  nobody can send anything in their chats. "Reactivate" undoes it. Both ask first.
+- **A doctor's settings**: "Show a patient's other doctors" (**On** / **Off** / **Follow the
+  clinic**) and "Mark meetings complete automatically" (**On** / **Off**).
+- **Invite a patient** and assign them to one or more doctors (decision 45). A patient who
+  already has an account keeps their name and their first inviter.
+- **Add a doctor to an existing patient.** Nobody is ever moved between doctors (decision 46).
+- **Block one chat** (decision 11): the patient can't send in that doctor's chat only.
+- **Block the whole account** (decision 12): they can't sign in or send to any doctor. Their
+  history stays on record.
+- **A patient's setting**: "Show their other doctors" (**On** / **Off** / **Follow the
+  doctor**).
+- **Clinics**: create, rename, set the "also consults" setting, and move doctors in and out.
+
+### Admin copy
+
+- "Overview", "Doctors", "Patients", "Clinics", "Invite doctor", "Invite patient",
+  "Create clinic", "Manage", "Deactivate", "Reactivate", "Block chat", "Unblock chat",
+  "Block the account", "Unblock the account", "Add a doctor", "Show a patient's other doctors",
+  "Follow the clinic", "Follow the doctor", "Mark meetings complete automatically",
+  "Nothing scheduled", "Join as a doctor", "Everything on CareConnect, at a glance.",
+  "A clinic groups doctors. A doctor belongs to one clinic at most.",
+  "Create one above, then add your doctors to it.", "No doctor yet.", "No contact yet",
+  "No clinic", "No clinic yet.", "There are no doctors yet. Invite a doctor first.",
+  "Nobody yet.", "Choose a doctor", "Invite a patient and assign them to a doctor.",
+  "Invite a doctor and they'll appear here.", "The patient keeps their other doctors. Nobody
+  is moved away.", "They can't sign in or send anything to any doctor. Their history stays on
+  record.", "When it follows the clinic, the clinic's own setting decides.",
+  "When it follows the doctor, the doctor's own setting decides.",
+  "To read or moderate a chat, open the patient's conversation with their doctor.",
+  "Only the admin can invite doctors, so keep this link to yourself until you send it.",
+  "One link is for one doctor.", "Tick every doctor the patient should see. You can choose
+  more than one.", "This link has been used.", "This link doesn't work any more.",
+  "This link has expired. Ask CareConnect for a new one.",
+  "There's already an account with this email or number. Sign in instead.",
+  "Set up your CareConnect account with this link. You'll invite your own patients afterwards.",
+  "You'll sign in with either.", "Use at least 8 characters for your password.",
+  "Enter a 10-digit Indian mobile number.", "That email doesn't look right. Check it and try
+  again.", "Enter your full name.", "Add your email or your mobile number, so you can sign in
+  later.", "We couldn't send the invitation. Check the email address and try again.",
+  "We couldn't create the invitation. Please try again.",
+  "We couldn't save these details. Please try again.", "We couldn't save these settings.
+  Please try again.", "We couldn't save this setting. Please try again.",
+  "We couldn't create the clinic. Please try again.", "We couldn't rename the clinic. Please
+  try again.", "We couldn't change this doctor's clinic. Please try again.",
+  "We couldn't block this chat. Please try again.", "We couldn't unblock this chat. Please try
+  again.", "We couldn't block this account. Please try again.", "We couldn't unblock this
+  account. Please try again.", "We couldn't deactivate this doctor. Please try again.",
+  "We couldn't reactivate this doctor. Please try again.", "We couldn't add this doctor.
+  Please try again.", "We couldn't connect this patient to their doctors. Please try again.",
+  "We couldn't create a link. Please try again.", "Doctor not found.", "Patient not found.",
+  "Clinic not found.", "Chat not found.", "This email belongs to a doctor account.",
+  "One of the chosen doctors isn't there any more. Please try again.",
+  "The invitation was sent but the profile wasn't set up. Please try again.",
+  "The invitation was sent but the chats couldn't be created. Please try again.",
+  "already sees this patient."
+- The admin is labelled **"Admin"** in the UI (decision 8, Q-J).
 
 ## Master medicines
 

@@ -30,6 +30,7 @@ npm run build      # must pass before you say a task is done
 ```
 src/app/(patient)/…        patient screens: /home /chat /prescriptions /profile
 src/app/doctor/…           doctor screens: /doctor /doctor/c/[id] /doctor/patients
+src/app/admin/…            admin screens: /admin /admin/doctors /admin/patients /admin/clinics
 src/app/actions/*.ts       ALL writes. Server actions, grouped by domain. Return ActionResult.
 src/lib/data.ts            ALL server reads. Pages call these; no inline queries in pages.
 src/lib/supabase/*         server.ts (default), client.ts (browser: realtime + uploads only), admin.ts (invites only)
@@ -70,9 +71,12 @@ src/components/patient/*   patient-only composites (only if not shareable)
 - `createAdminClient()` (service role) is allowed ONLY in `src/app/actions/patients.ts`: after `requireProfile("doctor")`,
   or in the invite-link functions (`checkInviteLink`, `joinWithInviteLink`, `acceptInviteLink`) where the one-time token is the boundary.
   One more: `emailForPhone()` in `actions/auth.ts` (not exported), so a mobile number can sign in to an email account.
-  Since 0005 also: `src/app/actions/admin.ts` and the admin-only functions in `src/app/actions/medicines.ts`
-  (`updateMedicine`, `setMedicineActive`, `mergeMedicine`; each starts with `requireProfile("admin")`), and
-  `src/app/api/cron/reminders/route.ts` (after checking `CRON_SECRET`).
+  Since 0005 also: `src/app/actions/admin.ts` (after `requireProfile("admin")`), the admin-only functions in
+  `src/app/actions/medicines.ts` (`updateMedicine`, `setMedicineActive`, `mergeMedicine`; each starts with `requireProfile("admin")`),
+  and `src/app/api/cron/reminders/route.ts` (after checking `CRON_SECRET`).
+  The admin's one exception inside `actions/admin.ts`: `joinWithDoctorInviteLink()`, where the one-time token is the boundary.
+- Every exported function in `src/app/actions/admin.ts` starts with `requireProfile("admin")` BEFORE it creates the
+  service-role client. Every admin screen (`src/app/admin/**`) calls `requireProfile("admin")` at the top of its layout.
 - Every service-role write that changes a meeting, check-in, block, patient details, message or prescription
   must insert its own `audit_log` row. DB triggers only log writes made with a user session (`auth.uid()` set).
 - Files are private. Show them with `getFileUrl()` (5-minute signed URL). Never make the bucket public or store URLs.

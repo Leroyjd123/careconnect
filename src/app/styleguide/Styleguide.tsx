@@ -71,7 +71,7 @@ import { PrescriptionView } from "@/components/rx/PrescriptionView";
 import { ReviewIssueDialog } from "@/components/rx/ReviewIssueDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TabBar } from "@/components/layout/TabBar";
-import { DoctorSidebar } from "@/components/layout/DoctorSidebar";
+import { AppSidebar, type AppNavItem } from "@/components/layout/AppSidebar";
 import { NotificationToggle, type NotificationState } from "@/components/layout/NotificationToggle";
 import { ErrorScreen } from "@/components/layout/ErrorScreen";
 import { SettingsRow } from "@/components/layout/SettingsRow";
@@ -323,6 +323,14 @@ const DEMO_OTHER_DOCTORS = [
   { id: "demo-doctor-3", full_name: "Dr. Arjun Rao", specialty: "Cardiology" },
 ];
 
+/** The admin's links, as the admin layout passes them. */
+const ADMIN_NAV_ITEMS: AppNavItem[] = [
+  { href: "/admin", label: "Overview", icon: "overview", exact: true },
+  { href: "/admin/doctors", label: "Doctors", icon: "doctors" },
+  { href: "/admin/patients", label: "Patients", icon: "patients" },
+  { href: "/admin/clinics", label: "Clinics", icon: "clinics" },
+];
+
 /** The appointment popup's actions, faked for the styleguide. */
 const DEMO_APPT_ACTIONS = {
   scheduleMeeting: async () => ({ ok: false as const, error: "Example only: nothing was scheduled." }),
@@ -347,7 +355,7 @@ const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = 
   ["ErrorScreen", "#empty", "shown"],
   ["Banner, EmptyState, Skeleton", "#banners", "shown"],
   ["Dialog, AttachSheet, ReviewIssueDialog, InviteDialog", "#dialogs", "shown"],
-  ["TabBar, DoctorSidebar, PageHeader", "#nav", "shown"],
+  ["TabBar, AppSidebar, PageHeader", "#nav", "shown"],
   ["MessageBubble, ChatDivider, MessageItem, FileCard, Composer", "#bubbles", "shown"],
   ["FileViewer", "#viewer", "shown"],
   ["PrescriptionCard, DoseSchedule, MedicineFields, PrescriptionView", "#rxcards", "shown"],
@@ -1074,7 +1082,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
         {/* ═════════ NAVIGATION ═════════ */}
         <div className="flex flex-col gap-10">
           <GroupTitle>Navigation</GroupTitle>
-          <Section id="nav" title="Tab bar & sidebar" file="layout/TabBar.tsx · PatientTabBar.tsx · DoctorSidebar.tsx" use="One TabBar for both apps; items differ. The doctor sidebar shows at ≥1024px.">
+          <Section id="nav" title="Tab bar & sidebar" file="layout/TabBar.tsx · PatientTabBar.tsx · AppSidebar.tsx" use="One TabBar and one sidebar for every app; the links differ. The sidebar shows at ≥1024px. AppSidebar takes the links as `items` and picks the icon by name, so the doctor and the admin share it.">
             <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
               <div className="flex flex-col gap-4">
                 <Spec label="Patient tabs">
@@ -1105,9 +1113,32 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
               </div>
               <Spec label="Doctor sidebar (desktop)">
                 <Frame className="flex h-[460px] resize-y overflow-auto p-3">
-                  <DoctorSidebar name="Dr. Sharma" unread={3} signOutAction={noop} />
+                  <AppSidebar name="Dr. Sharma" unread={3} doctorAvatar signOutAction={noop} />
                   <span className="w-3" />
-                  <DoctorSidebar name="Dr. Sharma" unread={3} signOutAction={noop} collapsed />
+                  <AppSidebar name="Dr. Sharma" unread={3} doctorAvatar signOutAction={noop} collapsed />
+                </Frame>
+              </Spec>
+            </div>
+          </Section>
+
+          <Section id="adminsidebar" title="Admin sidebar" file="layout/AppSidebar.tsx" use="The same sidebar with the admin's links. The avatar is the usual colour, not the doctor's green.">
+            <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
+              <Spec label="Admin sidebar (desktop)">
+                <Frame className="flex h-[460px] resize-y overflow-auto p-3">
+                  <AppSidebar
+                    name="Admin"
+                    items={ADMIN_NAV_ITEMS}
+                    signOutAction={noop}
+                  />
+                </Frame>
+              </Spec>
+              <Spec label="The admin's links">
+                <Frame className="flex flex-col gap-2 p-4 text-[14px]">
+                  {ADMIN_NAV_ITEMS.map((i) => (
+                    <span key={i.href} className="text-ink-2">
+                      {i.label} → <span className="text-ink">{i.href}</span>
+                    </span>
+                  ))}
                 </Frame>
               </Spec>
             </div>

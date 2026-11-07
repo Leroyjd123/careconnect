@@ -129,7 +129,10 @@ export async function revokeInviteLink(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-export type InviteLinkStatus = { ok: true; doctorName: string; specialty: string | null } | { ok: false; reason: "used" | "expired" | "invalid" };
+export type InviteLinkStatus =
+  | { ok: true; role: "patient"; doctorName: string; specialty: string | null }
+  | { ok: true; role: "doctor"; doctorName: null; specialty: null }
+  | { ok: false; reason: "used" | "expired" | "invalid" };
 
 /**
  * Public: what /join/<token> shows before the form. Uses the service role because the visitor has
@@ -140,14 +143,16 @@ export async function checkInviteLink(token: string): Promise<InviteLinkStatus> 
   const admin = createAdminClient();
   const { data: link } = await admin
     .from("invite_links")
-    .select("used_at, revoked_at, expires_at, doctor:profiles!invite_links_doctor_id_fkey(full_name, specialty)")
+    .select("role, used_at, revoked_at, expires_at, doctor:profiles!invite_links_doctor_id_fkey(full_name, specialty)")
     .eq("token", token)
     .maybeSingle();
   if (!link || link.revoked_at) return { ok: false, reason: "invalid" };
   if (link.used_at) return { ok: false, reason: "used" };
   if (new Date(link.expires_at).getTime() < Date.now()) return { ok: false, reason: "expired" };
+  // A doctor link (decision 44): the doctor joins alone, with no patient and no chat.
+  if (link.role === "doctor") return { ok: true, role: "doctor", doctorName: null, specialty: null };
   const doctor = link.doctor as unknown as { full_name: string; specialty: string | null } | null;
-  return { ok: true, doctorName: doctor?.full_name || "your doctor", specialty: doctor?.specialty ?? null };
+  return { ok: true, role: "patient", doctorName: doctor?.full_name || "your doctor", specialty: doctor?.specialty ?? null };
 }
 
 export type AcceptState = { error?: string };

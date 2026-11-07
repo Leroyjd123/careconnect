@@ -26,7 +26,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 |---|---|---|---|
 | `TabBar` | `layout/TabBar.tsx` | The floating glass bottom bar. ONE implementation: patient tabs and the doctor's phone nav differ only in `items`. | ✅ |
 | `PatientTabBar` | `layout/PatientTabBar.tsx` | Patient items for `TabBar` (Home, Prescriptions, Profile). Hides on /chat. | ✅ |
-| `DoctorSidebar` | `layout/DoctorSidebar.tsx` | Doctor nav: glass sidebar ≥1024px (collapsible to an icon rail, remembered in a cookie), `TabBar` below. | ✅ |
+| `AppSidebar` | `layout/AppSidebar.tsx` | App nav: glass sidebar ≥1024px (collapsible to an icon rail, remembered in a cookie), `TabBar` below. ONE sidebar for the doctor and the admin: the `items` prop gives the links, and the icon is picked by name inside the component (so no icon component ever crosses the server/client boundary). The doctor passes `DOCTOR_NAV`; the admin passes Overview / Doctors / Patients / Clinics. `doctorAvatar` makes the avatar forest green for doctors. | ✅ |
 | `LayoutToggle` | `layout/LayoutToggle.tsx` | Icon button that flips a remembered layout cookie and re-renders (hide/show patient details). | ✅ |
 | `NotificationToggle` | `layout/NotificationToggle.tsx` | Notifications card: turn web push on/off for this device. ONE component for patient Profile and doctor Settings (`audience`). `preview` pins a state for the styleguide. | ✅ |
 | `SettingsRow` | `layout/SettingsRow.tsx` | Tappable settings line: IconTile + title + hint. Patient Profile. | ✅ |
@@ -74,6 +74,24 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `MedicineList` | `doctor/MedicineList.tsx` | Shared master medicines (0005). Doctors add; `canManage` (admin) adds Edit / Deactivate / Merge. No delete. `/doctor/settings/medicines`. | ✅ |
 | `ReleaseNotes` | `doctor/ReleaseNotes.tsx` | Version history on `/doctor/settings`, from `RELEASES` in `lib/releases.ts`. First entry marked Current. | ✅ |
 
+## Admin — `src/app/admin` (page-local, one folder per screen)
+
+Every admin screen is a **server component** page plus a **page-local client component** in the
+same folder. No new shared component file was added (PLAN §6: the admin's screens reuse the
+existing primitives).
+
+| Part | File | What it does | Status |
+|---|---|---|---|
+| Shell | `admin/layout.tsx` | `requireProfile("admin")`, then the `AppSidebar` with the admin's four links. Same shape as `doctor/layout.tsx`. | ✅ |
+| Overview | `admin/page.tsx` | Counts only (decision 56): doctors, patients, chats, meetings this week. Four cards, no charts. | ✅ |
+| Doctors | `admin/doctors/page.tsx` + `AdminDoctors.tsx` | The list: name, specialty, clinic, patient count, status badge (Active / Deactivated). Search. "Patients" links to `/admin/patients?doctor=<id>`. | ✅ |
+| Doctor popup | `admin/doctors/DoctorDialog.tsx` | Name, specialty, registration number, clinic; "also consults" (On / Off / Follow the clinic); auto-complete (On / Off); deactivate / reactivate behind a confirmation. | ✅ |
+| Invite doctor | `admin/doctors/InviteDoctorDialog.tsx` | A one-time link or an email (decision 44). Only the admin can invite doctors (decision 18). | ✅ |
+| Patients | `admin/patients/page.tsx` + `AdminPatients.tsx` | The list: name, contact, the doctors they see, status badge. Search by name, mobile number or email. `?doctor=<id>` filters to one doctor's patients. | ✅ |
+| Patient popup | `admin/patients/PatientDialog.tsx` | Their doctors, block/unblock per chat, "add a doctor" (never move), "also consults", block/unblock the whole account (decision 12). | ✅ |
+| Invite patient | `admin/patients/InvitePatientDialog.tsx` | Name + email, then tick one or more doctors (decision 45). | ✅ |
+| Clinics | `admin/clinics/page.tsx` + `AdminClinics.tsx` | Create, rename, the "also consults" setting, and the doctors in each clinic (Q-B). | ✅ |
+
 ## Server actions — `src/app/actions` (already written; build UI on these)
 
 | Action | File |
@@ -84,6 +102,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `sendMessage`, `sendAttachment`, `getFileUrl`, `markRead`, `removeReport` | `actions/messages.ts` |
 | `saveDraft`, `issuePrescription`, `deleteDraft` | `actions/prescriptions.ts` |
 | `scheduleMeeting`, `updateMeeting`, `cancelMeeting`, `completeMeeting`, `setMeetingAutoComplete`, `scheduleCheckIn`, `updateCheckIn`, `completeCheckIn`, `cancelCheckIn`, `convertCheckInToMeeting` | `actions/meetings.ts` |
+| `getAdminOverview`, `getAdminDoctors`, `getAdminPatients`, `getAdminClinics`, `createDoctorInviteLink`, `inviteDoctorByEmail`, `updateAdminDoctor`, `setDoctorDeactivated`, `updateAdminDoctorSettings`, `createAdminPatientInviteLink`, `inviteAdminPatient`, `addDoctorToPatient`, `setAdminConversationBlocked`, `setAdminAccountBlocked`, `updateAdminPatientSettings`, `createClinic`, `renameClinic`, `updateClinicSettings`, `setDoctorClinic`, `joinWithDoctorInviteLink` | `actions/admin.ts` — every one starts with `requireProfile("admin")`; every service-role write writes an `audit_log` row |
 | `addMedicine`, `updateMedicine`, `setMedicineActive`, `mergeMedicine` | `actions/medicines.ts` |
 | `updateMyProfile`, `updateMyHealthDetails` | `actions/profile.ts` |
 
@@ -98,7 +117,7 @@ next meeting per doctor), `getDoctorDueCheckIns` (conversations with a check-in 
 ## Page-local client components
 
 Not shared, so they live beside their page rather than in `src/components`:
-`app/login/LoginForm.tsx` (`next` = return to an invite link), `app/join/[token]/AcceptInvite.tsx` (signed-in patient accepts another doctor's link), `app/(patient)/profile/LanguagePicker.tsx`, `app/(patient)/profile/HealthDetailsSection.tsx` + `HealthDetailsDialog.tsx` (the patient edits their own DOB, height and weight), `app/(patient)/prescriptions/DoctorFilter.tsx` (filter the prescription list by doctor, `?doctor=<id>`), `app/rx/[id]/print/AutoPrint.tsx`, `app/doctor/settings/MeetingAutoComplete.tsx` (the doctor switches auto-complete on and off).
+`app/login/LoginForm.tsx` (`next` = return to an invite link), `app/join/[token]/AcceptInvite.tsx` (signed-in patient accepts another doctor's link), `app/join/[token]/JoinForm.tsx` (the patient makes their account from a link), `app/join/[token]/DoctorJoinForm.tsx` (a doctor makes their own account from the admin's link), `app/(patient)/profile/LanguagePicker.tsx`, `app/(patient)/profile/HealthDetailsSection.tsx` + `HealthDetailsDialog.tsx` (the patient edits their own DOB, height and weight), `app/(patient)/prescriptions/DoctorFilter.tsx` (filter the prescription list by doctor, `?doctor=<id>`), `app/rx/[id]/print/AutoPrint.tsx`, `app/doctor/settings/MeetingAutoComplete.tsx` (the doctor switches auto-complete on and off).
 
 ## How state is split
 

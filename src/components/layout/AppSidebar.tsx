@@ -3,37 +3,71 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Inbox, LogOut, PanelLeftClose, PanelLeftOpen, Settings, UserPlus, Users } from "lucide-react";
+import { Building2, Inbox, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, Pill, Settings, Stethoscope, UserPlus, Users } from "lucide-react";
 import { setLayoutCookie } from "@/components/layout/LayoutToggle";
 import { LAYOUT_COOKIES } from "@/lib/constants";
 import { Avatar } from "@/components/ui/Avatar";
 import { CountBadge } from "@/components/ui/Badge";
 import { IconButton } from "@/components/ui/Button";
 import { Logo, LogoMark } from "@/components/ui/Logo";
-import { TabBar, type TabItem } from "@/components/layout/TabBar";
+import { TabBar } from "@/components/layout/TabBar";
 import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 
-const NAV: TabItem[] = [
-  { href: "/doctor", label: "Inbox", Icon: Inbox, exact: true },
-  { href: "/doctor/patients", label: "Patients", Icon: Users },
-  { href: "/doctor/patients?invite=1", label: "Invite patient", shortLabel: "Invite", Icon: UserPlus },
-  { href: "/doctor/settings", label: "Settings", Icon: Settings },
+/**
+ * What a sidebar link is. The icon is chosen by name inside this client component,
+ * so no component ever travels from a server component across the boundary.
+ */
+export type AppNavItem = {
+  href: string;
+  label: string;
+  /** Which icon to show. */
+  icon: keyof typeof ICONS;
+  /** Shorter wording when the full label won't fit on a phone. */
+  shortLabel?: string;
+  /** Match the path exactly instead of by prefix (e.g. /doctor vs /doctor/patients). */
+  exact?: boolean;
+};
+
+const ICONS = {
+  inbox: Inbox,
+  patients: Users,
+  invite: UserPlus,
+  settings: Settings,
+  overview: LayoutDashboard,
+  doctors: Stethoscope,
+  clinics: Building2,
+  medicines: Pill,
+} as const;
+
+/** The doctor's links. The admin passes its own (PLAN §6: one sidebar, different links). */
+export const DOCTOR_NAV: AppNavItem[] = [
+  { href: "/doctor", label: "Inbox", icon: "inbox", exact: true },
+  { href: "/doctor/patients", label: "Patients", icon: "patients" },
+  { href: "/doctor/patients?invite=1", label: "Invite patient", shortLabel: "Invite", icon: "invite" },
+  { href: "/doctor/settings", label: "Settings", icon: "settings" },
 ];
 
 /**
- * Doctor navigation. Glass sidebar on desktop, the shared TabBar on phones.
- * unread = total unread messages across the inbox.
+ * App navigation. Glass sidebar on desktop, the shared TabBar on phones.
+ * The doctor passes today's items (unchanged look); the admin passes its own.
+ * unread = total unread messages across the inbox (doctor only).
  * signOutAction is only overridden by /styleguide, so its demo can't sign anyone out.
  */
-export function DoctorSidebar({
+export function AppSidebar({
   name,
+  items = DOCTOR_NAV,
   unread = 0,
+  doctorAvatar = false,
   signOutAction = signOut,
   collapsed: initiallyCollapsed = false,
 }: {
   name: string;
+  /** The links to show. Defaults to the doctor's. */
+  items?: AppNavItem[];
   unread?: number;
+  /** The avatar is forest green for doctors, the usual colour for the admin. */
+  doctorAvatar?: boolean;
   signOutAction?: () => void | Promise<void>;
   /** Desktop only: icons-only rail. Remembered in a cookie; the layout passes the saved choice. */
   collapsed?: boolean;
@@ -44,7 +78,11 @@ export function DoctorSidebar({
     setLayoutCookie(LAYOUT_COOKIES.nav, collapsed ? "off" : "on");
   };
   const pathname = usePathname();
-  const items = NAV.map((item) => (item.label === "Inbox" ? { ...item, badge: unread } : item));
+  // The unread counter sits on the item that points at the inbox.
+  const withBadge = items.map((item) => (item.href === "/doctor" ? { ...item, badge: unread } : item));
+  // The phone bar wants the icon components themselves. Both live in this client file,
+  // so nothing crosses the server boundary.
+  const tabItems = withBadge.map((item) => ({ ...item, Icon: ICONS[item.icon] }));
 
   return (
     <>
@@ -65,7 +103,8 @@ export function DoctorSidebar({
             icon={collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           />
         </div>
-        {NAV.map(({ href, label, Icon, exact }) => {
+        {items.map(({ href, label, icon, exact }) => {
+          const Icon = ICONS[icon];
           const path = href.split("?")[0];
           const active = !href.includes("?") && (exact ? pathname === path : pathname.startsWith(path));
           return (
@@ -83,13 +122,13 @@ export function DoctorSidebar({
             >
               <Icon aria-hidden="true" className="size-5" strokeWidth={active ? 1.9 : 1.75} />
               {collapsed ? null : <span className="flex-1">{label}</span>}
-              {label === "Inbox" ? <CountBadge count={unread} className={collapsed ? "absolute top-1 right-1" : undefined} /> : null}
+              {href === "/doctor" ? <CountBadge count={unread} className={collapsed ? "absolute top-1 right-1" : undefined} /> : null}
             </Link>
           );
         })}
         <div className="flex-1" />
         <div className={cn("flex items-center rounded-tile bg-white/55 p-2", collapsed ? "flex-col gap-1.5" : "gap-2.5")}>
-          <Avatar name={name} doctor size="sm" />
+          <Avatar name={name} doctor={doctorAvatar} size="sm" />
           {collapsed ? null : <span className="min-w-0 flex-1 truncate text-sm font-semibold">{name}</span>}
           <form action={signOutAction}>
             <IconButton type="submit" label="Sign out" icon={<LogOut className="size-[18px]" />} />
@@ -98,7 +137,8 @@ export function DoctorSidebar({
       </nav>
 
       {/* Phone */}
-      <TabBar items={items} className="lg:hidden" />
+      <TabBar items={tabItems} className="lg:hidden" />
     </>
   );
 }
+

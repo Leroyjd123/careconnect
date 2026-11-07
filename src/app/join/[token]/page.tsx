@@ -9,18 +9,44 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Feedback";
 import { Logo } from "@/components/ui/Logo";
 import { JoinForm } from "./JoinForm";
+import { DoctorJoinForm } from "./DoctorJoinForm";
 import { AcceptInvite } from "./AcceptInvite";
 
 export const metadata: Metadata = { title: "Join" };
 
 // Opened from the link the doctor shared. No account, no email code: the patient makes their account here.
 // Already a patient (Q-K)? Signed in: accept and get a chat with this doctor. Signed out: sign in to accept.
+// A doctor link (decision 44) joins the doctor alone, with no patient and no chat.
 export default async function JoinPage({ params }: { params: Promise<{ token: string }> }) {
   const profile = await getProfile();
-  if (profile && profile.role !== "patient") redirect(homeFor(profile.role));
-
   const { token } = await params;
   const status = await checkInviteLink(token);
+
+  // A doctor joining: they already have an account, so there is nothing to accept.
+  if (status.ok && status.role === "doctor") {
+    if (profile) redirect(homeFor(profile.role));
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-16 pb-8">
+        <div className="flex flex-col items-center text-center">
+          <Logo size="lg" />
+        </div>
+        <Card className="mt-10 p-5 sm:p-6">
+          <h1 className="text-[22px] font-semibold tracking-tight">Join as a doctor</h1>
+          <p className="mt-2 text-base text-ink-2">
+            Set up your CareConnect account with this link. You&apos;ll invite your own patients afterwards.
+          </p>
+          <div className="mt-4">
+            <DoctorJoinForm token={token} />
+          </div>
+        </Card>
+        <p className="mt-auto pt-8 text-center text-[13px] leading-relaxed text-ink-2">
+          By joining you agree to the <Link href="/terms">Terms of use</Link> and <Link href="/privacy">Privacy notice</Link>.
+        </p>
+      </main>
+    );
+  }
+
+  if (profile && profile.role !== "patient") redirect(homeFor(profile.role));
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-16 pb-8">

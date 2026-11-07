@@ -53,7 +53,7 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 | C | Patient with several doctors | v0.7.0 | ✅ done 2026-11-07 |
 | P | Patient panel → summary + popups | v0.7.0 | ✅ done 2026-11-07 |
 | D | Meetings + check-ins | v0.7.0 | ✅ done 2026-11-11 |
-| E | Superadmin panel + audit log | v0.8.0 | ☐ |
+| E | Superadmin panel + audit log | v0.8.0 | ◐ part 1 done 2026-11-11 (shell, overview, doctors, patients, clinics). Part 2 to do |
 | G | Landing page | v0.9.0 | ☐ components approved |
 | F | Docs, consent, releases | each release | ☐ |
 
@@ -473,17 +473,43 @@ Phase P notes (2026-11-07):
   from the existing `Segmented` primitive. There is no switch primitive in the design system.
 
 ### Phase E: superadmin (v0.8.0)
-- [ ] `src/app/admin/layout.tsx` with `requireProfile("admin")`. `homeFor('admin')` = `/admin`. Middleware allows it.
-- [ ] `/admin`: counts (doctors, patients, conversations, meetings this week).
-- [ ] `/admin/doctors`: list, invite (link or email, role = doctor), edit name / specialty / reg no / clinic,
+
+**Part 1 (done): the shell, the overview, doctors, patients, clinics.** Part 2 (chat moderation, admin
+messages, prescription cancel, the audit log screen) is still to do.
+
+- [x] `src/app/admin/layout.tsx` with `requireProfile("admin")`. `homeFor('admin')` = `/admin`. Middleware allows it.
+- [x] `/admin`: counts (doctors, patients, conversations, meetings this week).
+- [x] `/admin/doctors`: list, invite (link or email, role = doctor), edit name / specialty / reg no / clinic,
       deactivate / reactivate, show-other-doctors and auto-complete settings, view their patients.
-- [ ] `/admin/patients`: list + search, invite and assign to one or more doctors, add a doctor, edit details,
+- [x] `/admin/patients`: list + search, invite and assign to one or more doctors, add a doctor, edit details,
       block per conversation or whole account, show-other-doctors setting.
-- [ ] `/admin/clinics` (per Q-B/Q-E): name, show-other-doctors setting, member doctors.
+- [x] `/admin/clinics` (per Q-B/Q-E): name, show-other-doctors setting, member doctors.
 - [ ] `/admin/c/[id]`: `Conversation` with `viewerRole="admin"`: send as "Admin", edit/remove messages,
       remove reports, schedule meetings, prescription cancel + correction per Q-C. Viewing writes an audit row.
 - [ ] `/admin/audit`: filter by actor, action, date.
-- [ ] `src/app/actions/admin.ts` for all of the above; every action writes `audit_log`.
+- [x] `src/app/actions/admin.ts` for all of the above; every action writes `audit_log`.
+
+#### Phase E part 1 notes
+
+- **`DoctorSidebar` → `AppSidebar`** (`git mv`, approved in §6). The `items` prop gives the links; the
+  **icon is chosen by name inside the client component**, because passing a lucide component across the
+  server/client boundary makes Next throw "Functions cannot be passed directly to Client Components".
+  The doctor's links and look are unchanged; `doctorAvatar` keeps the doctor's avatar forest green.
+- **Every admin screen is a server page plus a page-local client component in the same folder** — no new
+  shared component file. The popups live beside their list: `admin/doctors/DoctorDialog.tsx`,
+  `admin/doctors/InviteDoctorDialog.tsx`, `admin/patients/PatientDialog.tsx`,
+  `admin/patients/InvitePatientDialog.tsx`.
+- **All the admin's reads and writes are in `src/app/actions/admin.ts`.** Every exported function starts
+  with `requireProfile("admin")` before `createAdminClient()`. Every service-role write calls
+  `logAudit(client, admin, …)` with the before/after values.
+- **The whole-account block is `profiles.blocked_at`**, not the legacy auth ban: `requireProfile()` already
+  sends a blocked profile to `/login?error=blocked` and `can_write()` already refuses them everywhere.
+  The legacy auth ban was left alone.
+- **`/join/<token>` now takes doctor links** (decision 44). `checkInviteLink()` reports the link's `role`;
+  a doctor link opens "Join as a doctor" (`app/join/[token]/DoctorJoinForm.tsx`). A doctor who joins gets
+  no patient and no conversation, and lands on `/doctor`.
+- **`?doctor=<id>`** filters the admin's patient list to one doctor's patients.
+- **Clinics have no delete** in this part. Not asked for; see §8.
 
 ### Phase G: landing (v0.9.0)
 - [ ] `/` shows the landing to signed-out visitors; signed-in users still redirect to their home.
@@ -519,6 +545,9 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 | Q-N | **The doctor has no "Schedule" button in the chat header** (decision 74 said the header stays as it is, and there was no free action slot). Phase D put "Schedule" in the patient panel instead, plus a "Manage" link on every appointment card. Is that enough, or should the chat header grow a button? | Keep it in the panel. The header stays exactly as the 2026-11-07 screenshot. | Nothing — Phase D shipped. |
 | Q-O | **The Settings on/off switch uses `Segmented`** because the design system has no switch primitive. Two pills ("On" / "Off") are a bit heavy for a boolean. Should a switch primitive be added to the design system? | Leave it as `Segmented` for now; add a switch only when a second boolean needs it. | Nothing — Phase D shipped. |
 | Q-P | **The ASCII designs for the "Schedule" menu** (Meeting / Check-in) and the `⋯` menu (Edit details, Block, Invite again) from Phase P are still not built. Phase D used a single "Schedule" button that opens the popup with the Segmented inside, instead of a two-item menu. Should it become a real menu? | Keep the single button. The popup's Segmented does the same job with fewer parts. | Nothing — Phase D shipped. |
+| Q-Q | **Should a clinic be deletable?** Phase E part 1 can create a clinic, rename it, set its setting and move doctors in and out — but not delete it. A clinic with no doctors is harmless, and deleting one would clear every doctor in it. | Add a delete later, but only for a clinic with no doctors, and with a confirmation. | Nothing — part 1 shipped without it. |
+| Q-R | **Should the admin see a patient's date of birth, height and weight?** Part 1 shows the name, the contact and the doctors; the health details are not in the admin's list. The doctor sees them in their own panel. | Keep the admin's list to what the admin needs to manage access. The details stay with the doctor. | Nothing — part 1 shipped. |
+| Q-S | **Should the admin be able to send a message to a patient or a doctor?** Decision 48 says the admin's messages are labelled "Admin", but that is part 2 (`/admin/c/[id]`). Part 1 has no way to message anyone. | Build it in part 2, with the chat moderation. | Part 2. |
 
 ---
 

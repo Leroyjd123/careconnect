@@ -15,6 +15,23 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.8.0",
+    date: "2026-11-11",
+    title: "The CareConnect admin panel",
+    added: [
+      "A new admin area at /admin, for whoever looks after your CareConnect setup.",
+      "An overview with plain counts: doctors, patients, chats and meetings this week.",
+      "See every doctor, their specialty, their clinic and how many patients they have. Invite a new doctor with a link or an email.",
+      "Deactivate a doctor when you need to. Their patients can still read their history, but nobody can send anything in their chats.",
+      "See every patient, the doctors they see, and search by name, mobile number or email.",
+      "Give a patient more than one doctor. Nobody is ever moved away from a doctor they've already got.",
+      "Block one chat, or block a whole account. Both ask you first.",
+      "Clinics: group your doctors together and set what each clinic shows.",
+      "Everything the admin changes is written to the audit log.",
+    ],
+    changed: ["The side menu is now the same for doctors and for the admin, with different links."],
+  },
+  {
     version: "0.7.0",
     date: "2026-11-07",
     title: "More doctors, one shared medicine list",
