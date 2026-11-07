@@ -19,12 +19,25 @@ function Submit() {
 }
 
 /** loginAction is only overridden by /styleguide, so its demo never signs anyone in. */
-export function LoginForm({ linkError, blocked, loginAction = login }: { linkError?: boolean; blocked?: boolean; loginAction?: typeof login }) {
+export function LoginForm({
+  linkError,
+  blocked,
+  next,
+  loginAction = login,
+}: {
+  linkError?: boolean;
+  blocked?: boolean;
+  /** Where to go after signing in. Only /join/<token> is honoured by the action. */
+  next?: string;
+  loginAction?: typeof login;
+}) {
   const [state, action] = useActionState(loginAction, initial);
 
   return (
     <Card className="mt-10 p-5 sm:p-6">
       <form action={action} className="flex flex-col gap-4" noValidate>
+        {next ? <input type="hidden" name="next" value={next} /> : null}
+        {next && !state.error ? <p className="text-base text-ink-2">Sign in to accept your new doctor&apos;s invitation.</p> : null}
         {blocked && !state.error ? (
           <FieldError>Your account has been paused by your doctor&apos;s clinic. Please contact the clinic.</FieldError>
         ) : null}

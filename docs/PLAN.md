@@ -175,6 +175,7 @@ Numbers match the original question list so answers can be traced.
 | Q-H | Legal pages contact: `leroy.social@gmail.com`. |
 | Q-I | Meeting auto-complete defaults to on. |
 | Q-J | Admin messages are labelled "CareConnect Admin". |
+| Q-K | A signed-in patient can accept another doctor's invite link; signed out, "Sign in to accept" returns to the link. Built in Phase B follow-up. |
 
 ### Added 2026-11-07 (after the component review)
 | # | Decision |
@@ -441,7 +442,7 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 
 | ID | Question | Recommendation | Blocks |
 |---|---|---|---|
-| Q-K | A patient who already has an account opens a second doctor's invite link. Today `/join` says "There's already an account… Sign in instead", and signing in does NOT connect them to the new doctor. Should the link page offer "Already have an account? Sign in to accept", which links the signed-in patient to that doctor and uses up the link? | Yes. Email invites already do this (existing-account path). | C |
+| ~~Q-K~~ | Resolved 2026-11-07 (yes) and built: `acceptInviteLink`, `/join` accept card, `/login?next=`. | – | – |
 
 ---
 

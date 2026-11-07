@@ -150,6 +150,51 @@ export async function checkInviteLink(token: string): Promise<InviteLinkStatus> 
   return { ok: true, doctorName: doctor?.full_name || "your doctor", specialty: doctor?.specialty ?? null };
 }
 
+export type AcceptState = { error?: string };
+
+/**
+ * Q-K: a patient who already has an account opens another doctor's link while signed in.
+ * Claims the link and connects them to that doctor. The one-time token is the boundary (service role),
+ * plus the signed-in patient: the link can only ever be used by the person holding the session.
+ */
+export async function acceptInviteLink(token: string, _prev: AcceptState): Promise<AcceptState> {
+  const patient = await requireProfile("patient");
+  const status = await checkInviteLink(token);
+  if (!status.ok) return { error: status.reason === "used" ? "This link has already been used." : "This link has expired. Ask your doctor for a new one." };
+
+  const admin = createAdminClient();
+  const { data: claimed } = await admin
+    .from("invite_links")
+    .update({ used_at: new Date().toISOString(), used_by: patient.id })
+    .eq("token", token)
+    .is("used_at", null)
+    .is("revoked_at", null)
+    .eq("role", "patient")
+    .select("id, doctor_id")
+    .maybeSingle();
+  if (!claimed?.doctor_id) return { error: "This link has already been used." };
+
+  const { data: conv, error } = await admin
+    .from("conversations")
+    .upsert({ doctor_id: claimed.doctor_id, patient_id: patient.id }, { onConflict: "doctor_id,patient_id" })
+    .select("id")
+    .single();
+  if (error || !conv) {
+    await admin.from("invite_links").update({ used_at: null, used_by: null }).eq("id", claimed.id);
+    console.error("acceptInviteLink conversation failed", error);
+    return { error: "We couldn't connect you to this doctor. Please try again." };
+  }
+
+  await logAudit(admin, patient, {
+    action: "invite.accepted",
+    targetType: "conversation",
+    targetId: conv.id,
+    details: { doctor_id: claimed.doctor_id, invite_link_id: claimed.id },
+  });
+  revalidatePath("/", "layout");
+  redirect("/home");
+}
+
 export type JoinState = { error?: string; values?: { fullName: string; email: string; phone: string } };
 
 /**
@@ -197,7 +242,7 @@ export async function joinWithInviteLink(token: string, _prev: JoinState, formDa
   if (createError || !created.user) {
     await release();
     if (/already|exists|registered/i.test(createError?.message ?? "")) {
-      return { error: "There's already an account with this email or number. Sign in instead.", values };
+      return { error: "There's already an account with this email or number. Use \u201cSign in to accept\u201d below.", values };
     }
     console.error("joinWithInviteLink createUser failed", createError);
     return { error: "We couldn't create your account. Please try again.", values };

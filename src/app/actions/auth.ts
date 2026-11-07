@@ -48,7 +48,9 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     return { email: typed, error: "That email or number and password don't match. Please try again." };
   }
 
-  redirect("/");
+  // Only ever return to an invite link (Q-K), never to an arbitrary URL.
+  const next = String(formData.get("next") ?? "");
+  redirect(/^\/join\/[A-Za-z0-9_-]{20,64}$/.test(next) ? next : "/");
 }
 
 /**

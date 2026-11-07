@@ -68,7 +68,7 @@ src/components/patient/*   patient-only composites (only if not shareable)
 
 - RLS is the security boundary. Never rely on hiding UI. Every table has policies in the migration.
 - `createAdminClient()` (service role) is allowed ONLY in `src/app/actions/patients.ts`: after `requireProfile("doctor")`,
-  or in the invite-link functions (`checkInviteLink`, `joinWithInviteLink`) where the one-time token is the boundary.
+  or in the invite-link functions (`checkInviteLink`, `joinWithInviteLink`, `acceptInviteLink`) where the one-time token is the boundary.
   One more: `emailForPhone()` in `actions/auth.ts` (not exported), so a mobile number can sign in to an email account.
   Since 0005 also: `src/app/actions/admin.ts` and the admin-only functions in `src/app/actions/medicines.ts`
   (`updateMedicine`, `setMedicineActive`, `mergeMedicine`; each starts with `requireProfile("admin")`), and

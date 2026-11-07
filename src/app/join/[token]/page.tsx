@@ -9,13 +9,15 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Feedback";
 import { Logo } from "@/components/ui/Logo";
 import { JoinForm } from "./JoinForm";
+import { AcceptInvite } from "./AcceptInvite";
 
 export const metadata: Metadata = { title: "Join" };
 
 // Opened from the link the doctor shared. No account, no email code: the patient makes their account here.
+// Already a patient (Q-K)? Signed in: accept and get a chat with this doctor. Signed out: sign in to accept.
 export default async function JoinPage({ params }: { params: Promise<{ token: string }> }) {
   const profile = await getProfile();
-  if (profile) redirect(homeFor(profile.role));
+  if (profile && profile.role !== "patient") redirect(homeFor(profile.role));
 
   const { token } = await params;
   const status = await checkInviteLink(token);
@@ -25,8 +27,18 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
       <div className="flex flex-col items-center text-center">
         <Logo size="lg" />
       </div>
-      {status.ok ? (
-        <JoinForm token={token} doctorName={status.doctorName} specialty={status.specialty} />
+      {status.ok && profile ? (
+        <AcceptInvite token={token} doctorName={status.doctorName} specialty={status.specialty} patientName={profile.full_name} />
+      ) : status.ok ? (
+        <>
+          <JoinForm token={token} doctorName={status.doctorName} specialty={status.specialty} />
+          <div className="mt-4 flex flex-col items-center gap-1 text-center">
+            <p className="text-base text-ink-2">Already use CareConnect with another doctor?</p>
+            <ButtonLink href={`/login?next=${encodeURIComponent(`/join/${token}`)}`} variant="ghost">
+              Sign in to accept
+            </ButtonLink>
+          </div>
+        </>
       ) : (
         <Card className="mt-10">
           <EmptyState

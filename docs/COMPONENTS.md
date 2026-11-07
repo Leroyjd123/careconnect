@@ -89,7 +89,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 ## Page-local client components
 
 Not shared, so they live beside their page rather than in `src/components`:
-`app/login/LoginForm.tsx`, `app/(patient)/profile/LanguagePicker.tsx`, `app/rx/[id]/print/AutoPrint.tsx`.
+`app/login/LoginForm.tsx` (`next` = return to an invite link), `app/join/[token]/AcceptInvite.tsx` (signed-in patient accepts another doctor's link), `app/(patient)/profile/LanguagePicker.tsx`, `app/rx/[id]/print/AutoPrint.tsx`.
 
 ## How state is split
 

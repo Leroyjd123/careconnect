@@ -95,6 +95,8 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 - Patients page shows Active / Invite pending, with Resend for pending and Open chat for active.
 - "Email not delivered" from the hi-fi is out of scope for the MVP (needs delivery webhooks).
 
+- Already a patient (Q-K): signed in → `/join/<token>` shows "Join {Doctor}… You're signed in as {name}. Accept to start a separate chat with this doctor. Your other doctors won't see it." + "Accept invitation". Signed out → under the form: "Already use CareConnect with another doctor?" + "Sign in to accept" (`/login?next=/join/<token>`; sign-in returns only to `/join/<token>` paths). Accepting uses up the link and is audit logged.
+
 ## Patient profile & language
 
 - Languages: English, ಕನ್ನಡ, മലയാളം (0005; Hindi removed). Language switch saves to `profiles.language`. All copy stays English this round; the switch is wired for later translation.

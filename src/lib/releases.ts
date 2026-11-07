@@ -20,6 +20,7 @@ export const RELEASES: Release[] = [
     title: "More doctors, one shared medicine list",
     added: [
       "CareConnect now works for several doctors, each with their own patients.",
+      "Already with another doctor on CareConnect? Open the new doctor's link and sign in to accept. You get a separate chat with them.",
       "Malayalam is now a language choice, alongside English and Kannada. Hindi is no longer offered; anyone who chose it is set to English.",
     ],
     changed: [
