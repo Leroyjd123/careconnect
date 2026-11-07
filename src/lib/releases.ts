@@ -15,6 +15,22 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.7.0",
+    date: "2026-11-07",
+    title: "More doctors, one shared medicine list",
+    added: [
+      "CareConnect now works for several doctors, each with their own patients.",
+      "Malayalam is now a language choice, alongside English and Kannada. Hindi is no longer offered; anyone who chose it is set to English.",
+    ],
+    changed: [
+      "Blocking a patient now only stops them messaging you. They can still read their history and talk to their other doctors.",
+      "Master medicines is one list shared by all doctors. Add any medicine that's missing; changes and merges are made by CareConnect.",
+      "The privacy notice and terms now speak about “your doctor” and say who else can see a conversation.",
+      "Printed prescriptions leave out the registration number line until it's set.",
+    ],
+    fixed: ["Inviting a patient who already has an account no longer changes their name."],
+  },
+  {
     version: "0.6.0",
     date: "2026-10-21",
     title: "Patient details, blocking and master medicines",

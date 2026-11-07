@@ -30,7 +30,7 @@ export function PrescriptionView({ prescription, replaced, variant = "screen", a
           <div className="flex flex-col">
             <span className="text-[17px] font-semibold tracking-tight">{doctor.full_name}</span>
             {doctor.specialty ? <span className="text-sm text-ink-2">{doctor.specialty}</span> : null}
-            <span className="text-sm text-ink-2">Reg. no. {doctor.reg_no || "[REG NO]"}</span>
+            {doctor.reg_no ? <span className="text-sm text-ink-2">Reg. no. {doctor.reg_no}</span> : null}
           </div>
           {prescription.status === "draft" ? (
             <Badge tone="outline">Draft · not sent</Badge>

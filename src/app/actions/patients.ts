@@ -1,5 +1,6 @@
 "use server";
 
+import { logAudit } from "@/lib/audit";
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -49,8 +50,11 @@ export async function invitePatient(input: { fullName: string; email: string }):
   }
   if (!patientId) return { ok: false, error: "We couldn't create the invitation. Please try again." };
 
-  // The auth trigger created the profile. Fill in who invited them.
-  await admin.from("profiles").update({ full_name: fullName, invited_by: doctor.id }).eq("id", patientId).eq("role", "patient");
+  // New account: the auth trigger created the profile, so fill in the name and who invited them.
+  // Existing patient (e.g. already with another doctor): keep their name and first inviter (decision 14).
+  if (!inviteError) {
+    await admin.from("profiles").update({ full_name: fullName, invited_by: doctor.id }).eq("id", patientId).eq("role", "patient");
+  }
 
   const { data: conv, error: convError } = await admin
     .from("conversations")
@@ -176,9 +180,10 @@ export async function joinWithInviteLink(token: string, _prev: JoinState, formDa
     .eq("token", token)
     .is("used_at", null)
     .is("revoked_at", null)
+    .eq("role", "patient") // doctor invite links are joined through the admin flow (Phase E)
     .select("id, doctor_id")
     .maybeSingle();
-  if (!claimed) return { error: "This link has already been used.", values };
+  if (!claimed || !claimed.doctor_id) return { error: "This link has already been used.", values };
   const release = () => admin.from("invite_links").update({ used_at: null }).eq("id", claimed.id);
 
   // Phone-only patients sign in with their number; see PHONE_EMAIL_DOMAIN.
@@ -261,6 +266,11 @@ export async function updatePatientDetails(patientId: string, input: PatientDeta
   if (!weight.ok) return { ok: false, error: "Weight should be in kilograms, between 1 and 400." };
 
   const admin = createAdminClient();
+  const { data: before } = await admin
+    .from("profiles")
+    .select("full_name, email, phone, date_of_birth, height_cm, weight_kg")
+    .eq("id", patientId)
+    .maybeSingle();
   // Sign-in follows the details: email if there is one, otherwise the mobile number.
   const authEmail = email || `${phone!.slice(1)}@${PHONE_EMAIL_DOMAIN}`;
   const { data: authUser } = await admin.auth.admin.getUserById(patientId);
@@ -283,25 +293,50 @@ export async function updatePatientDetails(patientId: string, input: PatientDeta
     return { ok: false, error: "We couldn't save these details. Please try again." };
   }
 
+  const after = { full_name: fullName, email: email || null, phone, date_of_birth: dob, height_cm: height.value, weight_kg: weight.value };
+  await logAudit(admin, own.doctor, {
+    action: "profile.details_changed",
+    targetType: "profile",
+    targetId: patientId,
+    details: { before, after },
+  });
+
   revalidatePath("/doctor", "layout");
   return { ok: true };
 }
 
 /**
- * Block: the patient can't sign in, send messages or upload (auth ban + RLS). Their history stays.
- * Activate: undoes it.
+ * Block (0005: per conversation): the patient can't send messages or upload in THIS doctor's chat
+ * (RLS via can_write). They can still sign in, read their history, and use chats with other doctors.
+ * Activate: undoes it. The account-wide block is the admin's, in actions/admin.ts.
  */
 export async function setPatientBlocked(patientId: string, blocked: boolean): Promise<ActionResult> {
   const own = await requireOwnPatient(patientId);
   if (!own) return { ok: false, error: "Patient not found." };
 
   const admin = createAdminClient();
-  const { error: banError } = await admin.auth.admin.updateUserById(patientId, { ban_duration: blocked ? "876000h" : "none" });
-  if (banError) {
-    console.error("setPatientBlocked ban failed", banError);
+  const { error } = await admin
+    .from("conversations")
+    .update({ blocked_at: blocked ? new Date().toISOString() : null })
+    .eq("id", own.conversationId);
+  if (error) {
+    console.error("setPatientBlocked failed", error);
     return { ok: false, error: blocked ? "We couldn't block this patient. Please try again." : "We couldn't reactivate this patient. Please try again." };
   }
-  await admin.from("profiles").update({ blocked_at: blocked ? new Date().toISOString() : null }).eq("id", patientId).eq("role", "patient");
+
+  // Before 0005 a block was an auth ban. Lift any left over, unless the admin blocked the whole account.
+  const { data: profile } = await admin.from("profiles").select("blocked_at").eq("id", patientId).maybeSingle();
+  if (!profile?.blocked_at) {
+    const { error: banError } = await admin.auth.admin.updateUserById(patientId, { ban_duration: "none" });
+    if (banError) console.error("setPatientBlocked unban failed", banError);
+  }
+
+  await logAudit(admin, own.doctor, {
+    action: blocked ? "conversation.blocked" : "conversation.unblocked",
+    targetType: "conversation",
+    targetId: own.conversationId,
+    details: { patient_id: patientId },
+  });
 
   revalidatePath("/doctor", "layout");
   return { ok: true };

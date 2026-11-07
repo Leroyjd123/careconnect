@@ -14,7 +14,8 @@ Rules for whoever edits this file:
 ## State — 2026-11-07
 
 - New plan: `docs/PLAN.md` (multi-doctor, meetings, check-ins, superadmin, landing). Branch `feature/multi-doctor`.
-- Phase A written: migration 0005 + types. NOT applied to Supabase yet; waiting for Leroy's review.
+- Phase A done: migration 0005 applied to Supabase; admin account promoted.
+- Phase B done (v0.7.0 started): per-conversation blocking, shared medicines (admin manages), audit helper, legal pages, Malayalam. Next: Phase C (Q-K open in PLAN §8).
 
 ## State — 2026-10-20
 

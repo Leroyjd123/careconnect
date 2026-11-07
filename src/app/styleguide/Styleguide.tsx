@@ -1197,7 +1197,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
             </div>
           </Section>
 
-          <Section id="print" title="Print / PDF" file="rx/PrescriptionView.tsx · variant=&quot;print&quot; · /rx/[id]/print" use="Plain paper version the browser saves as a PDF. Doctor's registration number shows [REG NO] until it's set.">
+          <Section id="print" title="Print / PDF" file="rx/PrescriptionView.tsx · variant=&quot;print&quot; · /rx/[id]/print" use="Plain paper version the browser saves as a PDF. The doctor's registration number line is left out until it's set.">
             <div className="max-w-2xl rounded-tile border border-line bg-white p-6">
               <PrescriptionView prescription={demo.prescription} variant="print" />
             </div>
@@ -1226,9 +1226,12 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
             </Stage>
           </Section>
 
-          <Section id="medicines" title="Master medicines" file="doctor/MedicineList.tsx · /doctor/settings/medicines" use="Add, edit, deactivate, merge. No delete. Here every action is faked.">
+          <Section id="medicines" title="Master medicines" file="doctor/MedicineList.tsx · /doctor/settings/medicines" use="One shared list. Doctors add (canManage off). The admin also edits, deactivates and merges (canManage). No delete. Here every action is faked.">
             <Stage size="full" height="tall">
               <MedicineList medicines={DEMO_MEDICINES} actions={DEMO_MED_ACTIONS} />
+            </Stage>
+            <Stage size="full" height="tall">
+              <MedicineList medicines={DEMO_MEDICINES} actions={DEMO_MED_ACTIONS} canManage />
             </Stage>
           </Section>
 

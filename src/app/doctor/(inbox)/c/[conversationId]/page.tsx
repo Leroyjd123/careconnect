@@ -74,6 +74,7 @@ export default async function DoctorConversation({
             fileHrefBase={`${base}?file=`}
             rxHrefBase={`${base}?rx=`}
             correctionHrefBase={`${base}?rx=new&replaces=`}
+            readOnlyNotice={doctor.deactivated_at ? "Your account is deactivated. Contact CareConnect to send messages again." : undefined}
             header={{
               backHref: "/doctor",
               backLabel: "Back to the inbox",
@@ -134,6 +135,7 @@ export default async function DoctorConversation({
           <PatientPanel
             conversationId={conversationId}
             patient={patient}
+            blockedAt={conversation.blocked_at}
             prescriptions={prescriptions}
             replacedRxIds={replaced}
             reports={[...messages].reverse().filter((m) => m.kind === "file" && !m.deleted_at)}

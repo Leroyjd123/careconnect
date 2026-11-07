@@ -26,15 +26,27 @@ export const getConversation = cache(async (id: string): Promise<ConversationWit
 });
 
 /** The doctor's patients, newest conversation first. */
-export const getMyPatients = cache(async (): Promise<{ conversationId: string; patient: Profile }[]> => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("conversations")
-    .select("id, created_at, patient:profiles!conversations_patient_id_fkey(*)")
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(`patients failed: ${error.message}`);
-  return ((data ?? []) as unknown as { id: string; patient: Profile }[]).map((r) => ({ conversationId: r.id, patient: r.patient }));
-});
+export const getMyPatients = cache(
+  async (): Promise<{ conversationId: string; patient: Profile; blockedAt: string | null }[]> => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+    // Explicit doctor filter: RLS also lets the admin see every conversation.
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id, created_at, blocked_at, patient:profiles!conversations_patient_id_fkey(*)")
+      .eq("doctor_id", user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(`patients failed: ${error.message}`);
+    return ((data ?? []) as unknown as { id: string; blocked_at: string | null; patient: Profile }[]).map((r) => ({
+      conversationId: r.id,
+      patient: r.patient,
+      blockedAt: r.blocked_at,
+    }));
+  },
+);
 
 /** Latest messages, oldest first (ready to render top-to-bottom). */
 export async function getMessages(conversationId: string, limit = 200): Promise<Message[]> {
@@ -86,14 +98,14 @@ export const getPrescription = cache(async (id: string): Promise<PrescriptionWit
   return data ? sortItems(data as unknown as PrescriptionWithPeople) : null;
 });
 
-/** The doctor's active master medicines, for the composer's suggestions (0004). */
+/** Active medicines from the shared master list, for the composer's suggestions (0004, shared since 0005). */
 export async function getMedicineSuggestions(): Promise<MedicineOption[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("medicines").select("name, default_dose").eq("active", true).order("name");
   return (data ?? []) as MedicineOption[];
 }
 
-/** Every medicine in the doctor's master list, including inactive and merged ones (Settings). */
+/** Every medicine in the shared master list, including inactive and merged ones (Settings). */
 export async function getMyMedicines(): Promise<Medicine[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("medicines").select("*").order("name");

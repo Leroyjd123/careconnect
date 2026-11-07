@@ -25,11 +25,20 @@ type Actions = {
 const REAL: Actions = { add: addMedicine, update: updateMedicine, setActive: setMedicineActive, merge: mergeMedicine };
 
 /**
- * The doctor's master medicine list (Settings → Master medicines). Add, edit, deactivate, merge.
- * No delete, on purpose: a deactivated medicine just stops being suggested; a merged one points at the kept one.
- * `actions` is only overridden by /styleguide.
+ * The shared master medicine list (0005: one list for all doctors). Any doctor adds; only the admin
+ * edits, deactivates and merges (`canManage`). No delete, on purpose: a deactivated medicine just stops
+ * being suggested; a merged one points at the kept one. `actions` is only overridden by /styleguide.
  */
-export function MedicineList({ medicines, actions = REAL }: { medicines: Medicine[]; actions?: Actions }) {
+export function MedicineList({
+  medicines,
+  actions = REAL,
+  canManage = false,
+}: {
+  medicines: Medicine[];
+  actions?: Actions;
+  /** Admin only: show Edit / Deactivate / Merge. */
+  canManage?: boolean;
+}) {
   const [filter, setFilter] = useState<Filter>("active");
   const [query, setQuery] = useState("");
   const [name, setName] = useState("");
@@ -59,7 +68,7 @@ export function MedicineList({ medicines, actions = REAL }: { medicines: Medicin
 
   async function add() {
     setAdding(true);
-    const ok = await run(actions.add({ name, defaultDose: dose }), `${name.trim()} added to your medicines.`);
+    const ok = await run(actions.add({ name, defaultDose: dose }), `${name.trim()} added to the list.`);
     setAdding(false);
     if (ok) {
       setName("");
@@ -78,8 +87,9 @@ export function MedicineList({ medicines, actions = REAL }: { medicines: Medicin
       <div className="flex flex-col gap-1">
         <h1 className="text-[22px] font-semibold tracking-tight">Master medicines</h1>
         <p className="text-[15px] text-ink-2">
-          Your list of medicines. They&apos;re suggested when you write a prescription. Nothing is ever deleted: deactivate one to stop
-          suggesting it, or merge duplicates.
+          {canManage
+            ? "The list every doctor shares. Medicines are suggested when writing a prescription. Nothing is ever deleted: deactivate one to stop suggesting it, or merge duplicates."
+            : "The list every doctor shares. Medicines are suggested when you write a prescription. Add any that are missing. To change or merge one, contact CareConnect."}
         </p>
       </div>
 
@@ -99,7 +109,7 @@ export function MedicineList({ medicines, actions = REAL }: { medicines: Medicin
       {notice ? <Banner tone={notice.tone}>{notice.text}</Banner> : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <TextInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search your medicines" aria-label="Search medicines" className="h-11 min-w-0 flex-1 sm:max-w-xs" />
+        <TextInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search medicines" aria-label="Search medicines" className="h-11 min-w-0 flex-1 sm:max-w-xs" />
         <Segmented
           label="Show"
           value={filter}
@@ -134,7 +144,7 @@ export function MedicineList({ medicines, actions = REAL }: { medicines: Medicin
                   ) : !m.active ? (
                     <Badge tone="neutral" icon={<PowerOff aria-hidden="true" />}>Inactive</Badge>
                   ) : null}
-                  {into ? null : (
+                  {into || !canManage ? null : (
                     <div className="flex flex-wrap gap-1.5">
                       <Button size="sm" variant="ghost" onClick={() => setEditing(m)}>
                         <Pencil aria-hidden="true" className="size-4" /> Edit

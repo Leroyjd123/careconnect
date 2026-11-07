@@ -3,8 +3,8 @@ import type { Language } from "@/lib/types";
 export const APP_NAME = "CareConnect";
 export const TAGLINE = "Better care starts with a conversation.";
 
-/** Shown on the legal pages. Replace contact with the clinic's real email or phone before launch. */
-export const CLINIC = { doctor: "Dr. Vipin John", contact: "the clinic at [CLINIC EMAIL OR PHONE]" };
+/** Contact for the legal pages and the landing page (decisions 61, Q-H). */
+export const CONTACT_EMAIL = "leroy.social@gmail.com";
 
 export const LANGUAGES: { value: Language; label: string; english: string }[] = [
   { value: "en", label: "English", english: "English" },

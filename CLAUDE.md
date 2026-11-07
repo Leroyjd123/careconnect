@@ -70,7 +70,8 @@ src/components/patient/*   patient-only composites (only if not shareable)
 - `createAdminClient()` (service role) is allowed ONLY in `src/app/actions/patients.ts`: after `requireProfile("doctor")`,
   or in the invite-link functions (`checkInviteLink`, `joinWithInviteLink`) where the one-time token is the boundary.
   One more: `emailForPhone()` in `actions/auth.ts` (not exported), so a mobile number can sign in to an email account.
-  Since 0005 also: `src/app/actions/admin.ts` (every function starts with `requireProfile("admin")`) and
+  Since 0005 also: `src/app/actions/admin.ts` and the admin-only functions in `src/app/actions/medicines.ts`
+  (`updateMedicine`, `setMedicineActive`, `mergeMedicine`; each starts with `requireProfile("admin")`), and
   `src/app/api/cron/reminders/route.ts` (after checking `CRON_SECRET`).
 - Every service-role write that changes a meeting, check-in, block, patient details, message or prescription
   must insert its own `audit_log` row. DB triggers only log writes made with a user session (`auth.uid()` set).

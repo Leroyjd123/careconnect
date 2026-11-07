@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/layout/LegalPage";
-import { CLINIC } from "@/lib/constants";
+import { CONTACT_EMAIL } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Terms of use" };
 
@@ -9,12 +9,12 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of use"
-      updated="2026-10-21"
+      updated="2026-11-07"
       intro={<p>By using CareConnect you agree to these terms. They&apos;re short, and we&apos;ve tried to keep them plain.</p>}
       sections={[
         {
           heading: "What CareConnect is",
-          body: <p>A private way to message {CLINIC.doctor}, send reports and receive prescriptions. You can only join when your doctor invites you.</p>,
+          body: <p>A private way to message your doctor, send reports and receive prescriptions. You can only join when your doctor invites you.</p>,
         },
         {
           heading: "Not for emergencies",
@@ -58,7 +58,7 @@ export default function TermsPage() {
         },
         {
           heading: "Contact",
-          body: <p>Questions: message {CLINIC.doctor} in the app, or contact {CLINIC.contact}.</p>,
+          body: <p>Questions: message your doctor in the app, or email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>,
         },
       ]}
     />

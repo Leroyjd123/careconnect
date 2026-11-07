@@ -48,8 +48,8 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 
 | Phase | Name | Release | Status |
 |---|---|---|---|
-| A | Database migration 0005 | – | ◐ written, **awaiting Leroy's review + apply** |
-| B | Multi-doctor clean-up | v0.7.0 | ☐ |
+| A | Database migration 0005 | – | ✅ applied to Supabase 2026-11-07 |
+| B | Multi-doctor clean-up | v0.7.0 | ✅ done 2026-11-07 |
 | C | Patient with several doctors | v0.7.0 | ☐ |
 | P | Patient panel → summary + popups | v0.7.0 | ☐ |
 | D | Meetings + check-ins | v0.7.0 | ☐ |
@@ -322,7 +322,7 @@ Stop after this phase. Leroy reviews the SQL before it is applied to Supabase.
       RLS: any doctor reads and adds; edit/deactivate/merge by any doctor or admin (per Q-B/Q-E).
 - [x] Profile grants: patients may update own `date_of_birth, height_cm, weight_kg` (decision 28).
 - [x] `src/lib/types.ts` updated. `CLAUDE.md` §"Data and security" updated with §5 exceptions.
-- [ ] **STOP. Ask Leroy to review and apply 0005.**
+- [x] **STOP. Ask Leroy to review and apply 0005.** Applied 2026-11-07; admin account promoted.
 
 Phase A notes (2026-11-07):
 - Written: `supabase/migrations/0005_multi_doctor_meetings_admin.sql`, `src/lib/types.ts`, `LANGUAGES` (ml), `homeFor("admin")`, CLAUDE.md exceptions, `.clinerules`.
@@ -334,14 +334,25 @@ Phase A notes (2026-11-07):
 - New RPCs: `is_admin()`, `can_write(conv)`, `post_appointment_message(kind, id)`, `other_doctors(patient)`.
 
 ### Phase B: multi-doctor clean-up (v0.7.0)
-- [ ] Remove `CLINIC.doctor` from `src/lib/constants.ts`; read the doctor from the conversation/invite.
-- [ ] `/privacy`, `/terms`, all copy: "your doctor". Ask Leroy for the real contact line (no placeholder).
-- [ ] Tighten storage policy `attachments_delete_doctor` to the conversation's own doctor.
-- [ ] `setPatientBlocked` → sets `conversations.blocked_at` (no auth ban).
-- [ ] Print page: omit the registration line when empty.
-- [ ] Medicines actions and `/doctor/settings/medicines` use the shared list.
-- [ ] Language picker: English / ಕನ್ನಡ / മലയാളം.
-- [ ] Check every doctor query is scoped to `doctor_id = me` (inbox, patients, invite links).
+- [x] Remove `CLINIC.doctor` from `src/lib/constants.ts`; read the doctor from the conversation/invite.
+- [x] `/privacy`, `/terms`, all copy: "your doctor". Ask Leroy for the real contact line (no placeholder).
+- [x] Tighten storage policy `attachments_delete_doctor` to the conversation's own doctor.
+- [x] `setPatientBlocked` → sets `conversations.blocked_at` (no auth ban).
+- [x] Print page: omit the registration line when empty.
+- [x] Medicines actions and `/doctor/settings/medicines` use the shared list.
+- [x] Language picker: English / ಕನ್ನಡ / മലയാളം.
+- [x] Check every doctor query is scoped to `doctor_id = me` (inbox, patients, invite links).
+
+Phase B notes (2026-11-07):
+- `CLINIC` removed; `CONTACT_EMAIL` in `lib/constants.ts`. Legal pages say "your doctor" and now state that the
+  CareConnect team can open conversations and that each opening is recorded (admin access, decision 47).
+- New `src/lib/audit.ts` → `logAudit()` for every service-role write. Used by `updatePatientDetails`,
+  `setPatientBlocked`, and the admin-only medicine actions.
+- `Conversation` got `readOnlyNotice` (blocked conversation / deactivated doctor). `PatientPanel` got `blockedAt`,
+  `PatientsTable` rows got `blockedAt`, `MedicineList` got `canManage` (admin). All backward-compatible extensions.
+- Medicine edit/deactivate/merge are admin-only (CLAUDE.md exception updated). Doctors' Settings page only adds.
+- Doctor invite links (`role = 'doctor'`) are refused by `/join` until Phase E builds the doctor flow.
+- Release 0.7.0 started in `releases.ts`; `package.json` bumped to 0.7.0. C, P and D add to the same release.
 
 ### Phase C: patient with several doctors (v0.7.0)
 - [ ] `/chat`: 1 doctor → that chat; 2+ → doctor list (shared `ConversationList`, pending approval).
@@ -426,8 +437,11 @@ Goal: the right-hand `PatientPanel` only shows information; every action opens a
 
 ## 8. Open questions
 
-None open. All answered "yes" (recommended) on 2026-11-07, recorded in §3 "Resolved open questions".
-New questions go here as a table: ID, question, recommendation, blocks.
+Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions".
+
+| ID | Question | Recommendation | Blocks |
+|---|---|---|---|
+| Q-K | A patient who already has an account opens a second doctor's invite link. Today `/join` says "There's already an account… Sign in instead", and signing in does NOT connect them to the new doctor. Should the link page offer "Already have an account? Sign in to accept", which links the signed-in patient to that doctor and uses up the link? | Yes. Email invites already do this (existing-account path). | C |
 
 ---
 

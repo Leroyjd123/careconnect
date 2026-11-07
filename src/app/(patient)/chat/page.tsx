@@ -57,6 +57,13 @@ export default async function PatientChat({ searchParams }: { searchParams: Prom
           rxHrefBase="/prescriptions/"
           attachOnOpen={attach === "1"}
           starters={STARTERS}
+          readOnlyNotice={
+            doctor.deactivated_at
+              ? `${doctor.full_name} is no longer available here. You can still read your messages and prescriptions.`
+              : conversation.blocked_at
+                ? "You can't send messages in this chat. You can still read your messages and prescriptions."
+                : undefined
+          }
           header={{
             backHref: "/home",
             backLabel: "Back to home",

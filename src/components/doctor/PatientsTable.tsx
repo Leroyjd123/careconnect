@@ -13,7 +13,7 @@ import { TextInput } from "@/components/ui/Field";
 import { formatDate } from "@/lib/utils";
 import type { ActionResult, Profile } from "@/lib/types";
 
-type Row = { conversationId: string; patient: Profile };
+type Row = { conversationId: string; patient: Profile; /** Conversation block (0005). */ blockedAt?: string | null };
 
 const FILTERS = ["All", "Active", "Invite pending", "Blocked"];
 
@@ -35,13 +35,13 @@ export function PatientsTable({
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter(({ patient }) => {
+    return rows.filter(({ patient, blockedAt }) => {
       const matchesFilter =
         filter === "All" ||
         (filter === "Blocked"
-          ? !!patient.blocked_at
+          ? !!blockedAt
           : filter === "Active"
-            ? patient.status === "active" && !patient.blocked_at
+            ? patient.status === "active" && !blockedAt
             : patient.status === "invited");
       const matchesQuery =
         !q || patient.full_name.toLowerCase().includes(q) || (patient.email ?? "").toLowerCase().includes(q);
@@ -109,7 +109,7 @@ export function PatientsTable({
               </tr>
             </thead>
             <tbody>
-              {visible.map(({ conversationId, patient }) => {
+              {visible.map(({ conversationId, patient, blockedAt }) => {
                 const invited = patient.status === "invited";
                 return (
                   <tr key={patient.id} className="bg-white/80">
@@ -123,7 +123,7 @@ export function PatientsTable({
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      {patient.blocked_at ? (
+                      {blockedAt ? (
                         <Badge tone="danger" icon={<Ban aria-hidden="true" />}>
                           Blocked
                         </Badge>

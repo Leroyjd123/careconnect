@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/layout/LegalPage";
-import { CLINIC } from "@/lib/constants";
+import { CONTACT_EMAIL } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Privacy notice" };
 
@@ -9,10 +9,10 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy notice"
-      updated="2026-10-21"
+      updated="2026-11-07"
       intro={
         <p>
-          CareConnect lets you message {CLINIC.doctor}, send your reports and see your prescriptions. This notice explains, in plain
+          CareConnect lets you message your doctor, send your reports and see your prescriptions. This notice explains, in plain
           words, what we keep, who can see it and what you can ask us to do.
         </p>
       }
@@ -36,7 +36,13 @@ export default function PrivacyPage() {
           heading: "Who can see it",
           body: (
             <>
-              <p>Only you and your doctor. Every message, report and prescription is private to your conversation.</p>
+              <p>
+                You and your doctor. If more than one doctor invites you, each doctor sees only their own conversation with you.
+              </p>
+              <p>
+                A small CareConnect team can open conversations when needed for support, safety or a legal request. Every time they
+                do, it is recorded.
+              </p>
               <p>
                 Your data is stored securely with our service providers (Supabase for the database and files, Vercel for the website).
                 They store it for us and can&apos;t use it for anything else.
@@ -72,7 +78,7 @@ export default function PrivacyPage() {
           heading: "Contact",
           body: (
             <p>
-              Questions or requests: message {CLINIC.doctor} in the app, or contact {CLINIC.contact}. We&apos;ll reply within 30 days.
+              Questions or requests: message your doctor in the app, or email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. We&apos;ll reply within 30 days.
             </p>
           ),
         },

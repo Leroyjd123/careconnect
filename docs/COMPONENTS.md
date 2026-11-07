@@ -40,7 +40,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 |---|---|---|---|
 | `MessageBubble`, `ChatDivider` | `chat/MessageBubble.tsx` | Bubbles (`mine` decides side/colour), day and "new" dividers. | ✅ |
 | `FileCard`, `FileTypeTile` | `chat/FileCard.tsx` | Attachment rows in chat, Reports list, upload preview. `href` makes the row open the viewer. | ✅ |
-| `Conversation` | `chat/Conversation.tsx` | Message list + realtime + mark-read + sending + composer. Used by `/chat` AND `/doctor/c/[id]`; the role only changes props (`header`, `fileHrefBase`, `rxHrefBase`, `correctionHrefBase`, `starters`). | ✅ |
+| `Conversation` | `chat/Conversation.tsx` | Message list + realtime + mark-read + sending + composer. Used by `/chat` AND `/doctor/c/[id]`; the role only changes props (`header`, `fileHrefBase`, `rxHrefBase`, `correctionHrefBase`, `starters`, `readOnlyNotice`: replaces the composer with a Banner when the conversation is blocked or the doctor deactivated, 0005). | ✅ |
 | `Composer` | `chat/Composer.tsx` | Floating input pill: attach button, auto-growing textarea, send. `offline` shows the banner. | ✅ |
 | `MessageItem` | `chat/MessageItem.tsx` | Switch on `message.kind` → text bubble / FileCard / PrescriptionCard. Also renders pending and failed sends. | ✅ |
 | `AttachSheet` | `chat/AttachSheet.tsx` | Dialog sheet: take photo / choose photo / choose file → preview → note → send. | ✅ |
@@ -62,11 +62,11 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | Component | File | Use for | Status |
 |---|---|---|---|
 | `ConversationList` | `doctor/ConversationList.tsx` | Inbox list with search + All/Unread. Rendered once by `doctor/(inbox)/layout.tsx`; hides itself on a phone when a conversation is open. | ✅ |
-| `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity + age/height/weight, Edit details, Block/Activate, New prescription, Reports/Prescriptions tabs. Hideable on desktop. | ✅ |
+| `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity + age/height/weight, Edit details, Block/Activate (`blockedAt` = this conversation's block, 0005), New prescription, Reports/Prescriptions tabs. Hideable on desktop. | ✅ |
 | `InviteDialog` | `doctor/InviteDialog.tsx` | "Share a link" (one-time `/join` link, copy / share / WhatsApp) or "Send by email" → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
-| `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked) + actions (resend, open chat). | ✅ |
+| `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked; `blockedAt` per row = conversation block) + actions (resend, open chat). | ✅ |
 | `PatientDetailsDialog` | `doctor/PatientDetailsDialog.tsx` | Doctor edits name, email, mobile, date of birth, height, weight. Opened from PatientPanel. | ✅ |
-| `MedicineList` | `doctor/MedicineList.tsx` | Master medicines: add, edit, deactivate, merge. No delete. `/doctor/settings/medicines`. | ✅ |
+| `MedicineList` | `doctor/MedicineList.tsx` | Shared master medicines (0005). Doctors add; `canManage` (admin) adds Edit / Deactivate / Merge. No delete. `/doctor/settings/medicines`. | ✅ |
 | `ReleaseNotes` | `doctor/ReleaseNotes.tsx` | Version history on `/doctor/settings`, from `RELEASES` in `lib/releases.ts`. First entry marked Current. | ✅ |
 
 ## Server actions — `src/app/actions` (already written; build UI on these)

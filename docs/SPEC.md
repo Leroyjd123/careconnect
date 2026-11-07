@@ -7,9 +7,10 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 
 ## Roles and access
 
-- One doctor account (created by hand, see SETUP.md). Schema already supports more doctors later.
+- Several doctors (0005), each with their own patients. A patient can be invited by more than one doctor and then has one conversation per doctor. Doctors are added by the superadmin (Phase E); until then by hand (SETUP.md).
+- Superadmin (`role = 'admin'`): sees and manages everything; see docs/PLAN.md.
 - Patients exist only by invitation. Sign-up is disabled. A wrong email or password gets "That email and password don’t match. Please try again."
-- Each patient has one ongoing conversation with their doctor. No new thread per question.
+- Each patient has one ongoing conversation with each of their doctors. No new thread per question.
 - Sign-in for everyone: email or mobile number + password.
 - Joining, two ways: (1) **Share a link** (default): the doctor creates a one-time link (7 days) and shares it anywhere; the patient opens `/join/<token>` and gives name, email and/or mobile (at least one), and a password. No email, no code. (2) **Send by email**: Supabase invite email → `/set-password`.
 
@@ -55,12 +56,15 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 
 - Desktop menu collapses to an icon rail; the patient column can be hidden to widen the chat. Both remembered per browser.
 - Patient details the doctor can edit: name, email, mobile (changing either changes what the patient signs in with), date of birth (age shown), height (cm), weight (kg).
-- Block / Activate a patient. Blocked: can't sign in, message or upload (auth ban + RLS); history stays; shown as "Blocked" with icon.
+- Block / Activate a patient. Per conversation (0005): the patient can't message or upload in this doctor's chat; they can still sign in, read their history and use chats with other doctors. Shown as "Blocked" with icon. Every block and activation is audit logged.
+- Patient's composer when blocked: "You can't send messages in this chat. You can still read your messages and prescriptions."
+- When a doctor is deactivated by the admin, patient sees: "{Doctor name} is no longer available here. You can still read your messages and prescriptions." Doctor sees: "Your account is deactivated. Contact CareConnect to send messages again."
 
 ## Master medicines
 
-- Settings → Master medicines. Each doctor's own list: name + strength, optional usual dose.
-- Add, edit, deactivate (stops suggesting), merge duplicates (the duplicate becomes inactive and points at the kept one). No delete, so nothing is lost.
+- Settings → Master medicines. ONE list shared by every doctor (0005): name + strength, optional usual dose.
+- Doctors add. Only the superadmin edits, deactivates (stops suggesting) and merges duplicates (the duplicate becomes inactive and points at the kept one). No delete, so nothing is lost.
+- Doctor copy: "The list every doctor shares. Medicines are suggested when you write a prescription. Add any that are missing. To change or merge one, contact CareConnect."
 - The prescription medicine field suggests active medicines and fills the usual dose. Free text still works; "Save to my medicines" adds a new name.
 - Issued prescriptions keep the name they were written with; editing the master list never changes them.
 
@@ -93,7 +97,7 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 
 ## Patient profile & language
 
-- Language switch saves to `profiles.language`. All copy stays English this round; the switch is wired for later translation.
+- Languages: English, ಕನ್ನಡ, മലയാളം (0005; Hindi removed). Language switch saves to `profiles.language`. All copy stays English this round; the switch is wired for later translation.
 
 ## Notifications
 

@@ -13,7 +13,7 @@ export const doctor: Profile = {
   full_name: "Dr. Sharma",
   email: "doctor@example.com",
   specialty: "General Physician",
-  reg_no: "[REG NO]",
+  reg_no: "KMC 123456",
   status: "active",
   activated_at: EARLIER,
 };

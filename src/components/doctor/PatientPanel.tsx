@@ -20,6 +20,8 @@ import type { Message, PrescriptionWithPeople, Profile } from "@/lib/types";
 type PatientPanelProps = {
   conversationId: string;
   patient: Profile;
+  /** This conversation's block (0005). Blocking is per doctor, not per account. */
+  blockedAt?: string | null;
   prescriptions: PrescriptionWithPeople[];
   /** Prescription ids a newer issued one has replaced. */
   replacedRxIds: string[];
@@ -34,6 +36,7 @@ type PatientPanelProps = {
 export function PatientPanel({
   conversationId,
   patient,
+  blockedAt = null,
   prescriptions,
   replacedRxIds,
   reports,
@@ -48,7 +51,7 @@ export function PatientPanel({
   const [blockError, setBlockError] = useState<string | null>(null);
   const replaced = new Set(replacedRxIds);
   const invited = patient.status === "invited";
-  const blocked = !!patient.blocked_at;
+  const blocked = !!blockedAt;
   const firstName = patient.full_name.trim().split(/\s+/)[0] || "this patient";
   const facts = [
     patient.date_of_birth ? `${ageFrom(patient.date_of_birth)} yrs · born ${formatDate(patient.date_of_birth)}` : null,

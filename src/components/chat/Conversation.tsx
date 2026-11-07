@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MessageCircle, Search, X } from "lucide-react";
 import { markRead, sendAttachment, sendMessage } from "@/app/actions/messages";
 import { Button, IconButton } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/Feedback";
+import { Banner, EmptyState } from "@/components/ui/Feedback";
 import { TextInput } from "@/components/ui/Field";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ChatDivider } from "@/components/chat/MessageBubble";
@@ -45,6 +45,8 @@ type ConversationProps = {
   attachOnOpen?: boolean;
   /** Tap-to-send suggestions shown when the conversation is empty. */
   starters?: string[];
+  /** When set, the conversation is read-only (blocked, or the doctor is deactivated): this text replaces the composer. */
+  readOnlyNotice?: string;
 };
 
 /**
@@ -64,13 +66,14 @@ export function Conversation({
   correctionHrefBase,
   attachOnOpen,
   starters,
+  readOnlyNotice,
 }: ConversationProps) {
   const router = useRouter();
   const [confirmed, setConfirmed] = useState<Message[]>([]);
   const [pending, setPending] = useState<Pending[]>([]);
   const [draft, setDraft] = useState("");
   const [offline, setOffline] = useState(false);
-  const [attachOpen, setAttachOpen] = useState(!!attachOnOpen);
+  const [attachOpen, setAttachOpen] = useState(!!attachOnOpen && !readOnlyNotice);
   const [query, setQuery] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   // tempIds already on the wire, so a re-run of the effect below never sends twice.
@@ -322,14 +325,18 @@ export function Conversation({
         <div ref={bottomRef} />
       </div>
 
-      <Composer
-        value={draft}
-        onChange={setDraft}
-        onSend={sendDraft}
-        onAttach={() => setAttachOpen(true)}
-        offline={offline}
-        placeholder={`Message ${otherName}`}
-      />
+      {readOnlyNotice ? (
+        <Banner>{readOnlyNotice}</Banner>
+      ) : (
+        <Composer
+          value={draft}
+          onChange={setDraft}
+          onSend={sendDraft}
+          onAttach={() => setAttachOpen(true)}
+          offline={offline}
+          placeholder={`Message ${otherName}`}
+        />
+      )}
 
       <AttachSheet
         open={attachOpen}
