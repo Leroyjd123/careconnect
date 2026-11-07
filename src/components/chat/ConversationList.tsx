@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Clock, Search, UserPlus } from "lucide-react";
+import { CalendarClock, Clock, Search, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { CountBadge } from "@/components/ui/Badge";
+import { Badge, CountBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Feedback";
@@ -26,15 +26,20 @@ export function ConversationList({
   rows,
   viewerRole = "doctor",
   live = true,
+  /** Conversations where a check-in is due today or overdue (doctor only). */
+  dueCheckIns = [],
 }: {
   rows: InboxRow[];
   /** "doctor" = the inbox; "patient" = the patient's list of doctors. */
   viewerRole?: "doctor" | "patient";
   live?: boolean;
+  /** Conversation ids with a check-in due. Optional, so old callers keep working. */
+  dueCheckIns?: string[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const patient = viewerRole === "patient";
+  const due = useMemo(() => new Set(dueCheckIns), [dueCheckIns]);
   // The doctor's chats live at /doctor/c/<id>, the patient's at /chat/<id>.
   const activeId = patient
     ? pathname.startsWith("/chat/")
@@ -165,6 +170,14 @@ export function ConversationList({
                       )}
                       <CountBadge count={c.unread_count} />
                     </div>
+                    {/* A check-in is due today or overdue: say so, with an icon (never colour alone). */}
+                    {!patient && due.has(c.id) ? (
+                      <span className="mt-1 flex items-center gap-1.5">
+                        <Badge tone="warning" icon={<CalendarClock aria-hidden="true" />}>
+                          Check-in due
+                        </Badge>
+                      </span>
+                    ) : null}
                   </div>
                 </Link>
               </li>

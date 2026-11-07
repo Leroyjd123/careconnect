@@ -1,4 +1,4 @@
-import { getMyConversations } from "@/lib/data";
+import { getDoctorDueCheckIns, getMyConversations } from "@/lib/data";
 import { ConversationList } from "@/components/chat/ConversationList";
 
 /**
@@ -8,14 +8,14 @@ import { ConversationList } from "@/components/chat/ConversationList";
  * once a conversation is open.
  */
 export default async function InboxLayout({ children }: { children: React.ReactNode }) {
-  const conversations = await getMyConversations();
+  const [conversations, dueCheckIns] = await Promise.all([getMyConversations(), getDoctorDueCheckIns()]);
 
   // First run: no list to show, so the welcome screen gets the whole width.
   if (conversations.length === 0) return <>{children}</>;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 gap-4">
-      <ConversationList rows={conversations} />
+      <ConversationList rows={conversations} dueCheckIns={dueCheckIns} />
       {children}
     </div>
   );

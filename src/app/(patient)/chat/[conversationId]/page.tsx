@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { getConversation, getMessages, getMyConversations, getPrescriptions, replacedIds } from "@/lib/data";
+import { REQUEST_MEETING_TEXT } from "@/lib/constants";
+import { getConversation, getAppointments, getMessages, getMyConversations, getPrescriptions, replacedIds } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { Conversation } from "@/components/chat/Conversation";
@@ -33,7 +34,11 @@ export default async function PatientConversation({
   const inbox = await getMyConversations();
   const backHref = inbox.length > 1 ? "/chat" : "/home";
 
-  const [messages, prescriptions] = await Promise.all([getMessages(conversation.id), getPrescriptions(conversation.id)]);
+  const [messages, prescriptions, appointments] = await Promise.all([
+    getMessages(conversation.id),
+    getPrescriptions(conversation.id),
+    getAppointments(conversation.id),
+  ]);
   const doctor = conversation.doctor;
   const openFile = file ? messages.find((m) => m.id === file && m.file_path) : undefined;
 
@@ -47,10 +52,14 @@ export default async function PatientConversation({
           initialMessages={messages}
           prescriptions={prescriptions}
           replacedRxIds={replacedIds(prescriptions)}
+          meetings={appointments.meetings}
+          checkIns={appointments.checkIns}
+          viewerRole="patient"
           fileHrefBase={`/chat/${conversation.id}?file=`}
           rxHrefBase="/prescriptions/"
           attachOnOpen={attach === "1"}
           starters={STARTERS}
+          requestMeetingText={REQUEST_MEETING_TEXT}
           readOnlyNotice={
             doctor.deactivated_at
               ? `${doctor.full_name} is no longer available here. You can still read your messages and prescriptions.`

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Ban, CheckCircle2, Clock, FilePlus2, FileText, Mail, Paperclip, Pencil, Phone, UserCheck } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { Ban, CalendarClock, CalendarPlus, CheckCircle2, Clock, FilePlus2, FileText, Mail, Paperclip, Pencil, Phone, UserCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { setPatientBlocked } from "@/app/actions/patients";
 import { Badge } from "@/components/ui/Badge";
 import { Dialog } from "@/components/ui/Dialog";
@@ -11,12 +11,9 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Feedback";
 import { FileCard } from "@/components/chat/FileCard";
-import { PrescriptionCard } from "@/components/rx/PrescriptionCard";
-import { PrescriptionComposer } from "@/components/rx/PrescriptionComposer";
-import { PrescriptionView } from "@/components/rx/PrescriptionView";
-import { PatientDetailsDialog } from "@/components/doctor/PatientDetailsDialog";
+import { AppointmentCard } from "@/components/chat/AppointmentCard";
 import { ageFrom, cn, formatDate, formatDay, formatTime } from "@/lib/utils";
-import type { MedicineOption, Message, OtherDoctor, PrescriptionWithPeople, Profile } from "@/lib/types";
+import type { CheckIn, Meeting, Message, OtherDoctor, PrescriptionWithPeople, Profile } from "@/lib/types";
 
 type PatientPanelProps = {
   conversationId: string;
@@ -30,6 +27,10 @@ type PatientPanelProps = {
   reports: Message[];
   /** The patient's other doctors, by name only (decision 26). Empty when the setting is off. */
   otherDoctors?: OtherDoctor[];
+  /** The next scheduled meeting, for the "Next up" section. */
+  nextMeeting?: Meeting | null;
+  /** The next scheduled check-in, for the "Next up" section. */
+  nextCheckIn?: CheckIn | null;
   /** "column" (default) is the desktop column. "sheet" is the phone sheet: no card chrome, no own scroll. */
   variant?: "column" | "sheet";
   /** Only overridden by /styleguide. */
@@ -49,6 +50,8 @@ export function PatientPanel({
   replacedRxIds,
   reports,
   otherDoctors = [],
+  nextMeeting = null,
+  nextCheckIn = null,
   variant = "column",
   blockAction = setPatientBlocked,
 }: PatientPanelProps) {
@@ -132,6 +135,10 @@ export function PatientPanel({
           New prescription
         </ButtonLink>
         <div className="flex flex-wrap gap-2">
+          <ButtonLink href={`${base}?appt=meeting`} variant="secondary" size="sm" className="flex-1">
+            <CalendarPlus aria-hidden="true" className="size-4" />
+            Schedule
+          </ButtonLink>
           <ButtonLink href={`${base}?details=1`} variant="secondary" size="sm" className="flex-1">
             <Pencil aria-hidden="true" className="size-4" />
             Edit details
@@ -162,7 +169,36 @@ export function PatientPanel({
         </ul>
       </section>
 
-      {/* Phase D: Next up — next meeting and check-in. */}
+      {/* ── Next up ────────────────────────────────────────────── */}
+      <section className="flex flex-col gap-2" aria-label="Next up">
+        <h3 className="text-[13px] font-semibold tracking-wider text-ink-label uppercase">Next up</h3>
+        {nextMeeting || nextCheckIn ? (
+          <div className="flex flex-col gap-2">
+            {nextMeeting ? (
+              <AppointmentCard
+                type="meeting"
+                meeting={nextMeeting}
+                viewerRole="doctor"
+                compact
+                href={`${base}?appt=${nextMeeting.id}`}
+              />
+            ) : null}
+            {nextCheckIn ? (
+              <AppointmentCard
+                type="check_in"
+                checkIn={nextCheckIn}
+                viewerRole="doctor"
+                compact
+                href={`${base}?appt=${nextCheckIn.id}`}
+              />
+            ) : null}
+          </div>
+        ) : (
+          <EmptyState icon={CalendarClock} title="Nothing scheduled">
+            Set a meeting or a check-in for {firstName}.
+          </EmptyState>
+        )}
+      </section>
 
       {/* ── Latest prescription ─────────────────────────────────── */}
       <section className="flex flex-col gap-2" aria-label="Latest prescription">
@@ -284,211 +320,3 @@ export function PatientPanel({
   );
 }
 
-
-type PatientPopupsProps = {
-  conversationId: string;
-  patient: Profile;
-  /** This conversation's block (0005). Blocking is per doctor, not per account. */
-  blockedAt?: string | null;
-  prescriptions: PrescriptionWithPeople[];
-  /** Prescription ids a newer issued one has replaced. */
-  replacedRxIds: string[];
-  /** The file messages in this conversation, newest first. */
-  reports: Message[];
-  /** The patient's other doctors, by name only (decision 26). */
-  otherDoctors?: OtherDoctor[];
-  /** The doctor's master medicines, for the prescription popup. */
-  suggestions?: MedicineOption[];
-  /** Only overridden by /styleguide. */
-  blockAction?: typeof setPatientBlocked;
-};
-
-/**
- * The doctor's popups for one patient (decision 73). Every popup is opened by the query
- * string, so a link works, a reload works and Back works. Closing replaces the URL, so
- * the history never fills up with popups.
- *
- * This sits outside the patient column on purpose: a native <dialog> inside a
- * display:none ancestor is not painted, so the popups live in the page, not in the
- * column that hides itself on a phone.
- */
-export function PatientPopups({
-  conversationId,
-  patient,
-  blockedAt = null,
-  prescriptions,
-  replacedRxIds,
-  reports,
-  otherDoctors = [],
-  suggestions = [],
-  blockAction = setPatientBlocked,
-}: PatientPopupsProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const search = useSearchParams();
-  const replaced = new Set(replacedRxIds);
-  const firstName = patient.full_name.trim().split(/\s+/)[0] || "this patient";
-  const base = `/doctor/c/${conversationId}`;
-
-  const rxParam = search.get("rx");
-  const replacesParam = search.get("replaces");
-  const detailsOpen = search.get("details") === "1";
-  const listOpen = search.get("prescriptions") === "1";
-  const reportsOpen = search.get("reports") === "1";
-  const panelParam = search.get("panel") === "1";
-  // The patient sheet is the phone's version of the column. On a wide screen the column
-  // is already there, so the sheet stays closed and the column does the work.
-  const [isPhone, setIsPhone] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    const update = () => setIsPhone(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  const panelOpen = panelParam && isPhone;
-  // The prescription the popup shows: an issued one to read, or a draft to continue.
-  const openRx = rxParam && rxParam !== "new" ? prescriptions.find((p) => p.id === rxParam) : undefined;
-  // The issued prescription a correction starts from.
-  const replacesRx = replacesParam ? prescriptions.find((p) => p.id === replacesParam) : undefined;
-  // "?rx=new" continues the newest plain draft, so closing the popup keeps the work.
-  const newDraft = rxParam === "new" && !replacesRx ? prescriptions.find((p) => p.status === "draft" && !p.replaces_id) : undefined;
-  // A draft is edited; an issued one is only read.
-  const editingDraft = rxParam === "new" ? (newDraft ?? null) : openRx?.status === "draft" ? openRx : null;
-  const readingRx = rxParam !== "new" && openRx && openRx.status !== "draft" ? openRx : null;
-
-  /** Closing a popup replaces the URL, so the history never fills up with popups. */
-  function closePopup() {
-    router.replace(pathname);
-  }
-
-  return (
-    <>
-      {/* On a phone the patient column is gone, so the same panel opens as a sheet. */}
-      {panelOpen ? (
-        <Dialog
-          open
-          onClose={closePopup}
-          size="lg"
-          variant="sheet"
-          title={patient.full_name}
-          description="Patient details"
-        >
-          <PatientPanel
-            conversationId={conversationId}
-            patient={patient}
-            blockedAt={blockedAt}
-            prescriptions={prescriptions}
-            replacedRxIds={replacedRxIds}
-            reports={reports}
-            otherDoctors={otherDoctors}
-            variant="sheet"
-            blockAction={blockAction}
-          />
-        </Dialog>
-      ) : null}
-
-      {/* Write a prescription, read one, or correct one. */}
-      {rxParam ? (
-        <Dialog
-          open
-          onClose={closePopup}
-          size="lg"
-          title={readingRx ? "Prescription" : replacesRx ? "Correction" : editingDraft ? "Prescription draft" : "New prescription"}
-          description={
-            readingRx
-              ? `Issued ${formatDate(readingRx.issued_at ?? readingRx.created_at)}.`
-              : replacesRx
-                ? `This replaces the prescription from ${formatDay(replacesRx.issued_at ?? replacesRx.created_at)}. Both stay on record.`
-                : `${patient.full_name}. Nothing reaches them until you issue it.`
-          }
-        >
-          {readingRx ? (
-            <PrescriptionView
-              prescription={readingRx}
-              replaced={replaced.has(readingRx.id)}
-              actions={
-                <>
-                  <ButtonLink href={`/rx/${readingRx.id}/print`} target="_blank" variant="secondary" block>
-                    Open print view
-                  </ButtonLink>
-                  {replaced.has(readingRx.id) ? null : (
-                    <ButtonLink href={`${base}?rx=new&replaces=${readingRx.id}`} variant="soft" block>
-                      Issue a correction
-                    </ButtonLink>
-                  )}
-                </>
-              }
-            />
-          ) : (
-            <PrescriptionComposer
-              conversationId={conversationId}
-              patient={patient}
-              draft={editingDraft}
-              replaces={replacesRx ?? null}
-              suggestions={suggestions}
-              closeHref={base}
-            />
-          )}
-        </Dialog>
-      ) : null}
-
-
-      {/* Edit the patient's details. */}
-      {detailsOpen ? <PatientDetailsDialog patient={patient} open onClose={closePopup} /> : null}
-
-      {/* Every prescription in this conversation. */}
-      {listOpen ? (
-        <Dialog open onClose={closePopup} size="lg" title="All prescriptions" description={`${prescriptions.length} in this chat.`}>
-          {prescriptions.length === 0 ? (
-            <EmptyState icon={FileText} title="No prescriptions yet">
-              Drafts stay private until you issue them.
-            </EmptyState>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {prescriptions.map((rx) => (
-                <li key={rx.id}>
-                  <PrescriptionCard
-                    draft={rx.status === "draft"}
-                    issuedAt={rx.status === "draft" ? undefined : (rx.issued_at ?? rx.created_at)}
-                    medicines={(rx.prescription_items ?? []).map((i) => i.medicine)}
-                    replaced={replaced.has(rx.id)}
-                    actions={
-                      <ButtonLink href={`${base}?rx=${rx.id}`} variant="outline" size="sm">
-                        {rx.status === "draft" ? "Continue draft" : "View"}
-                      </ButtonLink>
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Dialog>
-      ) : null}
-
-      {/* Every report in this conversation. */}
-      {reportsOpen ? (
-        <Dialog open onClose={closePopup} size="lg" title="All reports" description={`${reports.length} in this chat.`}>
-          {reports.length === 0 ? (
-            <EmptyState icon={Paperclip} title="No reports yet">
-              Anything {firstName} sends will show up here.
-            </EmptyState>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {reports.map((m) => (
-                <li key={m.id}>
-                  <FileCard
-                    name={m.file_name ?? "Attachment"}
-                    type={m.file_type}
-                    meta={`${formatDay(m.created_at)}, ${formatTime(m.created_at)}`}
-                    href={`${base}?file=${m.id}`}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Dialog>
-      ) : null}
-    </>
-  );
-}

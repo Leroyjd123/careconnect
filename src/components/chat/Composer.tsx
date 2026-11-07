@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { Paperclip, Send } from "lucide-react";
 import { IconButton } from "@/components/ui/Button";
 import { Banner } from "@/components/ui/Feedback";
@@ -15,11 +15,14 @@ type ComposerProps = {
   onAttach?: () => void;
   offline?: boolean;
   placeholder?: string;
+  /** Lets the page focus the input, e.g. after "Request a meeting". */
+  inputRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
 /** The floating input pill at the bottom of every conversation. */
-export function Composer({ value, onChange, onSend, onAttach, offline, placeholder = "Type a message" }: ComposerProps) {
-  const ref = useRef<HTMLTextAreaElement>(null);
+export function Composer({ value, onChange, onSend, onAttach, offline, placeholder = "Type a message", inputRef }: ComposerProps) {
+  const localRef = useRef<HTMLTextAreaElement>(null);
+  const ref = inputRef ?? localRef;
   const [enterSends, setEnterSends] = useState(false);
 
   // On a phone, Enter makes a new line. With a keyboard it sends.
@@ -30,7 +33,7 @@ export function Composer({ value, onChange, onSend, onAttach, offline, placehold
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT)}px`;
-  }, [value]);
+  }, [value, ref]);
 
   function send() {
     if (!value.trim()) return;

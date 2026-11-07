@@ -83,7 +83,45 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 - The wide popups use `Dialog size="lg"`: ~720px on a desktop, a full-height sheet on a phone, with the body scrolling and the footer in place.
 - Block and Activate keep a small confirmation dialog inside the panel, because it acts at once and the doctor has to be sure.
 - On a phone the panel opens as a sheet from the chat header, with the same sections. There is no second, mobile-only panel.
-- **Next up** (the next meeting and the next check-in) is Phase D. Until then the section is a placeholder.
+- **Next up**: the next meeting and the next check-in, as compact cards. Empty state: "Nothing scheduled — Set a meeting or a check-in for {first name}."
+
+## Meetings and check-ins (Phase D, decisions 29–42, 68–72)
+
+Two kinds of appointment, one card and one popup, switched by `type`.
+
+- A **meeting** is a video call at a time: a pasted `https://` link (Google Meet, Zoom, anything), a date, a time, a length and an optional note.
+- A **check-in** is a reminder to come back on a date: a due date and a reason. No link, no time of day.
+
+### The card (in the chat, on the patient's home, in the panel)
+
+- **Meeting**: a badge with words and an icon — "Scheduled", "Starting soon" (15 minutes or less), "Now", "Completed", "Cancelled". The date, the time and the length are shown.
+- **Check-in**: a badge with words and an icon — "Scheduled" (with the due date, e.g. "Due Fri, 15 Nov"), "Due today", "Overdue", "Done", "Cancelled". The reason is shown.
+- **"Join meeting"** opens the link in a new tab. It only becomes live 10 minutes before the start and stops at the end; before then it reads "Join meeting (opens 10 minutes before)".
+- The doctor gets a "Manage" link on the card, which opens the popup for that appointment.
+- The patient's home shows that doctor's next meeting on their card.
+
+### The popup (the doctor)
+
+- Opened by the query string: `?appt=meeting`, `?appt=check_in`, `?appt=<id>`. Closing replaces the URL, so the history stays clean.
+- A new appointment starts on the **Meeting** tab; the **Segmented** switches to **Check-in**.
+- **Meeting form**: date, time, how long (15 minutes, 30, 45, 60 or Custom), the meeting link, and an optional note for the patient.
+- **Check-in form**: "In" chips (3 days, 1 week, 2 weeks, 1 month, or a custom date) and a reason. The reason is required.
+- If the meeting overlaps another of the doctor's meetings, a banner says so — "You already have a meeting at {time}. You can still schedule this one." It warns, it never blocks.
+- An existing appointment can be **rescheduled** (date, time, length, link, note), **cancelled** (with a confirmation) or **marked done**. A check-in can also be **turned into a meeting**: the meeting form opens prefilled, the reason becomes the note, and the check-in links to the meeting and becomes done.
+- The doctor opens the popup from the panel's "Schedule" button, from the "Manage" link on a card, and from the panel's "Next up" cards.
+
+### Rules
+
+- Only the conversation's doctor schedules. A patient asks with **"Request a meeting"**, which sends the message "I'd like to schedule a video meeting." and creates nothing.
+- A link must start with `https://` and be at most 500 characters. A meeting lasts 5 to 240 minutes. A note is at most 500 characters. A reason is 2 to 300 characters. A meeting cannot start in the past, and a check-in cannot be due in the past.
+- Every change posts a card in the chat, so both sides see the same history.
+- The doctor's inbox shows a small **"Check-in due"** badge on a conversation with a check-in due today or overdue.
+- **Settings → Meetings → Mark meetings complete automatically**: on by default. When it is on, a meeting is marked done 15 minutes after it starts.
+- The reminders cron sends both sides "Meeting in 15 minutes" before a meeting, and "Check-in due today" once on the morning a check-in is due. The notification never shows the time, the link, the note or the reason.
+
+### Doctor copy
+
+- "Schedule a meeting", "Set a check-in", "Join meeting", "Meeting cancelled", "Check-in due", "Request a meeting", "Nothing scheduled", "Turn into a meeting", "Mark done", "Overdue", "Due today".
 
 ## Master medicines
 

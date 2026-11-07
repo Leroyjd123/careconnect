@@ -51,8 +51,8 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 | A | Database migration 0005 | – | ✅ applied to Supabase 2026-11-07 |
 | B | Multi-doctor clean-up | v0.7.0 | ✅ done 2026-11-07 |
 | C | Patient with several doctors | v0.7.0 | ✅ done 2026-11-07 |
-| P | Patient panel → summary + popups | v0.7.0 | ✅ done 2026-11-07 (Next up waits for Phase D) |
-| D | Meetings + check-ins | v0.7.0 | ☐ |
+| P | Patient panel → summary + popups | v0.7.0 | ✅ done 2026-11-07 |
+| D | Meetings + check-ins | v0.7.0 | ✅ done 2026-11-11 |
 | E | Superadmin panel + audit log | v0.8.0 | ☐ |
 | G | Landing page | v0.9.0 | ☐ components approved |
 | F | Docs, consent, releases | each release | ☐ |
@@ -260,8 +260,8 @@ Leroy: reply "approve <name>" or suggest an alternative. Agents: do not build an
 
 | Proposed | Phase | Why an existing one can't be extended | Built from | Status |
 |---|---|---|---|---|
-| `chat/AppointmentCard` (`type`: meeting \| check_in) | D | Shown in chat, patient home and PatientPanel. Nothing displays a scheduled item today. | `Card`, `IconTile`, `Badge`, `ButtonLink` | ✅ approved 2026-11-07 |
-| `chat/AppointmentDialog` (`type`: meeting \| check_in) | D | Schedule / reschedule form. Opens from chat header, PatientPanel and admin. | `Dialog`, `Segmented`, `Field`, `TextInput`, `TextArea`, `ChipGroup allowCustom`, `Button` | ✅ approved 2026-11-07 |
+| `chat/AppointmentCard` (`type`: meeting \| check_in) | D | Shown in chat, patient home and PatientPanel. Nothing displays a scheduled item today. | `Card`, `IconTile`, `Badge`, `ButtonLink` | ✅ approved 2026-11-07 · done in Phase D |
+| `chat/AppointmentDialog` (`type`: meeting \| check_in) | D | Schedule / reschedule form. Opens from chat header, PatientPanel and admin. | `Dialog`, `Segmented`, `Field`, `TextInput`, `TextArea`, `ChipGroup allowCustom`, `Button` | ✅ approved 2026-11-07 · done in Phase D |
 | `Dialog` size `lg` (extension, no new file) | P | Prescription composer and "view all" lists need a wide popup (≈720px desktop, full-screen sheet on phone). | `Dialog` | allowed (extension) |
 | Move `doctor/ConversationList` → `chat/ConversationList` + `viewerRole` prop | C, E | Patients (2+ doctors) and admin need the same list. Move, don't copy. | itself | ✅ approved 2026-11-07 · done in Phase C |
 | Rename `layout/DoctorSidebar` → `layout/AppSidebar` with `items` prop | E | Admin needs the same sidebar with different links. | itself | ✅ approved 2026-11-07 |
@@ -379,15 +379,18 @@ Goal: the right-hand `PatientPanel` only shows information; every action opens a
       details (age, height, weight) → **Next up** (next meeting and next check-in, as compact `AppointmentCard`s)
       → **Latest prescription** (date, medicine names, "View") → **Reports** (count + 2 latest `FileCard`s,
       "View all") → **Also consults** (only when enabled).
-      Done, except **Next up**: it needs `AppointmentCard` from Phase D, so the section is a placeholder comment for now.
+      Done in Phase P except **Next up**, which needed `AppointmentCard`; **Next up is now built (Phase D)**.
 - [x] Action bar under identity: `New prescription` (the panel's one primary), `Schedule` menu
       (Meeting / Check-in), `⋯` (Edit details, Block, Invite again).
       Done: `New prescription` (primary), then `Edit details` and `Block`. The `Schedule` menu and `Invite again`
       need Phase D and the invite flow, so they are not here yet.
+      **Phase D added a `Schedule` button** that opens `?appt=meeting` (the Segmented inside the popup switches to
+      Check-in). `Invite again` still needs the invite flow.
 - [x] Popups (all `Dialog`, query-string driven so links work): `?rx=new` / `?rx=<id>` → `PrescriptionComposer`
       inside `Dialog size="lg"`; `?appt=meeting` / `?appt=check_in` / `?appt=<id>` → `AppointmentDialog`;
       `?details=1` → `PatientDetailsDialog`; `?reports=1` / `?prescriptions=1` → lists in `Dialog size="lg"`.
       Done, except the appointment popups: `AppointmentDialog` is Phase D.
+      **The appointment popups are now built (Phase D)** and live in `doctor/PatientPopups.tsx`.
 - [x] Remove the Reports/Prescriptions tabs and the inline composer from the panel. Phone: panel opens as a sheet
       from the chat header, same sections.
 - [x] Autosave, review-and-issue and corrections keep working inside the popup (closing keeps the draft).
@@ -414,26 +417,60 @@ Phase P notes (2026-11-07):
   old one "Replaced", and the patient's list still shows both prescriptions.
 
 ### Phase D: meetings + check-ins (v0.7.0)
-- [ ] `src/app/actions/meetings.ts`: `scheduleMeeting`, `updateMeeting`, `cancelMeeting`, `completeMeeting`,
+- [x] `src/app/actions/meetings.ts`: `scheduleMeeting`, `updateMeeting`, `cancelMeeting`, `completeMeeting`,
       `setMeetingAutoComplete`. Each posts a `kind='meeting'` message and pushes "Dr. X scheduled / moved /
       cancelled a meeting".
-- [ ] Doctor entry points: chat header and `PatientPanel` → `?meet=new` / `?meet=<id>` (query string pattern).
-- [ ] Form: date, time, duration (`ChipGroup` 15 default, 30, 45, custom), link (any `https://`), note.
+- [x] Doctor entry points: chat header and `PatientPanel` → `?appt=meeting` / `?appt=check_in` / `?appt=<id>` (query string pattern).
+- [x] Form: date, time, duration (`ChipGroup` 15 default, 30, 45, custom), link (any `https://`), note.
       Overlap with the doctor's other meetings → `Banner` warning, still allowed.
-- [ ] Meeting card in chat; "Upcoming meeting" on patient home; "Meetings" tab in `PatientPanel`.
-- [ ] "Join meeting" enabled from 10 min before start until the end; status badge text + icon.
-- [ ] Patient "Request a meeting" → sends the chat message "I'd like to schedule a video meeting."
-- [ ] Doctor Settings: toggle "Mark meetings complete automatically 15 minutes after they start".
-- [ ] **Check-ins**: `scheduleCheckIn`, `updateCheckIn`, `completeCheckIn`, `cancelCheckIn`, `convertCheckInToMeeting`
+- [x] Meeting card in chat; "Upcoming meeting" on patient home; "Meetings" tab in `PatientPanel`.
+- [x] "Join meeting" enabled from 10 min before start until the end; status badge text + icon.
+- [x] Patient "Request a meeting" → sends the chat message "I'd like to schedule a video meeting."
+- [x] Doctor Settings: toggle "Mark meetings complete automatically 15 minutes after they start".
+- [x] **Check-ins**: `scheduleCheckIn`, `updateCheckIn`, `completeCheckIn`, `cancelCheckIn`, `convertCheckInToMeeting`
       in `actions/meetings.ts`. Popup: type = Check-in, "In" chips (3 days, 1 week, 2 weeks, 1 month, Custom date)
       → due date, reason (required, e.g. "Review BP after new tablets").
-- [ ] Check-in card states: Scheduled ("Due Fri, 15 Nov"), Due today, Overdue (badge text + icon), Done, Cancelled.
+- [x] Check-in card states: Scheduled ("Due Fri, 15 Nov"), Due today, Overdue (badge text + icon), Done, Cancelled.
       Doctor actions: Mark done, Reschedule, Cancel, Turn into meeting.
-- [ ] Cron route also sends the check-in push once on the due date (morning run, `reminded_at`) to both sides.
-- [ ] Doctor inbox: conversations with a check-in due today or overdue show a small "Check-in due" badge.
-- [ ] `src/app/api/cron/reminders/route.ts`: checks `Authorization: Bearer ${CRON_SECRET}`; sends the
+- [x] Cron route also sends the check-in push once on the due date (morning run, `reminded_at`) to both sides.
+- [x] Doctor inbox: conversations with a check-in due today or overdue show a small "Check-in due" badge.
+- [x] `src/app/api/cron/reminders/route.ts`: checks `Authorization: Bearer ${CRON_SECRET}`; sends the
       15-minute reminder once (`reminded_at`); auto-completes meetings where the doctor's setting is on.
       Add `CRON_SECRET` to `.env.example` and `docs/SETUP.md` (cron-job.org every 5 min).
+
+#### Phase D notes
+
+- **One card, one popup** (decision 72): `chat/AppointmentCard` and `chat/AppointmentDialog`, switched by
+  `type`. The names in §6 stand; the ASCII designs approved on 2026-11-07 are not in this repo, so the card
+  and the popup were built from the written states in this section and decision 72.
+- **`?appt=` is the query string**, not `?meet=`. `?appt=meeting`, `?appt=check_in`, `?appt=<id>`. The popup is
+  opened by `PatientPopups` (`doctor/PatientPopups.tsx`), which now lives in its own file — one component per
+  file (Phase P housekeeping).
+- **PatientPopups moved** out of `doctor/PatientPanel.tsx` into `doctor/PatientPopups.tsx`. No behaviour change.
+- **`PatientPanel` has a "Next up" section** (next meeting + next check-in as compact cards, empty state
+  "Nothing scheduled") and a **"Schedule"** button that opens `?appt=meeting`. The Segmented inside the popup
+  switches to Check-in.
+- **The chat header is unchanged** (decision 74): there was no free action slot there, and the panel's
+  "Schedule" button plus the "Manage" link on each card cover the doctor's entry points.
+- **The doctor's inbox** shows a "Check-in due" badge (`ConversationList` prop `dueCheckIns`, optional and
+  backward-compatible). The badge is words + an icon, never colour alone.
+- **`getDoctorDueCheckIns()`** returns conversation ids with a check-in due today or overdue; the badge is
+  derived from it.
+- **Patient "Request a meeting"** is a soft button next to the composer that puts the fixed text
+  "I'd like to schedule a video meeting." into the input. It creates nothing (decision 31).
+- **Realtime**: `meetings` and `check_ins` are in the realtime publication, so `Conversation` subscribes to both
+  and refreshes the card when a row changes.
+- **`notifyConversationAsSystem()`** was added to `lib/push.ts`: the cron has no session, so `push_targets()`
+  (which needs `auth.uid()`) cannot be called the normal way. It reads both members' devices with the service
+  role and sends the same lock-screen-safe note. The notification never carries the note, the reason or the link.
+- **`CRON_SECRET`** guards `/api/cron/reminders`. Without it the route always answers 401, with no detail.
+  Every service-role write in the route writes its own `audit_log` row with a system actor (`logAudit(admin, null, …)`
+  — `lib/audit.ts` already supported `actor = null` → `actor_role: "system"`).
+- **Dates and times** go through `lib/utils.ts` only: `todayInAppZone()`, `addDays()`, `daysUntil()`,
+  `formatDue()`, `formatDayMonth()`, `formatTimeOn()`, `toIsoInAppZone()`, `appZoneDay()`, `appZoneTime()`.
+  `toIsoInAppZone()` was checked by hand: it round-trips every wall-clock time in `Asia/Kolkata`.
+- **The Settings toggle** is a page-local client component (`app/doctor/settings/MeetingAutoComplete.tsx`) built
+  from the existing `Segmented` primitive. There is no switch primitive in the design system.
 
 ### Phase E: superadmin (v0.8.0)
 - [ ] `src/app/admin/layout.tsx` with `requireProfile("admin")`. `homeFor('admin')` = `/admin`. Middleware allows it.
@@ -478,6 +515,10 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 |---|---|---|---|
 | ~~Q-K~~ | Resolved 2026-11-07 (yes) and built: `acceptInviteLink`, `/join` accept card, `/login?next=`. | – | – |
 | ~~Q-L~~ | Resolved 2026-11-07 and built in Phase P: the prescriptions filter chip list comes from the prescriptions' own doctors, so a card can always be filtered by its doctor — even when that doctor is no longer in the patient's chats. The blocked-but-still-has-"Send a report" case is fine as it is. | – | – |
+| Q-M | **The ASCII designs approved on 2026-11-07 (decision 67) are not in this repo.** Only the decision text survived, so `AppointmentCard` and `AppointmentDialog` were built from the written states in §7 Phase D and decision 72. If the original drawings matter, they should be pasted into §6 so the next pass can match them. | Paste the two ASCII designs into §6, or accept what Phase D built. | Nothing — Phase D shipped. |
+| Q-N | **The doctor has no "Schedule" button in the chat header** (decision 74 said the header stays as it is, and there was no free action slot). Phase D put "Schedule" in the patient panel instead, plus a "Manage" link on every appointment card. Is that enough, or should the chat header grow a button? | Keep it in the panel. The header stays exactly as the 2026-11-07 screenshot. | Nothing — Phase D shipped. |
+| Q-O | **The Settings on/off switch uses `Segmented`** because the design system has no switch primitive. Two pills ("On" / "Off") are a bit heavy for a boolean. Should a switch primitive be added to the design system? | Leave it as `Segmented` for now; add a switch only when a second boolean needs it. | Nothing — Phase D shipped. |
+| Q-P | **The ASCII designs for the "Schedule" menu** (Meeting / Check-in) and the `⋯` menu (Edit details, Block, Invite again) from Phase P are still not built. Phase D used a single "Schedule" button that opens the popup with the Segmented inside, instead of a two-item menu. Should it become a real menu? | Keep the single button. The popup's Segmented does the same job with fewer parts. | Nothing — Phase D shipped. |
 
 ---
 

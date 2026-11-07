@@ -33,6 +33,105 @@ function dayKey(date: Date) {
   return date.toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE });
 }
 
+/** Today in the app time zone, e.g. "2026-10-12". */
+export function todayInAppZone(now = new Date()) {
+  return dayKey(now);
+}
+
+/** The day `days` after today in the app time zone, e.g. "2026-10-15". */
+export function addDays(days: number, now = new Date()) {
+  const base = new Date(`${dayKey(now)}T00:00:00Z`);
+  base.setUTCDate(base.getUTCDate() + days);
+  return base.toISOString().slice(0, 10);
+}
+
+/** Whole days from today to a YYYY-MM-DD date. Negative = in the past. */
+export function daysUntil(date: string, now = new Date()) {
+  const a = Date.parse(`${date}T00:00:00Z`);
+  const b = Date.parse(`${dayKey(now)}T00:00:00Z`);
+  return Math.round((a - b) / 86_400_000);
+}
+
+/** The hour of the moment in the app time zone, 0–23. */
+export function hourInAppZone(date: Date = new Date()) {
+  const hour = date.toLocaleTimeString("en-US", {
+    timeZone: APP_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return Number(hour.split(":")[0]);
+}
+
+/** "Today", "Tomorrow", "Fri, 15 Nov" — how a due date reads. */
+export function formatDue(date: string, now = new Date()) {
+  const diff = daysUntil(date, now);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(LOCALE, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
+/** "15 Nov 2026" — a calendar date, without a weekday. */
+export function formatDayMonth(date: string) {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(LOCALE, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** "4:30 pm" on a YYYY-MM-DD date + a "HH:mm" time, in the app time zone. */
+export function formatTimeOn(date: string, time: string) {
+  return new Date(`${date}T${time}:00`).toLocaleTimeString(LOCALE, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: APP_TIME_ZONE,
+  });
+}
+
+/** A YYYY-MM-DD date and a "HH:mm" time in the app time zone → an ISO instant. */
+export function toIsoInAppZone(date: string, time: string) {
+  // Build the instant by reading back the wall-clock time in the app zone: start from
+  // the naive UTC guess, then correct by the difference between the two readings.
+  const naive = Date.parse(`${date}T${time}:00Z`);
+  const readBack = readAppZoneParts(naive);
+  const asUtc = Date.parse(`${readBack.day}T${readBack.time}:00Z`);
+  return new Date(naive - (asUtc - naive)).toISOString();
+}
+
+/** The calendar day (app time zone) an instant falls on, e.g. "2026-10-12". */
+export function appZoneDay(iso: string) {
+  return readAppZoneParts(Date.parse(iso)).day;
+}
+
+/** The time (app time zone) an instant falls on, e.g. "16:30". */
+export function appZoneTime(iso: string) {
+  return readAppZoneParts(Date.parse(iso)).time;
+}
+
+/** The day and the time an instant reads as, in the app time zone. */
+function readAppZoneParts(ms: number) {
+  // en-CA gives "2026-11-07, 22:00" — already the shape we need.
+  const [day, time] = new Date(ms).toLocaleDateString("en-CA", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).split(", ");
+  return { day, time };
+}
+
 function daysAgo(iso: string, now = new Date()) {
   const a = Date.parse(dayKey(new Date(iso)));
   const b = Date.parse(dayKey(now));

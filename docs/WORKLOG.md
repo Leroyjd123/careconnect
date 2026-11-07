@@ -18,6 +18,7 @@ Rules for whoever edits this file:
 - Phase B done (v0.7.0 started): per-conversation blocking, shared medicines (admin manages), audit helper, legal pages, Malayalam.
 - Phase C done: a patient can have several doctors. `/chat` is a router (0 / 1 / 2+ doctors), the chat moved to `/chat/[conversationId]`, home shows one card per doctor, prescriptions show the doctor and can be filtered by doctor, the patient edits their own DOB/height/weight, the doctor's panel can show "Also consults", notifications name the sender.
 - Phase P done: the doctor's panel is a read-only summary and every action opens a query-string popup (`?rx=new` / `?rx=<id>` / `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`, `?panel=1` for the phone sheet). `Dialog` grew `size="lg"` and `closeHref`. Q-L resolved (filter chips come from the prescriptions' own doctors). Next: Phase D (meetings + check-ins), which adds "Next up" to the panel and the `?appt=` popups.
+- Phase D done: meetings (a pasted `https://` link + a time) and check-ins (a due date + a reason) share one card and one popup, switched by `type` (`chat/AppointmentCard`, `chat/AppointmentDialog`). The doctor schedules them from the panel ("Schedule" button) or from a "Manage" link on a card; the patient sees every card in the chat and their next meeting on their home. `?appt=meeting` / `?appt=check_in` / `?appt=<id>` open the popup. The inbox shows a "Check-in due" badge, Settings has the auto-complete switch, and `/api/cron/reminders` sends the 15-minute and due-today reminders. Next: Phase E (superadmin).
 
 ## State — 2026-10-20
 
@@ -116,6 +117,20 @@ Newest last. Never delete an entry; add a superseding one instead.
 - **The prescriptions filter chips come from the prescriptions' own doctors** (Q-L), not from the patient's chat list, so a card can always be filtered by the doctor who issued it, even when that doctor is no longer in their chats.
 - **`getOtherDoctors()` logs and returns `[]`** instead of throwing: it is a nice-to-have section, and a failure must not take the whole conversation down.
 - **`min-w-0` on the doctor's flex rows** (`(inbox)/layout.tsx` and the conversation page). Without it the chat column grew to its content width (648px on a 390px phone) and the page scrolled sideways, pushing the chat header's buttons off screen. The `ConversationList` hides itself on a phone, but the row it left behind still had to be allowed to shrink.
+- **One card, one popup** (decision 72): `chat/AppointmentCard` and `chat/AppointmentDialog`, switched by `type`. The popup's `Segmented` picks Meeting or Check-in, so there is no second form and no second file.
+- **`PatientPopups` moved** to its own file, `doctor/PatientPopups.tsx` (Phase P housekeeping: one component per file). No behaviour change — it was already a second export of `doctor/PatientPanel.tsx`.
+- **The appointment popup is opened by `?appt=`**, not `?meet=`: `?appt=meeting`, `?appt=check_in`, `?appt=<id>`. Closing replaces the URL, like the other popups.
+- **The doctor's "Schedule" button is in the patient panel**, not the chat header (decision 74: the header stays as it is, and there was no free action slot). A "Manage" link on every appointment card is the second way in.
+- **The patient panel has a "Next up" section**: the next meeting and the next check-in as compact cards, or "Nothing scheduled".
+- **The "Check-in due" badge** sits on the inbox row. `ConversationList` gained an optional `dueCheckIns` prop, so old callers keep working.
+- **The patient's "Request a meeting"** is a soft button next to the composer that puts the fixed text into the input. It creates nothing (decision 31).
+- **Realtime**: `Conversation` now also subscribes to `meetings` and `check_ins`, so a moved, cancelled or completed appointment updates the card without a reload.
+- **`notifyConversationAsSystem()`** was added to `lib/push.ts` (no new file): the cron has no session, so `push_targets()` — which needs `auth.uid()` — cannot be called the normal way. It reads both members' devices with the service role and sends the same lock-screen-safe note.
+- **The cron route is `/api/cron/reminders`** (GET). It answers 401 unless `Authorization: Bearer ${CRON_SECRET}` matches, and returns JSON counts only. It is idempotent: `reminded_at` marks what has already been sent.
+- **Every service-role write in the cron writes its own `audit_log` row** with a system actor. `lib/audit.ts` already accepted `actor = null` → `actor_role: "system"`, so no change was needed there.
+- **All dates and times go through `lib/utils.ts`**: `todayInAppZone()`, `addDays()`, `daysUntil()`, `formatDue()`, `formatDayMonth()`, `formatTimeOn()`, `toIsoInAppZone()`, `appZoneDay()`, `appZoneTime()`. `toIsoInAppZone()` round-trips every wall-clock time in `Asia/Kolkata` (checked by hand).
+- **The Settings on/off switch is a `Segmented`**, because the design system has no switch primitive. It is a page-local client component (`app/doctor/settings/MeetingAutoComplete.tsx`).
+- **`Composer` gained an optional `inputRef`**, so "Request a meeting" can put the text in and focus the field. Backward-compatible: without it, the composer keeps its own ref.
 
 ## Known gaps — deliberate, not bugs
 
@@ -137,3 +152,4 @@ Newest last. Never delete an entry; add a superseding one instead.
 - **Phase 5** — `PatientsTable` with Resend / Open chat, `/profile` with the language switch, doctor first-run welcome, `loading.tsx` and `error.tsx` for both segments.
 - **Phase 6** — deleted `ComingSoon`, merged the duplicate tab bars and draft card, replaced the last three raw `<button>`s with primitives, confirmed no hex colours or hand-rolled glass outside `globals.css`, updated `docs/COMPONENTS.md` and `/styleguide`.
 - **Phase P** — the doctor's patient panel is a read-only summary; every action opens a query-string popup (`?rx=new`, `?rx=<id>`, `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`). The phone opens the same panel as a sheet (`?panel=1`). `Dialog` grew `size="lg"` and `closeHref`. Q-L resolved.
+- **Phase D** — meetings and check-ins share one card and one popup (`chat/AppointmentCard`, `chat/AppointmentDialog`, switched by `type`). The doctor schedules them from the panel or from a "Manage" link on a card; the patient sees every card in the chat and their next meeting on their home. `?appt=meeting` / `?appt=check_in` / `?appt=<id>`. Inbox badge, Settings switch, reminders cron.

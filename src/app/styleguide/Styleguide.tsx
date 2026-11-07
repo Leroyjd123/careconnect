@@ -77,6 +77,8 @@ import { ErrorScreen } from "@/components/layout/ErrorScreen";
 import { SettingsRow } from "@/components/layout/SettingsRow";
 import { IconTile } from "@/components/ui/IconTile";
 import { ConversationList } from "@/components/chat/ConversationList";
+import { AppointmentCard } from "@/components/chat/AppointmentCard";
+import { AppointmentDialog } from "@/components/chat/AppointmentDialog";
 import { PatientPanel } from "@/components/doctor/PatientPanel";
 import { PatientsTable } from "@/components/doctor/PatientsTable";
 import { ReleaseNotes } from "@/components/doctor/ReleaseNotes";
@@ -320,6 +322,19 @@ const DEMO_OTHER_DOCTORS = [
   { id: "demo-doctor-2", full_name: "Dr. Meera Nair", specialty: "Dermatology" },
   { id: "demo-doctor-3", full_name: "Dr. Arjun Rao", specialty: "Cardiology" },
 ];
+
+/** The appointment popup's actions, faked for the styleguide. */
+const DEMO_APPT_ACTIONS = {
+  scheduleMeeting: async () => ({ ok: false as const, error: "Example only: nothing was scheduled." }),
+  updateMeeting: async () => ({ ok: false as const, error: "Example only: nothing was changed." }),
+  cancelMeeting: async () => ({ ok: false as const, error: "Example only: nothing was cancelled." }),
+  completeMeeting: async () => ({ ok: false as const, error: "Example only: nothing was changed." }),
+  scheduleCheckIn: async () => ({ ok: false as const, error: "Example only: nothing was scheduled." }),
+  updateCheckIn: async () => ({ ok: false as const, error: "Example only: nothing was changed." }),
+  completeCheckIn: async () => ({ ok: false as const, error: "Example only: nothing was changed." }),
+  cancelCheckIn: async () => ({ ok: false as const, error: "Example only: nothing was cancelled." }),
+  convertCheckInToMeeting: async () => ({ ok: false as const, error: "Example only: nothing was scheduled." }),
+};
 
 /** What this page shows, and what only the running app can show (and why). */
 const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = [
@@ -1160,6 +1175,118 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
                   </>
                 }
               />
+            </div>
+          </Section>
+
+          <Section id="apptcards" title="Appointment cards" file="chat/AppointmentCard.tsx" use="One card for a meeting and for a check-in, switched by type. Every state has a badge with words and an icon; “Join meeting” only opens 10 minutes before the start.">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Variant name="Meeting · Scheduled" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="meeting" meeting={demo.meetingScheduled} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Meeting · Starting soon" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="meeting" meeting={demo.meetingSoon} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Meeting · Now" code="joinable" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="meeting" meeting={demo.meetingNow} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Meeting · Completed" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="meeting" meeting={demo.meetingCompleted} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Meeting · Cancelled" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="meeting" meeting={demo.meetingCancelled} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Meeting · Patient view" code="viewerRole=&quot;patient&quot;" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="meeting" meeting={demo.meetingNow} viewerRole="patient" />
+                </Stage>
+              </Variant>
+              <Variant name="Check-in · Scheduled" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="check_in" checkIn={demo.checkInScheduled} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Check-in · Due today" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="check_in" checkIn={demo.checkInDueToday} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Check-in · Overdue" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="check_in" checkIn={demo.checkInOverdue} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Check-in · Done" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="check_in" checkIn={demo.checkInDone} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Check-in · Cancelled" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="check_in" checkIn={demo.checkInCancelled} viewerRole="doctor" />
+                </Stage>
+              </Variant>
+              <Variant name="Compact" code="in the panel and on the patient's home" className="w-full">
+                <Stage size="panel">
+                  <AppointmentCard type="meeting" meeting={demo.meetingScheduled} viewerRole="doctor" compact href="#apptcards" />
+                </Stage>
+              </Variant>
+            </div>
+          </Section>
+
+          <Section id="apptdialog" title="Appointment popup" file="chat/AppointmentDialog.tsx" use="One popup for a meeting and for a check-in, switched by type. A new appointment starts on the Meeting tab; the Segmented switches to Check-in. Here every action is faked.">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Variant name="New meeting" code='type=&quot;meeting&quot;' className="w-full">
+                <Stage size="panel" height="tall">
+                  <AppointmentDialog
+                    conversationId="demo"
+                    type="meeting"
+                    closeHref="#apptdialog"
+                    actions={DEMO_APPT_ACTIONS}
+                  />
+                </Stage>
+              </Variant>
+              <Variant name="New check-in" code='type=&quot;check_in&quot;' className="w-full">
+                <Stage size="panel" height="tall">
+                  <AppointmentDialog
+                    conversationId="demo"
+                    type="check_in"
+                    closeHref="#apptdialog"
+                    actions={DEMO_APPT_ACTIONS}
+                  />
+                </Stage>
+              </Variant>
+              <Variant name="Existing meeting" code="reschedule, cancel, mark done" className="w-full">
+                <Stage size="panel" height="tall">
+                  <AppointmentDialog
+                    conversationId="demo"
+                    type="meeting"
+                    meeting={demo.meetingScheduled}
+                    closeHref="#apptdialog"
+                    actions={DEMO_APPT_ACTIONS}
+                  />
+                </Stage>
+              </Variant>
+              <Variant name="Existing check-in" code="turn into a meeting" className="w-full">
+                <Stage size="panel" height="tall">
+                  <AppointmentDialog
+                    conversationId="demo"
+                    type="check_in"
+                    checkIn={demo.checkInScheduled}
+                    closeHref="#apptdialog"
+                    actions={DEMO_APPT_ACTIONS}
+                  />
+                </Stage>
+              </Variant>
             </div>
           </Section>
 

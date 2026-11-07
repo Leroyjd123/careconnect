@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Search, X } from "lucide-react";
+import { MessageCircle, Search, Video, X } from "lucide-react";
 import { markRead, sendAttachment, sendMessage } from "@/app/actions/messages";
-import { Button, IconButton } from "@/components/ui/Button";
+import { Button, ButtonLink, IconButton } from "@/components/ui/Button";
 import { Banner, EmptyState } from "@/components/ui/Feedback";
 import { TextInput } from "@/components/ui/Field";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -15,7 +15,7 @@ import { AttachSheet } from "@/components/chat/AttachSheet";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { uploadAttachment } from "@/lib/upload";
 import { cn, formatDay, isNewDay } from "@/lib/utils";
-import type { Message, PrescriptionWithPeople } from "@/lib/types";
+import type { CheckIn, Meeting, Message, PrescriptionWithPeople } from "@/lib/types";
 
 /** A message the browser has accepted but the server hasn't confirmed yet. */
 type Pending = {
@@ -35,6 +35,13 @@ type ConversationProps = {
   prescriptions: PrescriptionWithPeople[];
   /** Prescription ids that a newer issued one has replaced. */
   replacedRxIds: string[];
+  /** The meetings and check-ins of this conversation, for the cards in the chat. */
+  meetings?: Meeting[];
+  checkIns?: CheckIn[];
+  /** Who is looking. The doctor sees the appointment actions; the patient only joins. */
+  viewerRole?: "doctor" | "patient";
+  /** Where an appointment popup opens, e.g. "/doctor/c/<id>?appt=". */
+  apptHrefBase?: string;
   header: { backHref?: string; backLabel?: string; leading?: ReactNode; title: string; subtitle?: ReactNode; actions?: ReactNode };
   /** Link prefixes. A message or prescription id is appended to each. */
   fileHrefBase: string;
@@ -45,6 +52,8 @@ type ConversationProps = {
   attachOnOpen?: boolean;
   /** Tap-to-send suggestions shown when the conversation is empty. */
   starters?: string[];
+  /** Patient only: the text "Request a meeting" puts in the composer (decision 31). */
+  requestMeetingText?: string;
   /** When set, the conversation is read-only (blocked, or the doctor is deactivated): this text replaces the composer. */
   readOnlyNotice?: string;
 };
@@ -60,12 +69,17 @@ export function Conversation({
   initialMessages,
   prescriptions,
   replacedRxIds,
+  meetings = [],
+  checkIns = [],
+  viewerRole = "patient",
+  apptHrefBase,
   header,
   fileHrefBase,
   rxHrefBase,
   correctionHrefBase,
   attachOnOpen,
   starters,
+  requestMeetingText,
   readOnlyNotice,
 }: ConversationProps) {
   const router = useRouter();
@@ -76,6 +90,8 @@ export function Conversation({
   const [attachOpen, setAttachOpen] = useState(!!attachOnOpen && !readOnlyNotice);
   const [query, setQuery] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // The composer's input, so "Request a meeting" can put the text in and focus it.
+  const requestRef = useRef<HTMLTextAreaElement>(null);
   // tempIds already on the wire, so a re-run of the effect below never sends twice.
   const inFlight = useRef<Set<string>>(new Set());
 
@@ -95,6 +111,8 @@ export function Conversation({
 
   const rxById = useMemo(() => new Map(prescriptions.map((p) => [p.id, p])), [prescriptions]);
   const replaced = useMemo(() => new Set(replacedRxIds), [replacedRxIds]);
+  const meetingById = useMemo(() => new Map(meetings.map((m) => [m.id, m])), [meetings]);
+  const checkInById = useMemo(() => new Map(checkIns.map((c) => [c.id, c])), [checkIns]);
 
   const lastSeenId = useMemo(
     () => [...messages].reverse().find((m) => m.sender_id === meId && m.read_at)?.id,
@@ -131,6 +149,17 @@ export function Conversation({
           // The card needs the prescription itself, which only the server can read.
           if (row.kind === "prescription") router.refresh();
         },
+      )
+      // A meeting or check-in row changing (moved, cancelled, done) changes the card.
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meetings", filter: `conversation_id=eq.${conversationId}` },
+        () => router.refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "check_ins", filter: `conversation_id=eq.${conversationId}` },
+        () => router.refresh(),
       )
       .subscribe();
     return () => {
@@ -284,6 +313,8 @@ export function Conversation({
           const prevAt = i > 0 ? rows[i - 1].message.created_at : null;
           const mine = message.sender_id === meId;
           const rx = message.prescription_id ? rxById.get(message.prescription_id) : undefined;
+          const meeting = message.meeting_id ? meetingById.get(message.meeting_id) : undefined;
+          const checkIn = message.check_in_id ? checkInById.get(message.check_in_id) : undefined;
           return (
             <div key={message.id} className="flex flex-col gap-2.5">
               {isNewDay(prevAt, message.created_at) ? <ChatDivider>{formatDay(message.created_at)}</ChatDivider> : null}
@@ -297,6 +328,20 @@ export function Conversation({
                 mine={mine}
                 prescription={rx}
                 replaced={rx ? replaced.has(rx.id) : false}
+                meeting={meeting}
+                checkIn={checkIn}
+                viewerRole={viewerRole}
+                appointmentActions={
+                  viewerRole === "doctor" && apptHrefBase && (meeting || checkIn) ? (
+                    <ButtonLink
+                      href={`${apptHrefBase}${meeting ? meeting.id : checkIn!.id}`}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Manage
+                    </ButtonLink>
+                  ) : null
+                }
                 tone={p ? (p.status === "failed" ? "failed" : "pending") : "default"}
                 status={p ? pendingStatus[p.status] : message.id === lastSeenId ? "Seen" : undefined}
                 fileHref={message.file_path ? `${fileHrefBase}${message.id}` : undefined}
@@ -328,14 +373,33 @@ export function Conversation({
       {readOnlyNotice ? (
         <Banner>{readOnlyNotice}</Banner>
       ) : (
-        <Composer
-          value={draft}
-          onChange={setDraft}
-          onSend={sendDraft}
-          onAttach={() => setAttachOpen(true)}
-          offline={offline}
-          placeholder={`Message ${otherName}`}
-        />
+        <>
+          {/* "Request a meeting" is just a message (decision 31). */}
+          {requestMeetingText ? (
+            <div className="flex justify-start px-1">
+              <Button
+                variant="soft"
+                size="sm"
+                onClick={() => {
+                  setDraft(requestMeetingText);
+                  requestRef.current?.focus();
+                }}
+              >
+                <Video aria-hidden="true" className="size-4" />
+                Request a meeting
+              </Button>
+            </div>
+          ) : null}
+          <Composer
+            value={draft}
+            onChange={setDraft}
+            onSend={sendDraft}
+            onAttach={() => setAttachOpen(true)}
+            offline={offline}
+            placeholder={`Message ${otherName}`}
+            inputRef={requestRef}
+          />
+        </>
       )}
 
       <AttachSheet

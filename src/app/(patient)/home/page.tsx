@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText, MessageCircle, Upload, UserRound } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { getMyConversations } from "@/lib/data";
+import { getMyConversations, getUpcomingForPatient } from "@/lib/data";
 import { formatRelative } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { CountBadge } from "@/components/ui/Badge";
@@ -10,6 +10,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { IconTile } from "@/components/ui/IconTile";
 import { EmptyState } from "@/components/ui/Feedback";
+import { AppointmentCard } from "@/components/chat/AppointmentCard";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -18,6 +19,8 @@ export default async function PatientHome() {
   // One card per doctor (PLAN §7 Phase C, decision 23). One doctor still behaves exactly as before.
   const inbox = await getMyConversations();
   const manyDoctors = inbox.length > 1;
+  // That doctor's next meeting, per doctor (Q-D).
+  const upcoming = await getUpcomingForPatient();
 
   return (
     <main className="flex flex-col gap-5 px-5 pt-6 pb-32">
@@ -55,6 +58,10 @@ export default async function PatientHome() {
                   </div>
                   <p className="line-clamp-2 text-base leading-snug">{doctor.last_message_preview}</p>
                 </div>
+              ) : null}
+              {/* That doctor's next meeting (Q-D). */}
+              {upcoming[doctor.id] ? (
+                <AppointmentCard type="meeting" meeting={upcoming[doctor.id]} viewerRole="patient" compact />
               ) : null}
               {/* One primary button per screen: the first doctor's chat. */}
               <ButtonLink href={`/chat/${doctor.id}`} variant={i === 0 ? "primary" : "secondary"} size="lg" block>

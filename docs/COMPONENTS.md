@@ -45,7 +45,9 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `MessageItem` | `chat/MessageItem.tsx` | Switch on `message.kind` → text bubble / FileCard / PrescriptionCard. Also renders pending and failed sends. | ✅ |
 | `AttachSheet` | `chat/AttachSheet.tsx` | Dialog sheet: take photo / choose photo / choose file → preview → note → send. | ✅ |
 | `FileViewer` | `chat/FileViewer.tsx` | PDF/image viewer on a 5-minute signed URL, with Download. Doctor gets `onRemove` (Remove report, with confirm). Opened by `?file=<messageId>`. |
-| `ConversationList` | `chat/ConversationList.tsx` | One list, two viewers. `viewerRole="doctor"` (default): the inbox, with search + All/Unread, pending invites with a dashed avatar; rendered once by `doctor/(inbox)/layout.tsx`, hides itself on a phone when a conversation is open. `viewerRole="patient"`: the patient's list of doctors (name, specialty, latest message, unread count) on `/chat`; links to `/chat/<id>`. | ✅ |
+| `ConversationList` | `chat/ConversationList.tsx` | One list, two viewers. `viewerRole="doctor"` (default): the inbox, with search + All/Unread, pending invites with a dashed avatar; rendered once by `doctor/(inbox)/layout.tsx`, hides itself on a phone when a conversation is open. `viewerRole="patient"`: the patient's list of doctors (name, specialty, latest message, unread count) on `/chat`; links to `/chat/<id>`. `dueCheckIns` (optional): conversation ids with a check-in due today or overdue → a "Check-in due" badge. | ✅ |
+| `AppointmentCard` | `chat/AppointmentCard.tsx` | The card for a meeting and for a check-in, switched by `type` (decision 72). Meeting states: Scheduled / Starting soon / Now / Completed / Cancelled. Check-in states: Scheduled ("Due Fri, 15 Nov") / Due today / Overdue / Done / Cancelled. Every state is a Badge with words **and** an icon. "Join meeting" opens the link in a new tab and is only live from 10 minutes before the start (decision 33). `compact` for the panel and the patient's home; `actions` for the doctor's buttons; `href` for a "Manage" link. | ✅ |
+| `AppointmentDialog` | `chat/AppointmentDialog.tsx` | The popup for a meeting and for a check-in, switched by `type`. A new appointment opens on the Meeting tab; the `Segmented` switches to Check-in. Meeting form: date, time, length (`ChipGroup`: 15 default, 30, 45, 60, Custom), link (`TextInput type=url`), optional note. Check-in form: "In" chips (3 days, 1 week, 2 weeks, 1 month, Custom date) → the due date, plus a required reason. Overlap with the doctor's other meetings → a `Banner` warning, still allowed (decision 41). An existing appointment: Reschedule / Cancel (confirm) / Mark done; a check-in can also be turned into a meeting. Opened by `?appt=meeting` / `?appt=check_in` / `?appt=<id>`. | ✅ |
 
 ## Prescriptions — `src/components/rx` (shared)
 
@@ -64,7 +66,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 |---|---|---|---|
 | `ConversationList` | `doctor/ConversationList.tsx` | Inbox list with search + All/Unread. Rendered once by `doctor/(inbox)/layout.tsx`; hides itself on a phone when a conversation is open. | ✅ |
 | `PatientPanel` | `doctor/PatientPanel.tsx` | Read-only summary of the patient (decision 73): identity, details, latest prescription, latest reports, "Also consults". Nothing is edited here — every action opens a popup. `variant="sheet"` is the phone version. `otherDoctors` adds the "Also consults" section (names only). Hideable on desktop. | ✅ |
-| `PatientPopups` | `doctor/PatientPanel.tsx` | The doctor's popups for one patient, opened by the query string: `?rx=new` / `?rx=<id>` / `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`, `?panel=1`. Closing replaces the URL, so the history stays clean. Mounted outside the patient column: a native `<dialog>` inside a `display:none` ancestor is not painted. | ✅ |
+| `PatientPopups` | `doctor/PatientPopups.tsx` | The doctor's popups for one patient, opened by the query string: `?rx=new` / `?rx=<id>` / `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`, `?panel=1`, `?appt=meeting` / `?appt=check_in` / `?appt=<id>`. Closing replaces the URL, so the history stays clean. Mounted outside the patient column: a native `<dialog>` inside a `display:none` ancestor is not painted. | ✅ |
 | `InviteDialog` | `doctor/InviteDialog.tsx` | "Share a link" (one-time `/join` link, copy / share / WhatsApp) or "Send by email" → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
 | `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked; `blockedAt` per row = conversation block) + actions (resend, open chat). | ✅ |
 | `PatientDetailsDialog` | `doctor/PatientDetailsDialog.tsx` | Doctor edits name, email, mobile, date of birth, height, weight. Opened from `PatientPopups` (`?details=1`). | ✅ |
@@ -81,18 +83,22 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `savePushSubscription`, `deletePushSubscription` | `actions/notifications.ts` |
 | `sendMessage`, `sendAttachment`, `getFileUrl`, `markRead`, `removeReport` | `actions/messages.ts` |
 | `saveDraft`, `issuePrescription`, `deleteDraft` | `actions/prescriptions.ts` |
+| `scheduleMeeting`, `updateMeeting`, `cancelMeeting`, `completeMeeting`, `setMeetingAutoComplete`, `scheduleCheckIn`, `updateCheckIn`, `completeCheckIn`, `cancelCheckIn`, `convertCheckInToMeeting` | `actions/meetings.ts` |
 | `addMedicine`, `updateMedicine`, `setMedicineActive`, `mergeMedicine` | `actions/medicines.ts` |
 | `updateMyProfile`, `updateMyHealthDetails` | `actions/profile.ts` |
 
 ## Reads — `src/lib/data.ts`
 
 `getMyConversations`, `getConversation`, `getMyPatients`, `getMessages`, `getPrescriptions`, `getMyIssuedPrescriptions`,
-`getPrescription`, `getMedicineSuggestions`, `getOtherDoctors`, `replacedIds`.
+`getPrescription`, `getMedicineSuggestions`, `getOtherDoctors`, `replacedIds`,
+`getAppointments` (a conversation's meetings + check-ins), `getAppointment`, `getUpcomingForPatient` (the patient's
+next meeting per doctor), `getDoctorDueCheckIns` (conversations with a check-in due today or overdue),
+`getDoctorMeetingsBetween` (the doctor's other meetings, for the overlap warning).
 
 ## Page-local client components
 
 Not shared, so they live beside their page rather than in `src/components`:
-`app/login/LoginForm.tsx` (`next` = return to an invite link), `app/join/[token]/AcceptInvite.tsx` (signed-in patient accepts another doctor's link), `app/(patient)/profile/LanguagePicker.tsx`, `app/(patient)/profile/HealthDetailsSection.tsx` + `HealthDetailsDialog.tsx` (the patient edits their own DOB, height and weight), `app/(patient)/prescriptions/DoctorFilter.tsx` (filter the prescription list by doctor, `?doctor=<id>`), `app/rx/[id]/print/AutoPrint.tsx`.
+`app/login/LoginForm.tsx` (`next` = return to an invite link), `app/join/[token]/AcceptInvite.tsx` (signed-in patient accepts another doctor's link), `app/(patient)/profile/LanguagePicker.tsx`, `app/(patient)/profile/HealthDetailsSection.tsx` + `HealthDetailsDialog.tsx` (the patient edits their own DOB, height and weight), `app/(patient)/prescriptions/DoctorFilter.tsx` (filter the prescription list by doctor, `?doctor=<id>`), `app/rx/[id]/print/AutoPrint.tsx`, `app/doctor/settings/MeetingAutoComplete.tsx` (the doctor switches auto-complete on and off).
 
 ## How state is split
 
@@ -100,4 +106,5 @@ Not shared, so they live beside their page rather than in `src/components`:
 - **`Conversation`** owns everything about sending: the pending queue, offline retry, realtime merge and mark-read.
   `Composer`, `MessageItem` and `AttachSheet` stay presentational so there is one place to debug a message that didn't arrive.
 - **Query string, not component state**, for anything a link should be able to open:
-  `?invite=1`, `?attach=1`, `?file=<messageId>`, `?rx=new|<id>`, `?rx=new&replaces=<id>`, `?issued=1`.
+  `?invite=1`, `?attach=1`, `?file=<messageId>`, `?rx=new|<id>`, `?rx=new&replaces=<id>`, `?issued=1`,
+  `?appt=meeting|check_in|<id>`, `?panel=1`.

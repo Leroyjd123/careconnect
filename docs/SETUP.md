@@ -80,6 +80,7 @@ where email = 'doctor@example.com';
 1. Push the repo to GitHub. Vercel → **Add New Project** → import it. Framework: Next.js (auto).
 2. Environment variables (Production + Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL=https://YOUR-APP.vercel.app`,
+   `CRON_SECRET` (see §9),
    and for notifications `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (see §8).
 3. Deploy. Then set Supabase Site URL to the Vercel URL (step 2).
 
@@ -102,3 +103,25 @@ Notes:
 - iPhone: only works once CareConnect is added to the Home Screen (iOS 16.4+), and opened from there.
 - Notifications say who sent something, never what it says. They show on lock screens.
 - Without the keys the app works normally and the Notifications card says the browser can't show them.
+
+## 9. Reminders cron (meeting and check-in reminders)
+
+The app reminds both sides 15 minutes before a meeting starts, and once on the morning a
+check-in is due. That runs from a protected route that an external cron calls.
+
+1. Pick a secret: any long random string, e.g. `openssl rand -hex 32`. Put it in `.env.local`
+   and in Vercel (Production + Preview) as `CRON_SECRET`, then redeploy.
+   **Never commit it, never paste it into a chat, never print it.**
+2. Create a free job at [cron-job.org](https://cron-job.org):
+   - **URL:** `https://YOUR-APP.vercel.app/api/cron/reminders`
+   - **Schedule:** every 5 minutes (`*/5 * * * *`)
+   - **Headers:** one header, name `Authorization`, value `Bearer <your secret>`
+3. Check it worked: open the URL in a browser without the header and you get `401`. With the
+   header you get JSON counts, e.g. `{"meetingReminders":0,"meetingsCompleted":0,"checkInReminders":0}`.
+   Running it again immediately sends nothing twice — the route remembers what it already sent.
+
+Notes:
+- The route needs `SUPABASE_SERVICE_ROLE_KEY` too (it already does, for invites).
+- Without `CRON_SECRET` set, the route always answers 401. That is deliberate.
+- The route marks a meeting complete 15 minutes after it starts only when the doctor has
+  "Mark meetings complete automatically" switched on (Settings → Meetings).

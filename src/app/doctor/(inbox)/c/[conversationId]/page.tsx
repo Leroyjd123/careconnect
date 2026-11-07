@@ -5,7 +5,7 @@ import { PanelRightClose, PanelRightOpen, UserRound } from "lucide-react";
 import { LayoutToggle } from "@/components/layout/LayoutToggle";
 import { LAYOUT_COOKIES } from "@/lib/constants";
 import { requireProfile } from "@/lib/auth";
-import { getConversation, getMedicineSuggestions, getMessages, getOtherDoctors, getPrescriptions, replacedIds } from "@/lib/data";
+import { getConversation, getAppointments, getDoctorMeetingsBetween, getMedicineSuggestions, getMessages, getOtherDoctors, getPrescriptions, replacedIds } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -13,7 +13,8 @@ import { Banner } from "@/components/ui/Feedback";
 import { Conversation } from "@/components/chat/Conversation";
 import { FileViewer } from "@/components/chat/FileViewer";
 import { removeReport } from "@/app/actions/messages";
-import { PatientPanel, PatientPopups } from "@/components/doctor/PatientPanel";
+import { PatientPanel } from "@/components/doctor/PatientPanel";
+import { PatientPopups } from "@/components/doctor/PatientPopups";
 import { cn } from "@/lib/utils";
 import type { MedicineOption } from "@/lib/types";
 
@@ -23,6 +24,8 @@ type Search = {
   file?: string;
   rx?: string;
   issued?: string;
+  /** "meeting" or "check_in" for a new one, an id for an existing one. */
+  appt?: string;
 };
 
 /**
@@ -38,17 +41,25 @@ export default async function DoctorConversation({
 }) {
   const doctor = await requireProfile("doctor");
   const { conversationId } = await params;
+  // "?appt=" is read by PatientPopups from the URL; the page only needs to know that
+  // the query string changed, which Next.js handles by re-rendering this page.
   const { file, rx, issued } = await searchParams;
 
   const conversation = await getConversation(conversationId);
   if (!conversation || conversation.doctor_id !== doctor.id) notFound();
 
-  const [messages, prescriptions, suggestions, otherDoctors] = await Promise.all([
+  const [messages, prescriptions, suggestions, otherDoctors, appointments, otherDoctorMeetings] = await Promise.all([
     getMessages(conversationId),
     getPrescriptions(conversationId),
     rx ? getMedicineSuggestions() : Promise.resolve<MedicineOption[]>([]),
     // Names only, and only when the "also consults" setting is on (decision 26).
     getOtherDoctors(conversation.patient_id),
+    getAppointments(conversationId),
+    // The doctor's own other meetings, for the overlap warning (decision 41).
+    getDoctorMeetingsBetween(
+      new Date(Date.now() - 86_400_000).toISOString(),
+      new Date(Date.now() + 30 * 86_400_000).toISOString(),
+    ),
   ]);
 
   const patient = conversation.patient;
@@ -60,6 +71,10 @@ export default async function DoctorConversation({
   // Desktop: the doctor can hide the patient column to give the chat the full width.
   const panelHidden = (await cookies()).get(LAYOUT_COOKIES.panel)?.value === "on";
   const reportMessages = [...messages].reverse().filter((m) => m.kind === "file" && !m.deleted_at);
+  // The next meeting and the next check-in for the panel's "Next up" section.
+  const now = Date.now();
+  const nextMeeting = appointments.meetings.find((m) => m.status === "scheduled" && Date.parse(m.starts_at) >= now) ?? null;
+  const nextCheckIn = appointments.checkIns.find((c) => c.status === "scheduled") ?? null;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 gap-4">
@@ -73,6 +88,10 @@ export default async function DoctorConversation({
             initialMessages={messages}
             prescriptions={prescriptions}
             replacedRxIds={replaced}
+            meetings={appointments.meetings}
+            checkIns={appointments.checkIns}
+            viewerRole="doctor"
+            apptHrefBase={`${base}?appt=`}
             fileHrefBase={`${base}?file=`}
             rxHrefBase={`${base}?rx=`}
             correctionHrefBase={`${base}?rx=new&replaces=`}
@@ -116,6 +135,8 @@ export default async function DoctorConversation({
           replacedRxIds={replaced}
           reports={reportMessages}
           otherDoctors={otherDoctors}
+          nextMeeting={nextMeeting}
+          nextCheckIn={nextCheckIn}
         />
       </div>
 
@@ -130,6 +151,9 @@ export default async function DoctorConversation({
         reports={reportMessages}
         otherDoctors={otherDoctors}
         suggestions={suggestions}
+        meetings={appointments.meetings}
+        checkIns={appointments.checkIns}
+        otherDoctorMeetings={otherDoctorMeetings}
       />
     </div>
   );

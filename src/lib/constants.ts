@@ -33,6 +33,12 @@ export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_FILE_TYPES = "application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif";
 export const PREVIEWABLE_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
+/**
+ * What "Request a meeting" sends (decision 31). A patient asks for a meeting in the
+ * chat; only the doctor can turn it into a real appointment.
+ */
+export const REQUEST_MEETING_TEXT = "I'd like to schedule a video meeting.";
+
 /** Prescription quick picks. Never pre-select one: the doctor always chooses. */
 export const FREQUENCY_OPTIONS = ["1-0-0", "0-0-1", "1-0-1", "1-1-1", "Once a week", "When needed"];
 export const DURATION_OPTIONS = ["3 days", "5 days", "7 days", "15 days", "30 days", "8 weeks"];

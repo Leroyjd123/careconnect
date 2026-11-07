@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { ReleaseNotes } from "@/components/doctor/ReleaseNotes";
 import { NotificationToggle } from "@/components/layout/NotificationToggle";
 import { SettingsRow } from "@/components/layout/SettingsRow";
+import { MeetingAutoComplete } from "@/app/doctor/settings/MeetingAutoComplete";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -52,6 +53,16 @@ export default async function SettingsPage() {
       </Card>
 
       <SettingsRow href="/doctor/settings/medicines" icon={Pill} title="Master medicines" hint="Add, edit, deactivate or merge the medicines you prescribe." />
+
+      <section aria-labelledby="meetings" className="flex flex-col gap-2">
+        <h2 id="meetings" className="text-[17px] font-semibold">
+          Meetings
+        </h2>
+        <Card className="flex flex-col gap-3 p-5">
+          <p className="text-[15px] font-medium">Mark meetings complete automatically</p>
+          <MeetingAutoComplete value={profile.meeting_auto_complete} />
+        </Card>
+      </section>
 
       <NotificationToggle audience="doctor" />
 

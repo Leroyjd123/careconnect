@@ -25,6 +25,12 @@ export const RELEASES: Release[] = [
       "With more than one doctor, your home shows a card for each of them, and /chat lists them so you can open the right chat.",
       "Your prescriptions say which doctor issued each one, and you can filter the list by doctor.",
       "You can update your own date of birth, height and weight in Profile. Your doctor sees the same details.",
+      "Schedule a video meeting: paste the link from your meeting app, pick a time and a length, and the patient sees the card in the chat.",
+      "Set a check-in to remind a patient to come back on a date, with a reason.",
+      "The patient's home shows their doctor's next meeting, and the panel shows the next meeting and check-in.",
+      "Patients can ask for a meeting from the chat with “Request a meeting”.",
+      "Your inbox shows a “Check-in due” badge when a patient is due to come back.",
+      "Settings → Meetings: switch on or off marking meetings complete automatically 15 minutes after they start.",
     ],
     changed: [
       "Blocking a patient now only stops them messaging you. They can still read their history and talk to their other doctors.",
@@ -33,11 +39,14 @@ export const RELEASES: Release[] = [
       "Printed prescriptions leave out the registration number line until it's set.",
       "The panel beside your chat is now a summary of the patient: their details, their latest prescription and their latest reports. Every action opens a popup instead of changing the panel.",
       "On a phone the patient panel opens as a sheet from the chat header.",
+      "“Join meeting” only opens 10 minutes before the meeting starts.",
+      "The meeting and check-in card is one card, so both read the same way wherever they appear.",
     ],
     fixed: [
       "Inviting a patient who already has an account no longer changes their name.",
       "Closing a prescription popup no longer loses your draft. Open “New prescription” again and pick up where you left off.",
       "Your prescriptions can always be filtered by the doctor who issued them, even if that doctor is no longer in your chats.",
+      "Scheduling a meeting that clashes with another of your meetings warns you, but still lets you go ahead.",
     ],
   },
   {

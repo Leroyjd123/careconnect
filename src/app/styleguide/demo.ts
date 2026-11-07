@@ -1,5 +1,5 @@
 // Fake data for /styleguide only. Fixed dates so server and browser render the same.
-import type { DraftItem, InboxRow, Message, PrescriptionWithPeople, Profile } from "@/lib/types";
+import type { CheckIn, DraftItem, InboxRow, Meeting, Message, PrescriptionWithPeople, Profile } from "@/lib/types";
 
 export const NOW = "2026-10-12T04:50:00.000Z";
 export const EARLIER = "2026-10-08T09:15:00.000Z";
@@ -102,3 +102,116 @@ export const patientDoctors: InboxRow[] = [
   { id: "d2", other_id: "demo-doctor-2", other_name: "Dr. Meera Nair", other_status: "active", other_specialty: "Dermatology", last_message_at: EARLIER, last_message_preview: "The rash is much better, thank you.", unread_count: 0 },
   { id: "d3", other_id: "demo-doctor-3", other_name: "Dr. Arjun Rao", other_status: "active", other_specialty: "Cardiology", last_message_at: null, last_message_preview: null, unread_count: 0 },
 ];
+
+// ── Meetings and check-ins (Phase D) ─────────────────────────────
+// The states of the appointment card, one of each. "Now" is a meeting that has already
+// started, so "Join meeting" is live; the rest show the other badges.
+
+const meetingBase = {
+  conversation_id: "demo-conversation",
+  doctor_id: doctor.id,
+  patient_id: patient.id,
+  duration_min: 15,
+  meet_url: "https://meet.google.com/abc-defg-hij",
+  note: null,
+  reminded_at: null,
+  created_by: doctor.id,
+  created_at: EARLIER,
+  updated_at: EARLIER,
+};
+
+/** A meeting later today: "Scheduled". */
+export const meetingScheduled: Meeting = {
+  ...meetingBase,
+  id: "demo-meeting-scheduled",
+  starts_at: "2026-10-12T09:00:00.000Z",
+  status: "scheduled",
+};
+
+/** A meeting starting in a few minutes: "Starting soon", joinable. */
+export const meetingSoon: Meeting = {
+  ...meetingBase,
+  id: "demo-meeting-soon",
+  starts_at: "2026-10-12T05:05:00.000Z",
+  status: "scheduled",
+};
+
+/** A meeting that has started: "Now", joinable. */
+export const meetingNow: Meeting = {
+  ...meetingBase,
+  id: "demo-meeting-now",
+  starts_at: "2026-10-12T04:45:00.000Z",
+  status: "scheduled",
+};
+
+/** A meeting that is over: "Completed". */
+export const meetingCompleted: Meeting = {
+  ...meetingBase,
+  id: "demo-meeting-completed",
+  starts_at: "2026-10-08T06:00:00.000Z",
+  status: "completed",
+};
+
+/** A meeting that was called off: "Cancelled". */
+export const meetingCancelled: Meeting = {
+  ...meetingBase,
+  id: "demo-meeting-cancelled",
+  starts_at: "2026-10-09T06:00:00.000Z",
+  status: "cancelled",
+};
+
+const checkInBase = {
+  conversation_id: "demo-conversation",
+  doctor_id: doctor.id,
+  patient_id: patient.id,
+  meeting_id: null,
+  reminded_at: null,
+  created_by: doctor.id,
+  created_at: EARLIER,
+  updated_at: EARLIER,
+};
+
+/** A check-in due later: "Scheduled". */
+export const checkInScheduled: CheckIn = {
+  ...checkInBase,
+  id: "demo-checkin-scheduled",
+  due_on: "2026-10-15",
+  reason: "Review BP after new tablets",
+  status: "scheduled",
+};
+
+/** A check-in due today: "Due today". */
+export const checkInDueToday: CheckIn = {
+  ...checkInBase,
+  id: "demo-checkin-due",
+  due_on: "2026-10-12",
+  reason: "Review BP after new tablets",
+  status: "scheduled",
+};
+
+/** A check-in whose date has passed: "Overdue". */
+export const checkInOverdue: CheckIn = {
+  ...checkInBase,
+  id: "demo-checkin-overdue",
+  due_on: "2026-10-09",
+  reason: "Review BP after new tablets",
+  status: "scheduled",
+};
+
+/** A check-in that was dealt with: "Done". */
+export const checkInDone: CheckIn = {
+  ...checkInBase,
+  id: "demo-checkin-done",
+  due_on: "2026-10-10",
+  reason: "Review BP after new tablets",
+  status: "done",
+};
+
+/** A check-in that was called off: "Cancelled". */
+export const checkInCancelled: CheckIn = {
+  ...checkInBase,
+  id: "demo-checkin-cancelled",
+  due_on: "2026-10-11",
+  reason: "Review BP after new tablets",
+  status: "cancelled",
+};

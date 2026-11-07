@@ -5,8 +5,9 @@ import { FileX } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { FileCard } from "@/components/chat/FileCard";
+import { AppointmentCard } from "@/components/chat/AppointmentCard";
 import { PrescriptionCard } from "@/components/rx/PrescriptionCard";
-import type { Message, PrescriptionWithPeople } from "@/lib/types";
+import type { CheckIn, Meeting, Message, PrescriptionWithPeople } from "@/lib/types";
 
 type MessageItemProps = {
   message: Message;
@@ -14,6 +15,14 @@ type MessageItemProps = {
   /** The prescription this card shows, looked up by the conversation. */
   prescription?: PrescriptionWithPeople;
   replaced?: boolean;
+  /** The meeting this card shows (kind = "meeting"). */
+  meeting?: Meeting;
+  /** The check-in this card shows (kind = "check_in"). */
+  checkIn?: CheckIn;
+  /** Who is looking: the doctor sees the actions, the patient only joins. */
+  viewerRole?: "doctor" | "patient";
+  /** Doctor actions on the appointment card: Reschedule, Cancel, Mark done. */
+  appointmentActions?: ReactNode;
   /** Text after the time: "Seen", "Sending…", "Not sent". */
   status?: ReactNode;
   tone?: "default" | "pending" | "failed";
@@ -32,6 +41,10 @@ export function MessageItem({
   mine,
   prescription,
   replaced,
+  meeting,
+  checkIn,
+  viewerRole = "patient",
+  appointmentActions,
   status,
   tone,
   fileHref,
@@ -55,6 +68,20 @@ export function MessageItem({
           <FileCard name={message.file_name ?? "Attachment"} size={message.file_size} type={message.file_type} href={fileHref} />
           {message.body ? <p className="px-1.5 pb-1 text-[15px] leading-relaxed">{message.body}</p> : null}
         </div>
+      ) : message.kind === "meeting" ? (
+        <AppointmentCard
+          type="meeting"
+          meeting={meeting}
+          viewerRole={viewerRole}
+          actions={appointmentActions}
+        />
+      ) : message.kind === "check_in" ? (
+        <AppointmentCard
+          type="check_in"
+          checkIn={checkIn}
+          viewerRole={viewerRole}
+          actions={appointmentActions}
+        />
       ) : prescription ? (
         <PrescriptionCard
           issuedAt={prescription.issued_at ?? message.created_at}

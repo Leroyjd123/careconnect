@@ -1,7 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import type { ConversationWithPeople, InboxRow, Medicine, MedicineOption, Message, OtherDoctor, Prescription, PrescriptionWithPeople, Profile } from "@/lib/types";
+import { todayInAppZone } from "@/lib/utils";
+import type { CheckIn, ConversationWithPeople, InboxRow, Medicine, MedicineOption, Meeting, Message, OtherDoctor, Prescription, PrescriptionWithPeople, Profile } from "@/lib/types";
 
 // All server-side reads live here. Pages call these; they never build queries inline.
 // Every query runs as the signed-in user, so RLS decides what comes back.
@@ -133,3 +134,95 @@ export const getOtherDoctors = cache(async (patientId: string): Promise<OtherDoc
   }
   return (data ?? []) as OtherDoctor[];
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Meetings and check-ins (0005, decisions 29–42 and 68–72)
+// ─────────────────────────────────────────────────────────────────
+
+/** The meetings and check-ins of one conversation. Both lists are newest first. */
+export const getAppointments = cache(async (conversationId: string): Promise<{ meetings: Meeting[]; checkIns: CheckIn[] }> => {
+  const supabase = await createClient();
+  const [meetings, checkIns] = await Promise.all([
+    supabase.from("meetings").select("*").eq("conversation_id", conversationId).order("starts_at", { ascending: false }),
+    supabase.from("check_ins").select("*").eq("conversation_id", conversationId).order("due_on", { ascending: false }),
+  ]);
+  if (meetings.error) throw new Error(`meetings failed: ${meetings.error.message}`);
+  if (checkIns.error) throw new Error(`check_ins failed: ${checkIns.error.message}`);
+  return {
+    meetings: (meetings.data ?? []) as Meeting[],
+    checkIns: (checkIns.data ?? []) as CheckIn[],
+  };
+});
+
+/** One meeting or check-in, by id. null when it isn't there. */
+export const getAppointment = cache(async (id: string): Promise<{ meeting: Meeting | null; checkIn: CheckIn | null }> => {
+  const supabase = await createClient();
+  const [meeting, checkIn] = await Promise.all([
+    supabase.from("meetings").select("*").eq("id", id).maybeSingle(),
+    supabase.from("check_ins").select("*").eq("id", id).maybeSingle(),
+  ]);
+  return {
+    meeting: (meeting.data as Meeting | null) ?? null,
+    checkIn: (checkIn.data as CheckIn | null) ?? null,
+  };
+});
+
+/**
+ * The patient's next scheduled meeting with each doctor, for /home (Q-D).
+ * Only meetings that have not started yet and are not cancelled.
+ */
+export const getUpcomingForPatient = cache(async (): Promise<Record<string, Meeting>> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meetings")
+    .select("*")
+    .eq("status", "scheduled")
+    .gt("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true });
+  if (error) throw new Error(`meetings failed: ${error.message}`);
+  // The earliest meeting per conversation wins.
+  const next: Record<string, Meeting> = {};
+  for (const m of (data ?? []) as Meeting[]) {
+    if (!next[m.conversation_id]) next[m.conversation_id] = m;
+  }
+  return next;
+});
+
+/**
+ * The conversations where a check-in is due today or overdue (decision: the inbox badge).
+ * The doctor only: RLS already limits the rows to their own patients.
+ */
+export const getDoctorDueCheckIns = cache(async (): Promise<string[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("check_ins")
+    .select("conversation_id, due_on")
+    .eq("status", "scheduled")
+    .lte("due_on", todayInAppZone());
+  if (error) {
+    console.error("check_ins failed", error);
+    return [];
+  }
+  return [...new Set(((data ?? []) as { conversation_id: string }[]).map((r) => r.conversation_id))];
+});
+
+/**
+ * The doctor's scheduled meetings that overlap a given window, for the overlap warning
+ * (decision 41). Overlapping is a warning, never a block.
+ */
+export const getDoctorMeetingsBetween = cache(async (fromIso: string, toIso: string): Promise<Meeting[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meetings")
+    .select("*")
+    .eq("status", "scheduled")
+    .gte("starts_at", fromIso)
+    .lte("starts_at", toIso)
+    .order("starts_at", { ascending: true });
+  if (error) {
+    console.error("meetings failed", error);
+    return [];
+  }
+  return (data ?? []) as Meeting[];
+});
+
