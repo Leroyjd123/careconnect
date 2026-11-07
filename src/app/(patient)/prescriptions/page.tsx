@@ -19,8 +19,13 @@ export default async function PrescriptionsPage({ searchParams }: { searchParams
   // "Latest" is the newest one of the whole list, so the badge keeps meaning the same thing.
   const latestId = prescriptions.find((p) => !replaced.has(p.id))?.id;
 
-  // With two or more doctors the list can be filtered by doctor (decision 25).
-  const doctors = inbox.map((c) => ({ id: c.other_id, name: c.other_name }));
+  // The chips come from the prescriptions themselves, so a card can always be filtered by
+  // its own doctor — even when that doctor is no longer in the patient's chats (Q-L).
+  const byDoctor = new Map<string, string>();
+  for (const rx of prescriptions) {
+    if (rx.doctor?.id && !byDoctor.has(rx.doctor.id)) byDoctor.set(rx.doctor.id, rx.doctor.full_name);
+  }
+  const doctors = [...byDoctor.entries()].map(([id, name]) => ({ id, name }));
   const manyDoctors = doctors.length > 1;
   const selected = manyDoctors && doctor && doctors.some((d) => d.id === doctor) ? doctor : null;
   const visible = selected ? prescriptions.filter((p) => p.doctor_id === selected) : prescriptions;
@@ -31,7 +36,7 @@ export default async function PrescriptionsPage({ searchParams }: { searchParams
         backHref="/home"
         backLabel="Back to home"
         title="My prescriptions"
-        subtitle={manyDoctors ? "From all your doctors" : inbox[0] ? `From ${inbox[0].other_name}` : undefined}
+        subtitle={manyDoctors ? "From all your doctors" : doctors[0] ? `From ${doctors[0].name}` : undefined}
       />
 
       {manyDoctors ? <DoctorFilter doctors={doctors} selected={selected} /> : null}

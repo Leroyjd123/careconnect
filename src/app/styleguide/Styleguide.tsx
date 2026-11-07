@@ -344,6 +344,8 @@ const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = 
   ["Logo, LogoMark", "#brand", "shown"],
   ["Conversation (live chat: realtime, sending queue, offline)", "/chat · /doctor/c/[id]", "app"],
   ["PrescriptionComposer (autosave + issue)", "/doctor/c/[id]?rx=new", "app"],
+  ["PatientPopups (the doctor's query-string popups)", "/doctor/c/[id]?rx=new · ?details=1 · ?prescriptions=1 · ?reports=1", "app"],
+  ["PatientPanel as a phone sheet", "/doctor/c/[id]?panel=1", "app"],
   ["PatientTabBar (patient items for TabBar)", "/home", "app"],
   ["BackgroundScene (behind this whole page)", "every page", "app"],
 ];
@@ -426,6 +428,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
   const [dur, setDur] = useState<string | null>("3 days");
   const [timing, setTiming] = useState<string | null>(null);
   const [modal, setModal] = useState(false);
+  const [wide, setWide] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [health, setHealth] = useState(false);
   const [attach, setAttach] = useState(false);
@@ -987,6 +990,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
             <div className="flex flex-wrap gap-3">
               <ButtonLink href="/styleguide?invite=1" scroll={false} variant="secondary">Invite form (real InviteDialog)</ButtonLink>
               <Button variant="secondary" onClick={() => setModal(true)}>Plain modal</Button>
+              <Button variant="secondary" onClick={() => setWide(true)}>Wide popup (size=&quot;lg&quot;)</Button>
               <Button variant="secondary" onClick={() => setSheet(true)}>Bottom sheet</Button>
               <Button variant="secondary" onClick={() => setAttach(true)}>AttachSheet</Button>
               <Button variant="secondary" onClick={() => setReview(true)}>ReviewIssueDialog (with table)</Button>
@@ -1023,6 +1027,31 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
                 <Camera className="size-5" aria-hidden="true" /> Take a photo
               </Button>
               <Button variant="ghost" block onClick={() => setSheet(false)}>Cancel</Button>
+            </Dialog>
+            {/* size="lg": 720px on a desktop, a full-height sheet on a phone. The body scrolls. */}
+            <Dialog
+              open={wide}
+              onClose={() => setWide(false)}
+              size="lg"
+              title="All prescriptions"
+              description="2 in this chat."
+            >
+              <ul className="flex flex-col gap-3">
+                {[demo.prescription, demo.prescription].map((rx, i) => (
+                  <li key={i}>
+                    <PrescriptionCard
+                      issuedAt={demo.NOW}
+                      medicines={(rx.prescription_items ?? []).map((it) => it.medicine)}
+                      latest={i === 0}
+                      actions={
+                        <ButtonLink href="#" variant="outline">
+                          View
+                        </ButtonLink>
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
             </Dialog>
           </Section>
         </div>
@@ -1235,16 +1264,16 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
             </div>
           </Section>
 
-          <Section id="panel" title="Patient panel" file="doctor/PatientPanel.tsx" use="Right column next to the doctor's chat.">
+          <Section id="panel" title="Patient panel" file="doctor/PatientPanel.tsx" use="Right column next to the doctor's chat. Read-only summary (decision 73): every action opens a popup. On a phone the same panel opens as a sheet from the chat header.">
             <div className="grid gap-5 lg:grid-cols-2">
               <Variant name="Patient" className="w-full">
                 <Stage size="panel" height="tall">
-                  <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} saveAction={demoSave} blockAction={demoSave2} />
+                  <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} blockAction={demoSave2} />
                 </Stage>
               </Variant>
               <Variant name="With “Also consults”" code="otherDoctors" className="w-full">
                 <Stage size="panel" height="tall">
-                  <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} otherDoctors={DEMO_OTHER_DOCTORS} saveAction={demoSave} blockAction={demoSave2} />
+                  <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} otherDoctors={DEMO_OTHER_DOCTORS} blockAction={demoSave2} />
                 </Stage>
               </Variant>
             </div>

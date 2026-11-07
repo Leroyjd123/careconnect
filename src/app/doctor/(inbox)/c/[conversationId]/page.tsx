@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { FilePlus2, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { PanelRightClose, PanelRightOpen, UserRound } from "lucide-react";
 import { LayoutToggle } from "@/components/layout/LayoutToggle";
 import { LAYOUT_COOKIES } from "@/lib/constants";
 import { requireProfile } from "@/lib/auth";
@@ -13,19 +13,21 @@ import { Banner } from "@/components/ui/Feedback";
 import { Conversation } from "@/components/chat/Conversation";
 import { FileViewer } from "@/components/chat/FileViewer";
 import { removeReport } from "@/app/actions/messages";
-import { PatientPanel } from "@/components/doctor/PatientPanel";
-import { PrescriptionComposer } from "@/components/rx/PrescriptionComposer";
-import { PrescriptionView } from "@/components/rx/PrescriptionView";
+import { PatientPanel, PatientPopups } from "@/components/doctor/PatientPanel";
 import { cn } from "@/lib/utils";
 import type { MedicineOption } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Conversation" };
 
-type Search = { file?: string; rx?: string; replaces?: string; issued?: string };
+type Search = {
+  file?: string;
+  rx?: string;
+  issued?: string;
+};
 
 /**
- * Desktop: inbox list (from the layout) | conversation | patient or prescription panel.
- * Phone: one of those at a time, chosen by the query string.
+ * Desktop: inbox list (from the layout) | conversation | patient panel.
+ * Phone: the chat, and the patient panel opens as a sheet from the chat header.
  */
 export default async function DoctorConversation({
   params,
@@ -36,7 +38,7 @@ export default async function DoctorConversation({
 }) {
   const doctor = await requireProfile("doctor");
   const { conversationId } = await params;
-  const { file, rx, replaces, issued } = await searchParams;
+  const { file, rx, issued } = await searchParams;
 
   const conversation = await getConversation(conversationId);
   if (!conversation || conversation.doctor_id !== doctor.id) notFound();
@@ -55,15 +57,13 @@ export default async function DoctorConversation({
   const base = `/doctor/c/${conversationId}`;
 
   const openFile = file ? messages.find((m) => m.id === file && m.file_path) : undefined;
-  const openRx = rx && rx !== "new" ? prescriptions.find((p) => p.id === rx) : undefined;
-  const replacesRx = replaces ? prescriptions.find((p) => p.id === replaces) : undefined;
-  const composing = rx === "new" || openRx?.status === "draft";
   // Desktop: the doctor can hide the patient column to give the chat the full width.
-  const panelHidden = !rx && (await cookies()).get(LAYOUT_COOKIES.panel)?.value === "on";
+  const panelHidden = (await cookies()).get(LAYOUT_COOKIES.panel)?.value === "on";
+  const reportMessages = [...messages].reverse().filter((m) => m.kind === "file" && !m.deleted_at);
 
   return (
-    <div className="flex min-h-0 flex-1 gap-4">
-      <div className={cn("relative flex min-h-0 flex-1 flex-col gap-2", rx && "hidden lg:flex")}>
+    <div className="flex min-h-0 min-w-0 flex-1 gap-4">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2">
         {issued ? <Banner tone="success">Prescription issued. {firstName} can see it in chat and under Prescriptions.</Banner> : null}
         <Card tone="subtle" className="flex min-h-0 flex-1 flex-col p-3">
           <Conversation
@@ -85,9 +85,9 @@ export default async function DoctorConversation({
               subtitle: patient.status === "invited" ? "Invite pending" : patient.email,
               actions: (
                 <>
-                  <ButtonLink href={`${base}?rx=new`} variant="soft" size="sm" className="lg:hidden">
-                    <FilePlus2 aria-hidden="true" className="size-4" />
-                    Prescribe
+                  <ButtonLink href={`${base}?panel=1`} variant="soft" size="sm" className="lg:hidden">
+                    <UserRound aria-hidden="true" className="size-4" />
+                    Patient
                   </ButtonLink>
                   <LayoutToggle
                     cookie={LAYOUT_COOKIES.panel}
@@ -106,45 +106,31 @@ export default async function DoctorConversation({
         {openFile ? <FileViewer message={openFile} backHref={base} replyHref={base} onRemove={removeReport.bind(null, openFile.id, conversationId)} className="absolute inset-0 z-10" /> : null}
       </div>
 
-      <div className={cn("min-h-0 w-full shrink-0 flex-col lg:w-[380px]", rx ? "flex" : "hidden", panelHidden ? "lg:hidden" : "lg:flex")}>
-        {composing ? (
-          <PrescriptionComposer
-            conversationId={conversationId}
-            patient={patient}
-            draft={openRx ?? null}
-            replaces={replacesRx ?? null}
-            suggestions={suggestions}
-            closeHref={base}
-          />
-        ) : openRx ? (
-          <Card tone="subtle" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
-            <PrescriptionView
-              prescription={openRx}
-              replaced={replaced.includes(openRx.id)}
-              actions={
-                <>
-                  <ButtonLink href={`/rx/${openRx.id}/print`} target="_blank" variant="secondary" block>
-                    Open print view
-                  </ButtonLink>
-                  <ButtonLink href={base} variant="ghost" block>
-                    Back to the conversation
-                  </ButtonLink>
-                </>
-              }
-            />
-          </Card>
-        ) : (
-          <PatientPanel
-            conversationId={conversationId}
-            patient={patient}
-            blockedAt={conversation.blocked_at}
-            prescriptions={prescriptions}
-            replacedRxIds={replaced}
-            reports={[...messages].reverse().filter((m) => m.kind === "file" && !m.deleted_at)}
-            otherDoctors={otherDoctors}
-          />
-        )}
+      {/* Desktop: the patient column. On a phone the same panel opens as a sheet (below). */}
+      <div className={cn("hidden min-h-0 w-full shrink-0 flex-col lg:w-[380px]", panelHidden ? "lg:hidden" : "lg:flex")}>
+        <PatientPanel
+          conversationId={conversationId}
+          patient={patient}
+          blockedAt={conversation.blocked_at}
+          prescriptions={prescriptions}
+          replacedRxIds={replaced}
+          reports={reportMessages}
+          otherDoctors={otherDoctors}
+        />
       </div>
+
+      {/* The popups live here, outside the patient column: a native <dialog> inside a
+          display:none ancestor is not painted, and the column hides itself on a phone. */}
+      <PatientPopups
+        conversationId={conversationId}
+        patient={patient}
+        blockedAt={conversation.blocked_at}
+        prescriptions={prescriptions}
+        replacedRxIds={replaced}
+        reports={reportMessages}
+        otherDoctors={otherDoctors}
+        suggestions={suggestions}
+      />
     </div>
   );
 }

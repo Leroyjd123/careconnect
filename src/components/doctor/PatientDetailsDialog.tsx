@@ -17,11 +17,15 @@ export function PatientDetailsDialog({
   patient,
   open,
   onClose,
+  closeHref,
   saveAction = updatePatientDetails,
 }: {
   patient: Profile;
   open: boolean;
-  onClose: () => void;
+  /** Called when the dialog closes. */
+  onClose?: () => void;
+  /** Where closing goes. Used when the query string opens this dialog, so closing never adds history. */
+  closeHref?: string;
   saveAction?: typeof updatePatientDetails;
 }) {
   const router = useRouter();
@@ -37,6 +41,11 @@ export function PatientDetailsDialog({
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<PatientDetailsInput>) => setForm((f) => ({ ...f, ...patch }));
 
+  function close() {
+    if (closeHref) router.replace(closeHref);
+    else onClose?.();
+  }
+
   async function save() {
     setSaving(true);
     setError(null);
@@ -46,19 +55,19 @@ export function PatientDetailsDialog({
       setError(result.error);
       return;
     }
-    onClose();
+    close();
     router.refresh();
   }
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={close}
       title="Edit patient details"
       description="Changing the email or mobile number also changes what they sign in with."
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={saving}>
+          <Button variant="secondary" onClick={close} disabled={saving}>
             Cancel
           </Button>
           <Button onClick={save} loading={saving}>

@@ -16,7 +16,8 @@ Rules for whoever edits this file:
 - New plan: `docs/PLAN.md` (multi-doctor, meetings, check-ins, superadmin, landing). Branch `feature/multi-doctor`.
 - Phase A done: migration 0005 applied to Supabase; admin account promoted.
 - Phase B done (v0.7.0 started): per-conversation blocking, shared medicines (admin manages), audit helper, legal pages, Malayalam.
-- Phase C done: a patient can have several doctors. `/chat` is a router (0 / 1 / 2+ doctors), the chat moved to `/chat/[conversationId]`, home shows one card per doctor, prescriptions show the doctor and can be filtered by doctor, the patient edits their own DOB/height/weight, the doctor's panel can show "Also consults", notifications name the sender. Next: Phase P (patient panel → summary + popups). Open: Q-L in PLAN §8.
+- Phase C done: a patient can have several doctors. `/chat` is a router (0 / 1 / 2+ doctors), the chat moved to `/chat/[conversationId]`, home shows one card per doctor, prescriptions show the doctor and can be filtered by doctor, the patient edits their own DOB/height/weight, the doctor's panel can show "Also consults", notifications name the sender.
+- Phase P done: the doctor's panel is a read-only summary and every action opens a query-string popup (`?rx=new` / `?rx=<id>` / `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`, `?panel=1` for the phone sheet). `Dialog` grew `size="lg"` and `closeHref`. Q-L resolved (filter chips come from the prescriptions' own doctors). Next: Phase D (meetings + check-ins), which adds "Next up" to the panel and the `?appt=` popups.
 
 ## State — 2026-10-20
 
@@ -105,6 +106,16 @@ Newest last. Never delete an entry; add a superseding one instead.
 - **`validateHealthDetails()` lives in `lib/utils.ts`**, because the doctor and the patient must apply the same rules and duplicating them would drift.
 - **The prescriptions filter lives in the query string** (`?doctor=<id>`), like every other "a link should be able to open this" case in the app.
 - **A push notification's title is the sender's name** and the body says only what happened ("New message."). The URL opens that conversation for both roles, so a patient with several doctors lands in the right chat.
+- **The doctor's patient panel is read-only** (v0.7.0, Phase P, decision 73). It shows information; every action opens a popup. A panel that both shows and edits needs two sets of affordances in one narrow column, and the doctor has to hunt.
+- **Every popup is opened by the query string** (`?rx=new|<id>`, `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`, `?panel=1`), and closing uses `router.replace`, so the browser history never fills up with popups. Back still leaves the conversation.
+- **`Dialog size="lg"`** (an extension, not a new file): ~720px on a desktop, a full-height sheet on a phone, with the body scrolling and the header/footer in place. `Dialog closeHref` closes to a URL.
+- **The popups live in the page, not in the patient column.** A native `<dialog>` inside a `display:none` ancestor is not painted (the browser reports `open=true` but renders a 0×0 box), and the patient column hides itself on a phone. `PatientPopups` is a second export of `doctor/PatientPanel.tsx`, so there is still no new component file.
+- **`?rx=new` resumes the newest plain draft**, so closing the popup never loses the doctor's work. The draft still autosaves; the popup is just where it is edited now.
+- **Block/Activate keeps a confirmation dialog inside the panel**, not a query-string popup: it acts at once, and the doctor has to be sure. Everything else in the panel is a link.
+- **The phone sheet reuses `PatientPanel` with `variant="sheet"`** — one component, one set of sections, no mobile copy. `?panel=1` opens it; a media query keeps it closed on a desktop, where the column is already there.
+- **The prescriptions filter chips come from the prescriptions' own doctors** (Q-L), not from the patient's chat list, so a card can always be filtered by the doctor who issued it, even when that doctor is no longer in their chats.
+- **`getOtherDoctors()` logs and returns `[]`** instead of throwing: it is a nice-to-have section, and a failure must not take the whole conversation down.
+- **`min-w-0` on the doctor's flex rows** (`(inbox)/layout.tsx` and the conversation page). Without it the chat column grew to its content width (648px on a 390px phone) and the page scrolled sideways, pushing the chat header's buttons off screen. The `ConversationList` hides itself on a phone, but the row it left behind still had to be allowed to shrink.
 
 ## Known gaps — deliberate, not bugs
 
@@ -125,3 +136,4 @@ Newest last. Never delete an entry; add a superseding one instead.
 - **Phase 4** — `MedicineFields`, `PrescriptionComposer` (1.5s autosave), `ReviewIssueDialog`, `PrescriptionView`, corrections via `replacesId`, patient list and detail, `/rx/[id]/print` with `AutoPrint`.
 - **Phase 5** — `PatientsTable` with Resend / Open chat, `/profile` with the language switch, doctor first-run welcome, `loading.tsx` and `error.tsx` for both segments.
 - **Phase 6** — deleted `ComingSoon`, merged the duplicate tab bars and draft card, replaced the last three raw `<button>`s with primitives, confirmed no hex colours or hand-rolled glass outside `globals.css`, updated `docs/COMPONENTS.md` and `/styleguide`.
+- **Phase P** — the doctor's patient panel is a read-only summary; every action opens a query-string popup (`?rx=new`, `?rx=<id>`, `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`). The phone opens the same panel as a sheet (`?panel=1`). `Dialog` grew `size="lg"` and `closeHref`. Q-L resolved.

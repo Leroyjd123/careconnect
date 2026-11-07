@@ -13,7 +13,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `Field`, `TextInput`, `TextArea`, `InputAddon`, `FieldError` | `ui/Field.tsx` | Every form control with label, hint and error. | ✅ |
 | `Segmented` | `ui/Segmented.tsx` | Exactly-one-of switches: All/Unread, Reports/Prescriptions, language. | ✅ |
 | `ChipGroup` | `ui/ChipGroup.tsx` | Quick picks: frequency, duration, timing, patient filters. `allowCustom` adds a "Custom…" chip with a text input. | ✅ |
-| `Dialog` | `ui/Dialog.tsx` | Modals (invite, review & issue) and bottom sheets (attach). | ✅ |
+| `Dialog` | `ui/Dialog.tsx` | Modals (invite, review & issue) and bottom sheets (attach). `size="lg"` = a wide popup (~720px on desktop, a full-height sheet on a phone) whose body scrolls; `closeHref` closes to a URL without adding history. | ✅ |
 | `Avatar` | `ui/Avatar.tsx` | Initials avatar. `doctor` = forest, `pending` = dashed. | ✅ |
 | `Badge`, `CountBadge` | `ui/Badge.tsx` | Status pills and unread counts. | ✅ |
 | `EmptyState`, `Banner`, `Skeleton` | `ui/Feedback.tsx` | Empty/error screens, inline status (issued, offline, failed), loading. | ✅ |
@@ -54,7 +54,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `PrescriptionCard` | `rx/PrescriptionCard.tsx` | Card in chat (both sides) and in the patient list. `replaced` / `latest` change the badge. `doctorName` adds the issuing doctor (the patient's list). | ✅ |
 | `DoseSchedule` | `rx/DoseSchedule.tsx` | Morning / Afternoon / Night slots from "1-0-1". | ✅ |
 | `PrescriptionView` | `rx/PrescriptionView.tsx` | Full read-only prescription. Patient detail, doctor "View" and the print page (`variant="print"`). | ✅ |
-| `PrescriptionComposer` | `rx/PrescriptionComposer.tsx` | Draft editor: medicines, diagnosis, advice, 1.5 s autosave, review. ONE component for the desktop panel and the phone full screen. | ✅ |
+| `PrescriptionComposer` | `rx/PrescriptionComposer.tsx` | Draft editor: medicines, diagnosis, advice, 1.5 s autosave, review. ONE component for the wide popup and the phone sheet. | ✅ |
 | `MedicineFields` | `rx/MedicineFields.tsx` | One medicine row inside the composer. Suggests from the master list (fills the usual dose); "Save to my medicines" for new names. | ✅ |
 | `ReviewIssueDialog` | `rx/ReviewIssueDialog.tsx` | Dialog: patient identity strip + table + lock notice + Issue. | ✅ |
 
@@ -63,10 +63,11 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | Component | File | Use for | Status |
 |---|---|---|---|
 | `ConversationList` | `doctor/ConversationList.tsx` | Inbox list with search + All/Unread. Rendered once by `doctor/(inbox)/layout.tsx`; hides itself on a phone when a conversation is open. | ✅ |
-| `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity + age/height/weight, Edit details, Block/Activate (`blockedAt` = this conversation's block, 0005), New prescription, Reports/Prescriptions tabs. `otherDoctors` adds the "Also consults" section (names only). Hideable on desktop. | ✅ |
+| `PatientPanel` | `doctor/PatientPanel.tsx` | Read-only summary of the patient (decision 73): identity, details, latest prescription, latest reports, "Also consults". Nothing is edited here — every action opens a popup. `variant="sheet"` is the phone version. `otherDoctors` adds the "Also consults" section (names only). Hideable on desktop. | ✅ |
+| `PatientPopups` | `doctor/PatientPanel.tsx` | The doctor's popups for one patient, opened by the query string: `?rx=new` / `?rx=<id>` / `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`, `?panel=1`. Closing replaces the URL, so the history stays clean. Mounted outside the patient column: a native `<dialog>` inside a `display:none` ancestor is not painted. | ✅ |
 | `InviteDialog` | `doctor/InviteDialog.tsx` | "Share a link" (one-time `/join` link, copy / share / WhatsApp) or "Send by email" → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
 | `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked; `blockedAt` per row = conversation block) + actions (resend, open chat). | ✅ |
-| `PatientDetailsDialog` | `doctor/PatientDetailsDialog.tsx` | Doctor edits name, email, mobile, date of birth, height, weight. Opened from PatientPanel. | ✅ |
+| `PatientDetailsDialog` | `doctor/PatientDetailsDialog.tsx` | Doctor edits name, email, mobile, date of birth, height, weight. Opened from `PatientPopups` (`?details=1`). | ✅ |
 | `ChipGroup` `optionValues` | `ui/ChipGroup.tsx` | When a chip's label isn't its value: the patient's prescription filter shows a doctor's name but keeps their id. | ✅ |
 | `MedicineList` | `doctor/MedicineList.tsx` | Shared master medicines (0005). Doctors add; `canManage` (admin) adds Edit / Deactivate / Merge. No delete. `/doctor/settings/medicines`. | ✅ |
 | `ReleaseNotes` | `doctor/ReleaseNotes.tsx` | Version history on `/doctor/settings`, from `RELEASES` in `lib/releases.ts`. First entry marked Current. | ✅ |

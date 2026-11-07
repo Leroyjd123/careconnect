@@ -25,11 +25,11 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/home` | patient | One card per doctor (name, specialty, latest message, unread count, "Open chat"), Prescriptions + Send a report tiles (B1) ✅ |
 | `/chat` | patient | One doctor → that chat. Two or more → "Your doctors" list (B2, B4, B5) ✅ |
 | `/chat/[conversationId]` | patient | The chat with one doctor. Back goes to "/chat" with two or more doctors, otherwise "/home" ✅ |
-| `/prescriptions` | patient | Issued list, newest first, "Replaced" marked, the doctor's name on each; filter chips by doctor when there are two or more (C1, C4) ✅ |
+| `/prescriptions` | patient | Issued list, newest first, "Replaced" marked, the doctor's name on each; filter chips by doctor when there are two or more (C1, C4). The chips come from the prescriptions' own doctors, so a card can always be filtered by its doctor (Q-L) ✅ |
 | `/prescriptions/[id]` | patient | Full prescription, DoseSchedule, Download (print) (C2) ✅ |
 | `/profile` | patient | Name, email, language (EN/ಕನ್ನಡ/മലയാളം), own health details (date of birth, height, weight), privacy, help, sign out (C3) ✅ |
 | `/doctor` | doctor | Inbox. Desktop: list + empty conversation pane. Phone: list (D2, E1, D9) |
-| `/doctor/c/[id]` | doctor | Same 3 columns with conversation open + PatientPanel (D2, D3, D6, E2) |
+| `/doctor/c/[id]` | doctor | Same 3 columns with conversation open + PatientPanel (D2, D3, D6, E2). The panel is a read-only summary; every action opens a popup (P1–P5) ✅ |
 | `/doctor/settings/medicines` | doctor | Master medicines: add, edit, deactivate, merge (never delete) ✅ |
 | `/doctor/settings` | doctor | Account details (name, email, specialty, reg no), current version, release notes ✅ |
 | `/doctor/patients` | doctor | Patients + invite status, `?invite=1` opens InviteDialog (D7, D8) |
@@ -72,6 +72,19 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 - Patient's composer when blocked: "You can't send messages in this chat. You can still read your messages and prescriptions."
 - When a doctor is deactivated by the admin, patient sees: "{Doctor name} is no longer available here. You can still read your messages and prescriptions." Doctor sees: "Your account is deactivated. Contact CareConnect to send messages again."
 
+## Patient panel and popups (Phase P, decision 73)
+
+- The right-hand panel is a **read-only summary**. Top to bottom: identity (avatar, name, phone, email, joined date, status badge) → details (age, height, weight) → latest prescription (date, medicine names, "View") → reports (count + the 2 latest, "View all") → "Also consults" (only when the setting is on). Nothing is edited inside the panel.
+- Every action opens a popup, and the popup is opened by the **query string**, so a link works, a reload works and Back works. Closing replaces the URL, so the history never fills up with popups.
+  - `?rx=new` → write a prescription (or resume the newest draft). `?rx=<id>` → read an issued one, or continue a draft. `?rx=new&replaces=<id>` → a correction, prefilled.
+  - `?details=1` → edit the patient's name, email, mobile, date of birth, height and weight.
+  - `?prescriptions=1` → every prescription in the chat. `?reports=1` → every report in the chat.
+  - `?panel=1` → the patient panel as a sheet (phone only).
+- The wide popups use `Dialog size="lg"`: ~720px on a desktop, a full-height sheet on a phone, with the body scrolling and the footer in place.
+- Block and Activate keep a small confirmation dialog inside the panel, because it acts at once and the doctor has to be sure.
+- On a phone the panel opens as a sheet from the chat header, with the same sections. There is no second, mobile-only panel.
+- **Next up** (the next meeting and the next check-in) is Phase D. Until then the section is a placeholder.
+
 ## Master medicines
 
 - Settings → Master medicines. ONE list shared by every doctor (0005): name + strength, optional usual dose.
@@ -88,11 +101,11 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 
 ## Prescriptions
 
-- Doctor writes from the conversation (desktop: right-hand panel; phone: full screen). Same component.
+- Doctor writes from a popup: the conversation's "New prescription" opens a wide popup (`Dialog size="lg"`). Same component on phone, where it is a full-height sheet.
 - Patient name and date are filled in and read-only. Fields: diagnosis/notes (optional), medicines (search text + dose + frequency chips + duration chips + timing chips), advice.
 - Quick picks: `FREQUENCY_OPTIONS`, `DURATION_OPTIONS`, `TIMING_OPTIONS` in `lib/constants.ts`. Nothing is pre-selected. "Custom…" reveals a text input.
 - Medicine search in the MVP = free text with suggestions from the doctor's own previous prescriptions (no drug database).
-- Draft autosaves (debounced 1.5 s) and shows "Draft · saved 10:19 AM · not visible to Ravi". Drafts listed in PatientPanel with "Continue draft".
+- Draft autosaves (debounced 1.5 s) and shows "Draft · saved 10:19 AM · not visible to Ravi". Closing the popup keeps the draft; "?rx=new" resumes it.
 - Review dialog shows the patient identity strip, a table of medicines, advice and the lock notice:
   "Ravi will see this in his chat and under Prescriptions. Once issued it is locked. To correct it, you issue a new version that replaces this one, and both stay on record."
 - Issue → locked, card posted in chat, success banner "Prescription issued. Ravi can see it in his chat and under Prescriptions."

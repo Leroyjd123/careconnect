@@ -31,8 +31,14 @@ export const RELEASES: Release[] = [
       "Master medicines is one list shared by all doctors. Add any medicine that's missing; changes and merges are made by CareConnect.",
       "The privacy notice and terms now speak about “your doctor” and say who else can see a conversation.",
       "Printed prescriptions leave out the registration number line until it's set.",
+      "The panel beside your chat is now a summary of the patient: their details, their latest prescription and their latest reports. Every action opens a popup instead of changing the panel.",
+      "On a phone the patient panel opens as a sheet from the chat header.",
     ],
-    fixed: ["Inviting a patient who already has an account no longer changes their name."],
+    fixed: [
+      "Inviting a patient who already has an account no longer changes their name.",
+      "Closing a prescription popup no longer loses your draft. Open “New prescription” again and pick up where you left off.",
+      "Your prescriptions can always be filtered by the doctor who issued them, even if that doctor is no longer in your chats.",
+    ],
   },
   {
     version: "0.6.0",

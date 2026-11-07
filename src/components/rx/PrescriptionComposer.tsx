@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Banner } from "@/components/ui/Feedback";
 import { Field, FieldError, TextArea } from "@/components/ui/Field";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { MedicineFields } from "@/components/rx/MedicineFields";
 import { ReviewIssueDialog } from "@/components/rx/ReviewIssueDialog";
 import { formatDate, formatTime } from "@/lib/utils";
@@ -26,10 +25,9 @@ type PrescriptionComposerProps = {
   draft?: PrescriptionWithPeople | null;
   /** Issued prescription this one corrects: its contents are prefilled. */
   replaces?: PrescriptionWithPeople | null;
-  /** Medicine names this doctor has used before. */
   /** The doctor's active master medicines (Settings → Master medicines). */
   suggestions: MedicineOption[];
-  /** Back link and where to go after issuing, e.g. /doctor/c/<id>. */
+  /** The conversation URL: where the popup closes to, and where the issued banner shows. */
   closeHref: string;
 };
 
@@ -147,15 +145,8 @@ export function PrescriptionComposer({ conversationId, patient, draft, replaces,
   }
 
   return (
-    <Card tone="subtle" className="flex min-h-0 flex-1 flex-col gap-3 p-3">
-      <PageHeader
-        backHref={closeHref}
-        backLabel="Close the prescription"
-        title={draftId ? "Prescription draft" : "New prescription"}
-        subtitle={replacesId ? `Correction for ${patient.full_name}` : patient.full_name}
-      />
-
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-2">
+    <Card tone="subtle" className="flex flex-col gap-3 p-3">
+      <div className="flex flex-col gap-4 px-1 pb-2">
         <div className="flex items-center gap-3 rounded-tile bg-white/70 px-4 py-3">
           <Avatar name={patient.full_name} seed={patient.id} />
           <div className="flex min-w-0 flex-col">

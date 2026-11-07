@@ -121,10 +121,15 @@ export function replacedIds(list: Prescription[]): string[] {
  * The patient's other doctors, by name only (0005, decision 26).
  * The RPC returns nothing unless the "also consults" setting is on for this pair,
  * and only the doctor who shares a conversation with the patient can call it.
+ * It is RLS-protected, so a failure here must not take the whole conversation down:
+ * the panel simply shows no names.
  */
 export const getOtherDoctors = cache(async (patientId: string): Promise<OtherDoctor[]> => {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("other_doctors", { patient: patientId });
-  if (error) throw new Error(`other_doctors failed: ${error.message}`);
+  if (error) {
+    console.error("other_doctors failed", error);
+    return [];
+  }
   return (data ?? []) as OtherDoctor[];
 });

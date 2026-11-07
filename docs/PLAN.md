@@ -51,7 +51,7 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 | A | Database migration 0005 | – | ✅ applied to Supabase 2026-11-07 |
 | B | Multi-doctor clean-up | v0.7.0 | ✅ done 2026-11-07 |
 | C | Patient with several doctors | v0.7.0 | ✅ done 2026-11-07 |
-| P | Patient panel → summary + popups | v0.7.0 | ☐ |
+| P | Patient panel → summary + popups | v0.7.0 | ✅ done 2026-11-07 (Next up waits for Phase D) |
 | D | Meetings + check-ins | v0.7.0 | ☐ |
 | E | Superadmin panel + audit log | v0.8.0 | ☐ |
 | G | Landing page | v0.9.0 | ☐ components approved |
@@ -375,18 +375,43 @@ Phase B notes (2026-11-07):
 
 ### Phase P: patient panel → summary + popups (v0.7.0)
 Goal: the right-hand `PatientPanel` only shows information; every action opens a `Dialog`.
-- [ ] Panel sections (read-only, top to bottom): identity (avatar, name, contact, joined, status badge) →
+- [x] Panel sections (read-only, top to bottom): identity (avatar, name, contact, joined, status badge) →
       details (age, height, weight) → **Next up** (next meeting and next check-in, as compact `AppointmentCard`s)
       → **Latest prescription** (date, medicine names, "View") → **Reports** (count + 2 latest `FileCard`s,
       "View all") → **Also consults** (only when enabled).
-- [ ] Action bar under identity: `New prescription` (the panel's one primary), `Schedule` menu
+      Done, except **Next up**: it needs `AppointmentCard` from Phase D, so the section is a placeholder comment for now.
+- [x] Action bar under identity: `New prescription` (the panel's one primary), `Schedule` menu
       (Meeting / Check-in), `⋯` (Edit details, Block, Invite again).
-- [ ] Popups (all `Dialog`, query-string driven so links work): `?rx=new` / `?rx=<id>` → `PrescriptionComposer`
+      Done: `New prescription` (primary), then `Edit details` and `Block`. The `Schedule` menu and `Invite again`
+      need Phase D and the invite flow, so they are not here yet.
+- [x] Popups (all `Dialog`, query-string driven so links work): `?rx=new` / `?rx=<id>` → `PrescriptionComposer`
       inside `Dialog size="lg"`; `?appt=meeting` / `?appt=check_in` / `?appt=<id>` → `AppointmentDialog`;
       `?details=1` → `PatientDetailsDialog`; `?reports=1` / `?prescriptions=1` → lists in `Dialog size="lg"`.
-- [ ] Remove the Reports/Prescriptions tabs and the inline composer from the panel. Phone: panel opens as a sheet
+      Done, except the appointment popups: `AppointmentDialog` is Phase D.
+- [x] Remove the Reports/Prescriptions tabs and the inline composer from the panel. Phone: panel opens as a sheet
       from the chat header, same sections.
-- [ ] Autosave, review-and-issue and corrections keep working inside the popup (closing keeps the draft).
+- [x] Autosave, review-and-issue and corrections keep working inside the popup (closing keeps the draft).
+
+Phase P notes (2026-11-07):
+- `Dialog` grew `size?: "md" | "lg"` (no new file): "lg" is ~720px on a desktop and a full-height sheet on a phone,
+  with the body scrolling. It also grew `closeHref`, so a popup opened by the query string closes with
+  `router.replace` and the browser history never fills up with popups.
+- The popups live in `PatientPopups` (same file as `PatientPanel`, so no new component file), mounted in the page
+  and **outside** the patient column: a native `<dialog>` inside a `display:none` ancestor is not painted, and the
+  column hides itself on a phone.
+- The panel's inline composer and its segmented tabs are gone. The panel is read-only; `Edit details` is a link to
+  `?details=1`. Block/Activate keeps a small confirmation dialog in the panel, because it acts at once.
+- `?rx=new` resumes the newest plain draft, so closing the popup never loses the doctor's work.
+- On a phone the panel opens as a sheet (`?panel=1`) from the chat header. The same component, `variant="sheet"`.
+- Q-L resolved: the patient's filter chips come from the prescriptions' own doctors, not from their chat list, so a
+  card can always be filtered by its doctor.
+- `getOtherDoctors()` now logs the error and returns `[]` instead of throwing: a failure there must not take the
+  whole conversation down.
+- Fixed a sideways scroll on a phone: the doctor's flex rows needed `min-w-0`, so the chat column stopped growing to
+  its content width and the chat header's buttons stayed on screen at 390px.
+- Verified by hand against the live project at 1440px and 390px: every popup opens, closing replaces the URL and
+  keeps the history length, autosave survives a close, review-and-issue works, a correction prefills and marks the
+  old one "Replaced", and the patient's list still shows both prescriptions.
 
 ### Phase D: meetings + check-ins (v0.7.0)
 - [ ] `src/app/actions/meetings.ts`: `scheduleMeeting`, `updateMeeting`, `cancelMeeting`, `completeMeeting`,
@@ -452,7 +477,7 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 | ID | Question | Recommendation | Blocks |
 |---|---|---|---|
 | ~~Q-K~~ | Resolved 2026-11-07 (yes) and built: `acceptInviteLink`, `/join` accept card, `/login?next=`. | – | – |
-| Q-L | **Phase C, 2026-11-07**: a patient with one doctor who has blocked them in that conversation still has "Send a report" open on `/home`, but the chat's `readOnlyNotice` says they can't send. Fine as it is. The open one: when the patient has 2+ doctors, the prescriptions filter chip is named after the doctor, and the list shows a card per doctor — but a patient may have prescriptions from a doctor who is no longer in their conversations (e.g. the doctor was removed). Those cards then have no chip to filter by. Recommended: show every doctor who issued a prescription in the list, not only the doctors with a chat. | Build the chip list from the prescriptions' own doctors, so a card can always be filtered. | – |
+| ~~Q-L~~ | Resolved 2026-11-07 and built in Phase P: the prescriptions filter chip list comes from the prescriptions' own doctors, so a card can always be filtered by its doctor — even when that doctor is no longer in the patient's chats. The blocked-but-still-has-"Send a report" case is fine as it is. | – | – |
 
 ---
 
