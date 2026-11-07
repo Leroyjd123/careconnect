@@ -327,6 +327,8 @@ export async function joinWithDoctorInviteLink(
     })
     .eq("id", doctorId);
   if (profileError) {
+    // Remove the half-made account, so it can't sign in and the link can be used again.
+    await client.auth.admin.deleteUser(doctorId);
     await release();
     console.error("joinWithDoctorInviteLink profile failed", profileError);
     return { error: "We couldn't set up your account. Please try again.", values };
@@ -615,7 +617,7 @@ export async function inviteAdminPatient(input: {
   // A patient who already has an account: reuse it, don't touch their name.
   const { data: existingProfile } = await client.from("profiles").select("id, full_name, role").eq("email", email).maybeSingle();
   if (existingProfile) {
-    if (existingProfile.role !== "patient") return { ok: false, error: "This email belongs to a doctor account." };
+    if (existingProfile.role !== "patient") return { ok: false, error: "This email belongs to a doctor or admin account." };
     const patientId = existingProfile.id;
     const { error: convError } = await client
       .from("conversations")
