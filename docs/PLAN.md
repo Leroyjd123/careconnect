@@ -50,7 +50,7 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 |---|---|---|---|
 | A | Database migration 0005 | – | ✅ applied to Supabase 2026-11-07 |
 | B | Multi-doctor clean-up | v0.7.0 | ✅ done 2026-11-07 |
-| C | Patient with several doctors | v0.7.0 | ☐ |
+| C | Patient with several doctors | v0.7.0 | ✅ done 2026-11-07 |
 | P | Patient panel → summary + popups | v0.7.0 | ☐ |
 | D | Meetings + check-ins | v0.7.0 | ☐ |
 | E | Superadmin panel + audit log | v0.8.0 | ☐ |
@@ -263,7 +263,7 @@ Leroy: reply "approve <name>" or suggest an alternative. Agents: do not build an
 | `chat/AppointmentCard` (`type`: meeting \| check_in) | D | Shown in chat, patient home and PatientPanel. Nothing displays a scheduled item today. | `Card`, `IconTile`, `Badge`, `ButtonLink` | ✅ approved 2026-11-07 |
 | `chat/AppointmentDialog` (`type`: meeting \| check_in) | D | Schedule / reschedule form. Opens from chat header, PatientPanel and admin. | `Dialog`, `Segmented`, `Field`, `TextInput`, `TextArea`, `ChipGroup allowCustom`, `Button` | ✅ approved 2026-11-07 |
 | `Dialog` size `lg` (extension, no new file) | P | Prescription composer and "view all" lists need a wide popup (≈720px desktop, full-screen sheet on phone). | `Dialog` | allowed (extension) |
-| Move `doctor/ConversationList` → `chat/ConversationList` + `viewerRole` prop | C, E | Patients (2+ doctors) and admin need the same list. Move, don't copy. | itself | ✅ approved 2026-11-07 |
+| Move `doctor/ConversationList` → `chat/ConversationList` + `viewerRole` prop | C, E | Patients (2+ doctors) and admin need the same list. Move, don't copy. | itself | ✅ approved 2026-11-07 · done in Phase C |
 | Rename `layout/DoctorSidebar` → `layout/AppSidebar` with `items` prop | E | Admin needs the same sidebar with different links. | itself | ✅ approved 2026-11-07 |
 | `admin/AuditLogTable` | E | No table of events exists. `PatientsTable` is patient-specific. | `Card`, `Badge`, `Segmented`, `TextInput` | ✅ approved 2026-11-07 |
 | `doctor/OtherDoctorsCard` (or a `PatientPanel` section, no new file) | C | Show "Also consults: Dr. X". Prefer a section inside `PatientPanel`, which needs no approval. | `Card`, `Avatar` | ⏳ prefer no new file |
@@ -356,13 +356,22 @@ Phase B notes (2026-11-07):
 - Release 0.7.0 started in `releases.ts`; `package.json` bumped to 0.7.0. C, P and D add to the same release.
 
 ### Phase C: patient with several doctors (v0.7.0)
-- [ ] `/chat`: 1 doctor → that chat; 2+ → doctor list (shared `ConversationList`, pending approval).
-- [ ] `/chat/[conversationId]`: reuses `Conversation`.
-- [ ] `/home`: one doctor card per doctor (built from `Card`, `Avatar`, `ButtonLink`).
-- [ ] `/prescriptions`: doctor name on each; `ChipGroup` filter by doctor when 2+.
-- [ ] Profile: patient edits own DOB, height, weight (audit logged).
-- [ ] Doctor's `PatientPanel`: "Also consults" name cards when the effective `show_other_doctors` is true.
-- [ ] Push notifications name the right doctor.
+- [x] `/chat`: 1 doctor → that chat; 2+ → doctor list (shared `ConversationList`, pending approval).
+- [x] `/chat/[conversationId]`: reuses `Conversation`.
+- [x] `/home`: one doctor card per doctor (built from `Card`, `Avatar`, `ButtonLink`).
+- [x] `/prescriptions`: doctor name on each; `ChipGroup` filter by doctor when 2+.
+- [x] Profile: patient edits own DOB, height, weight (audit logged).
+- [x] Doctor's `PatientPanel`: "Also consults" name cards when the effective `show_other_doctors` is true.
+- [x] Push notifications name the right doctor.
+
+**Phase C notes**
+
+- `doctor/ConversationList` → `chat/ConversationList` (move, approved in §6). New `viewerRole` prop: `"doctor"` (default, unchanged inbox) or `"patient"` (the patient's list of doctors).
+- `/chat` is now a router: 0 → EmptyState, 1 → `redirect("/chat/<id>")` (keeps `?attach=1`), 2+ → "Your doctors" + the list. The chat body moved to `/chat/[conversationId]`, with `notFound()` unless the conversation is the patient's.
+- `lib/utils.ts` grew `validateHealthDetails()`; `updatePatientDetails` and the new `updateMyHealthDetails` (normal client, audit trigger) both use it.
+- Extensions (backward-compatible): `PrescriptionCard` `doctorName`, `PatientPanel` `otherDoctors`, `ChipGroup` `optionValues`.
+- Page-local client parts (no new component files): `app/(patient)/prescriptions/DoctorFilter.tsx`, `app/(patient)/profile/HealthDetailsSection.tsx` + `HealthDetailsDialog.tsx`.
+- Verified by hand against the live project: 1 doctor (redirect + home card + no filter) and 2 doctors (list, two chats, home cards, chip filter, "Also consults" only when the setting is on).
 
 ### Phase P: patient panel → summary + popups (v0.7.0)
 Goal: the right-hand `PatientPanel` only shows information; every action opens a `Dialog`.
@@ -443,6 +452,7 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 | ID | Question | Recommendation | Blocks |
 |---|---|---|---|
 | ~~Q-K~~ | Resolved 2026-11-07 (yes) and built: `acceptInviteLink`, `/join` accept card, `/login?next=`. | – | – |
+| Q-L | **Phase C, 2026-11-07**: a patient with one doctor who has blocked them in that conversation still has "Send a report" open on `/home`, but the chat's `readOnlyNotice` says they can't send. Fine as it is. The open one: when the patient has 2+ doctors, the prescriptions filter chip is named after the doctor, and the list shows a card per doctor — but a patient may have prescriptions from a doctor who is no longer in their conversations (e.g. the doctor was removed). Those cards then have no chip to filter by. Recommended: show every doctor who issued a prescription in the list, not only the doctors with a chat. | Build the chip list from the prescriptions' own doctors, so a card can always be filtered. | – |
 
 ---
 

@@ -10,7 +10,7 @@ const TABS: TabItem[] = [
   { href: "/profile", label: "Profile", Icon: UserRound },
 ];
 
-/** Patient navigation. Hidden on the chat screen, which has its own composer at the bottom. */
+/** Patient navigation. Hidden on the chat screens (/chat and /chat/<id>), which have their own composer at the bottom. */
 export function PatientTabBar() {
   const pathname = usePathname();
   if (pathname.startsWith("/chat")) return null;

@@ -16,13 +16,15 @@ type PrescriptionCardProps = {
   replaced?: boolean;
   /** Newest issued prescription, in the patient's list. */
   latest?: boolean;
+  /** Who issued it. The patient's list shows it, so several doctors' prescriptions stay apart. */
+  doctorName?: string;
 };
 
 /**
  * The prescription card that appears in chat (both sides), the doctor's panel and the
  * patient's list. Issued prescriptions are locked, so this card is read-only by design.
  */
-export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced, latest }: PrescriptionCardProps) {
+export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced, latest, doctorName }: PrescriptionCardProps) {
   const count = `${medicines.length} ${medicines.length === 1 ? "medicine" : "medicines"}`;
 
   return (
@@ -34,6 +36,7 @@ export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-base font-semibold">{draft ? "Draft prescription" : "Prescription"}</span>
           <span className="text-[13px] text-ink-2">{issuedAt ? `${formatDate(issuedAt)} · ${count}` : count}</span>
+          {doctorName ? <span className="truncate text-[13px] text-ink-2">{doctorName}</span> : null}
         </div>
         {draft ? (
           <Badge tone="outline">Not sent</Badge>

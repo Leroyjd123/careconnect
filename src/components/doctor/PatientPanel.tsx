@@ -15,7 +15,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { FileCard } from "@/components/chat/FileCard";
 import { PrescriptionCard } from "@/components/rx/PrescriptionCard";
 import { ageFrom, formatDate, formatDay, formatTime } from "@/lib/utils";
-import type { Message, PrescriptionWithPeople, Profile } from "@/lib/types";
+import type { Message, OtherDoctor, PrescriptionWithPeople, Profile } from "@/lib/types";
 
 type PatientPanelProps = {
   conversationId: string;
@@ -27,6 +27,8 @@ type PatientPanelProps = {
   replacedRxIds: string[];
   /** The file messages in this conversation, newest first. */
   reports: Message[];
+  /** The patient's other doctors, by name only (decision 26). Empty when the setting is off. */
+  otherDoctors?: OtherDoctor[];
   /** Only overridden by /styleguide. */
   saveAction?: typeof updatePatientDetails;
   blockAction?: typeof setPatientBlocked;
@@ -40,6 +42,7 @@ export function PatientPanel({
   prescriptions,
   replacedRxIds,
   reports,
+  otherDoctors = [],
   saveAction = updatePatientDetails,
   blockAction = setPatientBlocked,
 }: PatientPanelProps) {
@@ -142,6 +145,23 @@ export function PatientPanel({
       />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto">
+        {otherDoctors.length ? (
+          <section className="flex flex-col gap-2 rounded-tile bg-white/70 p-3" aria-label="Also consults">
+            <h3 className="text-[13px] font-semibold tracking-wider text-ink-label uppercase">Also consults</h3>
+            <ul className="flex flex-col gap-2">
+              {otherDoctors.map((d) => (
+                <li key={d.id} className="flex items-center gap-2.5">
+                  <Avatar name={d.full_name} seed={d.id} size="sm" doctor />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-[15px] font-medium">{d.full_name}</span>
+                    {d.specialty ? <span className="truncate text-[13px] text-ink-2">{d.specialty}</span> : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[13px] text-ink-2">Chats with other doctors stay private.</p>
+          </section>
+        ) : null}
         {tab === "reports" ? (
           reports.length === 0 ? (
             <EmptyState icon={Paperclip} title="No reports yet">

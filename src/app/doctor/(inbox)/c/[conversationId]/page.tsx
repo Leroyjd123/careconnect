@@ -5,7 +5,7 @@ import { FilePlus2, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { LayoutToggle } from "@/components/layout/LayoutToggle";
 import { LAYOUT_COOKIES } from "@/lib/constants";
 import { requireProfile } from "@/lib/auth";
-import { getConversation, getMedicineSuggestions, getMessages, getPrescriptions, replacedIds } from "@/lib/data";
+import { getConversation, getMedicineSuggestions, getMessages, getOtherDoctors, getPrescriptions, replacedIds } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -41,10 +41,12 @@ export default async function DoctorConversation({
   const conversation = await getConversation(conversationId);
   if (!conversation || conversation.doctor_id !== doctor.id) notFound();
 
-  const [messages, prescriptions, suggestions] = await Promise.all([
+  const [messages, prescriptions, suggestions, otherDoctors] = await Promise.all([
     getMessages(conversationId),
     getPrescriptions(conversationId),
     rx ? getMedicineSuggestions() : Promise.resolve<MedicineOption[]>([]),
+    // Names only, and only when the "also consults" setting is on (decision 26).
+    getOtherDoctors(conversation.patient_id),
   ]);
 
   const patient = conversation.patient;
@@ -139,6 +141,7 @@ export default async function DoctorConversation({
             prescriptions={prescriptions}
             replacedRxIds={replaced}
             reports={[...messages].reverse().filter((m) => m.kind === "file" && !m.deleted_at)}
+            otherDoctors={otherDoctors}
           />
         )}
       </div>

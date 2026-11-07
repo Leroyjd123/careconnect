@@ -10,6 +10,8 @@ const CUSTOM = "Custom…";
 type ChipGroupProps = {
   label: string;
   options: string[];
+  /** The value of each option, when the label isn't the value (a doctor's name → their id). */
+  optionValues?: string[];
   value: string | null;
   onChange: (value: string) => void;
   /** Adds a "Custom…" chip that reveals a text input (prescription fields). */
@@ -23,8 +25,9 @@ type ChipGroupProps = {
  * Single-choice quick picks (frequency, duration, timing).
  * Starts with nothing selected unless `value` is set: never pre-choose a clinical option.
  */
-export function ChipGroup({ label, options, value, onChange, allowCustom, customPlaceholder, size = "sm", className }: ChipGroupProps) {
-  const isCustomValue = !!value && !options.includes(value);
+export function ChipGroup({ label, options, optionValues, value, onChange, allowCustom, customPlaceholder, size = "sm", className }: ChipGroupProps) {
+  const values = optionValues ?? options;
+  const isCustomValue = !!value && !values.includes(value);
   const [customOpen, setCustomOpen] = useState(isCustomValue);
   const showCustom = allowCustom && (customOpen || isCustomValue);
 
@@ -32,9 +35,10 @@ export function ChipGroup({ label, options, value, onChange, allowCustom, custom
     <fieldset className={cn("flex flex-col gap-2", className)}>
       <legend className="mb-2 text-[13px] font-semibold text-ink">{label}</legend>
       <div className="flex flex-wrap gap-1.5">
-        {(allowCustom ? [...options, CUSTOM] : options).map((o) => {
+        {(allowCustom ? [...options, CUSTOM] : options).map((o, i) => {
           const isCustomChip = o === CUSTOM;
-          const selected = isCustomChip ? !!showCustom : o === value && !showCustom;
+          const chipValue = isCustomChip ? "" : (values[i] ?? o);
+          const selected = isCustomChip ? !!showCustom : chipValue === value && !showCustom;
           return (
             <button
               key={o}
@@ -42,7 +46,7 @@ export function ChipGroup({ label, options, value, onChange, allowCustom, custom
               aria-pressed={selected}
               onClick={() => {
                 setCustomOpen(isCustomChip);
-                onChange(isCustomChip ? "" : o);
+                onChange(isCustomChip ? "" : chipValue);
               }}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 transition-colors",

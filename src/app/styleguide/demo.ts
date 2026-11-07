@@ -95,3 +95,10 @@ export const patientRows = [
   { conversationId: "c2", patient: { ...patient, id: "p2", full_name: "Priya Mehta", email: "priya@example.com" } },
   { conversationId: "c3", patient: pendingPatient },
 ];
+
+/** The patient's own list of doctors (ConversationList with viewerRole="patient"). */
+export const patientDoctors: InboxRow[] = [
+  { id: "d1", other_id: "demo-doctor-1", other_name: "Dr. Vipin John", other_status: "active", other_specialty: "General Medicine", last_message_at: NOW, last_message_preview: "I've been having a headache since yesterday.", unread_count: 2 },
+  { id: "d2", other_id: "demo-doctor-2", other_name: "Dr. Meera Nair", other_status: "active", other_specialty: "Dermatology", last_message_at: EARLIER, last_message_preview: "The rash is much better, thank you.", unread_count: 0 },
+  { id: "d3", other_id: "demo-doctor-3", other_name: "Dr. Arjun Rao", other_status: "active", other_specialty: "Cardiology", last_message_at: null, last_message_preview: null, unread_count: 0 },
+];

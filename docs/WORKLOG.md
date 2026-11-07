@@ -15,7 +15,8 @@ Rules for whoever edits this file:
 
 - New plan: `docs/PLAN.md` (multi-doctor, meetings, check-ins, superadmin, landing). Branch `feature/multi-doctor`.
 - Phase A done: migration 0005 applied to Supabase; admin account promoted.
-- Phase B done (v0.7.0 started): per-conversation blocking, shared medicines (admin manages), audit helper, legal pages, Malayalam. Next: Phase C (Q-K open in PLAN §8).
+- Phase B done (v0.7.0 started): per-conversation blocking, shared medicines (admin manages), audit helper, legal pages, Malayalam.
+- Phase C done: a patient can have several doctors. `/chat` is a router (0 / 1 / 2+ doctors), the chat moved to `/chat/[conversationId]`, home shows one card per doctor, prescriptions show the doctor and can be filtered by doctor, the patient edits their own DOB/height/weight, the doctor's panel can show "Also consults", notifications name the sender. Next: Phase P (patient panel → summary + popups). Open: Q-L in PLAN §8.
 
 ## State — 2026-10-20
 
@@ -97,6 +98,13 @@ Newest last. Never delete an entry; add a superseding one instead.
 - **Mobile sign-in for email accounts**: `login()` falls back to `emailForPhone()` (service role, server-only) when a patient has both. Previously a mobile number only worked for phone-only accounts.
 - **Master medicines never delete** (no delete policy, delete revoked). Merge sets `active=false, merged_into`. Seeded from past prescriptions in 0004. Composer suggests active ones and pre-fills the usual dose.
 - **Layout choices in cookies** (`cc_nav`, `cc_panel`) so the server renders the collapsed menu / hidden panel without a flash.
+
+- **The patient's chat is one route per doctor** (v0.7.0, Phase C): `/chat` only decides where to go (0 → empty, 1 → redirect, 2+ → the list of doctors); the chat itself lives at `/chat/<conversationId>`. So `/chat` stays a valid link from anywhere, and a notification can open the right chat.
+- **`doctor/ConversationList` → `chat/ConversationList`** with a `viewerRole` prop, not a copy. The doctor's inbox keeps its search, All/Unread and pending invites; the patient's variant shows the doctor's specialty and links to `/chat/<id>`.
+- **The patient edits their own health details with the normal Supabase client**, not the service role: 0005 grants `update (date_of_birth, height_cm, weight_kg)` and the `profiles_details_audit` trigger writes the audit row for a session write. The doctor's edit still uses the service role, because it touches another person's row and their sign-in.
+- **`validateHealthDetails()` lives in `lib/utils.ts`**, because the doctor and the patient must apply the same rules and duplicating them would drift.
+- **The prescriptions filter lives in the query string** (`?doctor=<id>`), like every other "a link should be able to open this" case in the app.
+- **A push notification's title is the sender's name** and the body says only what happened ("New message."). The URL opens that conversation for both roles, so a patient with several doctors lands in the right chat.
 
 ## Known gaps — deliberate, not bugs
 

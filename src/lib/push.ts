@@ -38,9 +38,10 @@ async function queuePush(conversationId: string, event: PushEvent) {
     await Promise.all(
       targets.map(async (t) => {
         const payload = JSON.stringify({
-          title: "CareConnect",
-          body: bodyFor(event, t.sender_name),
-          url: urlFor(event, t.recipient_role, conversationId),
+          // The title names the sender, so the right doctor is obvious on a lock screen.
+          title: t.sender_name,
+          body: bodyFor(event),
+          url: urlFor(t.recipient_role, conversationId),
           // One notification per conversation: a burst of messages replaces rather than stacks.
           tag: `conv-${conversationId}`,
         });
@@ -57,13 +58,15 @@ async function queuePush(conversationId: string, event: PushEvent) {
   });
 }
 
-function bodyFor(event: PushEvent, sender: string) {
-  if (event === "prescription") return `${sender} sent you a prescription.`;
-  if (event === "file") return `${sender} sent a file.`;
-  return `New message from ${sender}.`;
+/** What happened, and nothing more. Never the message or any medical detail. */
+function bodyFor(event: PushEvent) {
+  if (event === "prescription") return "Sent you a prescription.";
+  if (event === "file") return "Sent you a file.";
+  return "New message.";
 }
 
-function urlFor(event: PushEvent, role: "doctor" | "patient", conversationId: string) {
+/** Where the notification opens. A patient goes straight to that doctor's chat. */
+function urlFor(role: "doctor" | "patient", conversationId: string) {
   if (role === "doctor") return `/doctor/c/${conversationId}`;
-  return event === "prescription" ? "/prescriptions" : "/chat";
+  return `/chat/${conversationId}`;
 }

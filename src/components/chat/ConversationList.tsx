@@ -16,14 +16,33 @@ import { cn, formatRelative } from "@/lib/utils";
 import type { InboxRow } from "@/lib/types";
 
 /**
- * The doctor's inbox column. Rendered once by the inbox layout, so it stays put while
- * conversations open beside it. On a phone it hides itself when one is open.
+ * The conversation list. One component for two places (PLAN §6): the doctor's inbox column,
+ * rendered once by the inbox layout so it stays put while conversations open beside it, and the
+ * patient's list of doctors on /chat. On a phone the doctor's list hides itself when a
+ * conversation is open.
  */
 /** live=false (styleguide only) skips the realtime subscription. */
-export function ConversationList({ rows, live = true }: { rows: InboxRow[]; live?: boolean }) {
+export function ConversationList({
+  rows,
+  viewerRole = "doctor",
+  live = true,
+}: {
+  rows: InboxRow[];
+  /** "doctor" = the inbox; "patient" = the patient's list of doctors. */
+  viewerRole?: "doctor" | "patient";
+  live?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
-  const activeId = pathname.startsWith("/doctor/c/") ? pathname.split("/")[3] : null;
+  const patient = viewerRole === "patient";
+  // The doctor's chats live at /doctor/c/<id>, the patient's at /chat/<id>.
+  const activeId = patient
+    ? pathname.startsWith("/chat/")
+      ? pathname.split("/")[2]
+      : null
+    : pathname.startsWith("/doctor/c/")
+      ? pathname.split("/")[3]
+      : null;
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
@@ -53,22 +72,30 @@ export function ConversationList({ rows, live = true }: { rows: InboxRow[]; live
   return (
     <Card
       as="section"
-      aria-label="Conversations"
-      className={cn("flex min-h-0 w-full flex-col overflow-hidden lg:w-[340px] lg:shrink-0", activeId && "hidden lg:flex")}
+      aria-label={patient ? "Your doctors" : "Conversations"}
+      className={cn(
+        "flex min-h-0 w-full flex-col overflow-hidden",
+        !patient && "lg:w-[340px] lg:shrink-0",
+        !patient && activeId && "hidden lg:flex",
+      )}
     >
       <div className="flex flex-col gap-3 px-4 pt-4">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-[22px] font-semibold tracking-tight">Inbox</h1>
-          <ButtonLink href="/doctor?invite=1" variant="soft" size="sm">
-            <UserPlus aria-hidden="true" className="size-4" />
-            Invite
-          </ButtonLink>
+          {patient ? null : (
+            <>
+              <h1 className="text-[22px] font-semibold tracking-tight">Inbox</h1>
+              <ButtonLink href="/doctor?invite=1" variant="soft" size="sm">
+                <UserPlus aria-hidden="true" className="size-4" />
+                Invite
+              </ButtonLink>
+            </>
+          )}
         </div>
         <TextInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search patients"
-          aria-label="Search patients"
+          placeholder={patient ? "Search doctors" : "Search patients"}
+          aria-label={patient ? "Search doctors" : "Search patients"}
           className="h-11"
         />
         <Segmented
@@ -84,7 +111,11 @@ export function ConversationList({ rows, live = true }: { rows: InboxRow[]; live
 
       {visible.length === 0 ? (
         <EmptyState icon={Search} title="Nothing here">
-          {rows.length === 0 ? "Invite a patient to get started." : "No conversation matches that."}
+          {rows.length === 0
+            ? patient
+              ? "Your doctor will appear here."
+              : "Invite a patient to get started."
+            : "No conversation matches that."}
         </EmptyState>
       ) : (
         <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
@@ -94,30 +125,41 @@ export function ConversationList({ rows, live = true }: { rows: InboxRow[]; live
             return (
               <li key={c.id}>
                 <Link
-                  href={`/doctor/c/${c.id}`}
+                  href={patient ? `/chat/${c.id}` : `/doctor/c/${c.id}`}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex gap-3 rounded-tile p-3 text-ink no-underline hover:text-ink",
                     active ? "bg-white/90 shadow-lift" : "hover:bg-white/70",
                   )}
                 >
-                  <Avatar name={c.other_name} seed={c.other_id} pending={invited} />
+                  <Avatar name={c.other_name} seed={c.other_id} doctor={patient} pending={!patient && invited} />
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <div className="flex justify-between gap-2">
-                      <span className={cn("truncate text-[15px]", c.unread_count > 0 ? "font-semibold" : "font-medium")}>{c.other_name}</span>
+                      <span className={cn("truncate", patient ? "text-base" : "text-[15px]", c.unread_count > 0 ? "font-semibold" : "font-medium")}>
+                        {c.other_name}
+                      </span>
                       {c.last_message_at ? (
                         <span className={cn("shrink-0 text-xs", c.unread_count > 0 ? "font-semibold text-forest" : "text-ink-2")}>
                           {formatRelative(c.last_message_at)}
                         </span>
                       ) : null}
                     </div>
+                    {patient && c.other_specialty ? (
+                      <span className="truncate text-sm text-ink-2">{c.other_specialty}</span>
+                    ) : null}
                     <div className="flex items-center justify-between gap-2">
-                      {invited ? (
+                      {!patient && invited ? (
                         <span className="flex items-center gap-1 text-[13px] text-ink-2">
                           <Clock aria-hidden="true" className="size-3.5" /> Invite pending
                         </span>
                       ) : (
-                        <span className={cn("truncate text-[13px]", c.unread_count > 0 ? "font-medium" : "text-ink-2")}>
+                        <span
+                          className={cn(
+                            "truncate",
+                            patient ? "text-base" : "text-[13px]",
+                            c.unread_count > 0 ? "font-medium" : "text-ink-2",
+                          )}
+                        >
                           {c.last_message_preview ?? "No messages yet"}
                         </span>
                       )}

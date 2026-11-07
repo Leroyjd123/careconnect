@@ -22,6 +22,9 @@ export const RELEASES: Release[] = [
       "CareConnect now works for several doctors, each with their own patients.",
       "Already with another doctor on CareConnect? Open the new doctor's link and sign in to accept. You get a separate chat with them.",
       "Malayalam is now a language choice, alongside English and Kannada. Hindi is no longer offered; anyone who chose it is set to English.",
+      "With more than one doctor, your home shows a card for each of them, and /chat lists them so you can open the right chat.",
+      "Your prescriptions say which doctor issued each one, and you can filter the list by doctor.",
+      "You can update your own date of birth, height and weight in Profile. Your doctor sees the same details.",
     ],
     changed: [
       "Blocking a patient now only stops them messaging you. They can still read their history and talk to their other doctors.",

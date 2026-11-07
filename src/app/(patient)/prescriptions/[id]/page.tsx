@@ -36,7 +36,7 @@ export default async function PrescriptionDetail({ params }: { params: Promise<{
               <Download aria-hidden="true" className="size-[18px]" />
               Download PDF
             </ButtonLink>
-            <ButtonLink href="/chat" block>
+            <ButtonLink href={`/chat/${prescription.conversation_id}`} block>
               <MessageCircle aria-hidden="true" className="size-[18px]" />
               Ask {prescription.doctor.full_name} about this
             </ButtonLink>

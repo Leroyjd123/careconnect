@@ -1,5 +1,5 @@
 import { getMyConversations } from "@/lib/data";
-import { ConversationList } from "@/components/doctor/ConversationList";
+import { ConversationList } from "@/components/chat/ConversationList";
 
 /**
  * The inbox shell: one conversation list beside whatever is open.

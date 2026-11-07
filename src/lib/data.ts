@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import type { ConversationWithPeople, InboxRow, Medicine, MedicineOption, Message, Prescription, PrescriptionWithPeople, Profile } from "@/lib/types";
+import type { ConversationWithPeople, InboxRow, Medicine, MedicineOption, Message, OtherDoctor, Prescription, PrescriptionWithPeople, Profile } from "@/lib/types";
 
 // All server-side reads live here. Pages call these; they never build queries inline.
 // Every query runs as the signed-in user, so RLS decides what comes back.
@@ -116,3 +116,15 @@ export async function getMyMedicines(): Promise<Medicine[]> {
 export function replacedIds(list: Prescription[]): string[] {
   return list.filter((p) => p.status === "issued" && p.replaces_id).map((p) => p.replaces_id as string);
 }
+
+/**
+ * The patient's other doctors, by name only (0005, decision 26).
+ * The RPC returns nothing unless the "also consults" setting is on for this pair,
+ * and only the doctor who shares a conversation with the patient can call it.
+ */
+export const getOtherDoctors = cache(async (patientId: string): Promise<OtherDoctor[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("other_doctors", { patient: patientId });
+  if (error) throw new Error(`other_doctors failed: ${error.message}`);
+  return (data ?? []) as OtherDoctor[];
+});

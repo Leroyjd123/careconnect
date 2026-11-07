@@ -44,13 +44,14 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `Composer` | `chat/Composer.tsx` | Floating input pill: attach button, auto-growing textarea, send. `offline` shows the banner. | ✅ |
 | `MessageItem` | `chat/MessageItem.tsx` | Switch on `message.kind` → text bubble / FileCard / PrescriptionCard. Also renders pending and failed sends. | ✅ |
 | `AttachSheet` | `chat/AttachSheet.tsx` | Dialog sheet: take photo / choose photo / choose file → preview → note → send. | ✅ |
-| `FileViewer` | `chat/FileViewer.tsx` | PDF/image viewer on a 5-minute signed URL, with Download. Doctor gets `onRemove` (Remove report, with confirm). Opened by `?file=<messageId>`. | ✅ |
+| `FileViewer` | `chat/FileViewer.tsx` | PDF/image viewer on a 5-minute signed URL, with Download. Doctor gets `onRemove` (Remove report, with confirm). Opened by `?file=<messageId>`. |
+| `ConversationList` | `chat/ConversationList.tsx` | One list, two viewers. `viewerRole="doctor"` (default): the inbox, with search + All/Unread, pending invites with a dashed avatar; rendered once by `doctor/(inbox)/layout.tsx`, hides itself on a phone when a conversation is open. `viewerRole="patient"`: the patient's list of doctors (name, specialty, latest message, unread count) on `/chat`; links to `/chat/<id>`. | ✅ |
 
 ## Prescriptions — `src/components/rx` (shared)
 
 | Component | File | Use for | Status |
 |---|---|---|---|
-| `PrescriptionCard` | `rx/PrescriptionCard.tsx` | Card in chat (both sides) and in the patient list. `replaced` / `latest` change the badge. | ✅ |
+| `PrescriptionCard` | `rx/PrescriptionCard.tsx` | Card in chat (both sides) and in the patient list. `replaced` / `latest` change the badge. `doctorName` adds the issuing doctor (the patient's list). | ✅ |
 | `DoseSchedule` | `rx/DoseSchedule.tsx` | Morning / Afternoon / Night slots from "1-0-1". | ✅ |
 | `PrescriptionView` | `rx/PrescriptionView.tsx` | Full read-only prescription. Patient detail, doctor "View" and the print page (`variant="print"`). | ✅ |
 | `PrescriptionComposer` | `rx/PrescriptionComposer.tsx` | Draft editor: medicines, diagnosis, advice, 1.5 s autosave, review. ONE component for the desktop panel and the phone full screen. | ✅ |
@@ -62,10 +63,11 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | Component | File | Use for | Status |
 |---|---|---|---|
 | `ConversationList` | `doctor/ConversationList.tsx` | Inbox list with search + All/Unread. Rendered once by `doctor/(inbox)/layout.tsx`; hides itself on a phone when a conversation is open. | ✅ |
-| `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity + age/height/weight, Edit details, Block/Activate (`blockedAt` = this conversation's block, 0005), New prescription, Reports/Prescriptions tabs. Hideable on desktop. | ✅ |
+| `PatientPanel` | `doctor/PatientPanel.tsx` | Right column: patient identity + age/height/weight, Edit details, Block/Activate (`blockedAt` = this conversation's block, 0005), New prescription, Reports/Prescriptions tabs. `otherDoctors` adds the "Also consults" section (names only). Hideable on desktop. | ✅ |
 | `InviteDialog` | `doctor/InviteDialog.tsx` | "Share a link" (one-time `/join` link, copy / share / WhatsApp) or "Send by email" → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
 | `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked; `blockedAt` per row = conversation block) + actions (resend, open chat). | ✅ |
 | `PatientDetailsDialog` | `doctor/PatientDetailsDialog.tsx` | Doctor edits name, email, mobile, date of birth, height, weight. Opened from PatientPanel. | ✅ |
+| `ChipGroup` `optionValues` | `ui/ChipGroup.tsx` | When a chip's label isn't its value: the patient's prescription filter shows a doctor's name but keeps their id. | ✅ |
 | `MedicineList` | `doctor/MedicineList.tsx` | Shared master medicines (0005). Doctors add; `canManage` (admin) adds Edit / Deactivate / Merge. No delete. `/doctor/settings/medicines`. | ✅ |
 | `ReleaseNotes` | `doctor/ReleaseNotes.tsx` | Version history on `/doctor/settings`, from `RELEASES` in `lib/releases.ts`. First entry marked Current. | ✅ |
 
@@ -79,17 +81,17 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `sendMessage`, `sendAttachment`, `getFileUrl`, `markRead`, `removeReport` | `actions/messages.ts` |
 | `saveDraft`, `issuePrescription`, `deleteDraft` | `actions/prescriptions.ts` |
 | `addMedicine`, `updateMedicine`, `setMedicineActive`, `mergeMedicine` | `actions/medicines.ts` |
-| `updateMyProfile` | `actions/profile.ts` |
+| `updateMyProfile`, `updateMyHealthDetails` | `actions/profile.ts` |
 
 ## Reads — `src/lib/data.ts`
 
 `getMyConversations`, `getConversation`, `getMyPatients`, `getMessages`, `getPrescriptions`, `getMyIssuedPrescriptions`,
-`getPrescription`, `getMedicineSuggestions`, `replacedIds`.
+`getPrescription`, `getMedicineSuggestions`, `getOtherDoctors`, `replacedIds`.
 
 ## Page-local client components
 
 Not shared, so they live beside their page rather than in `src/components`:
-`app/login/LoginForm.tsx` (`next` = return to an invite link), `app/join/[token]/AcceptInvite.tsx` (signed-in patient accepts another doctor's link), `app/(patient)/profile/LanguagePicker.tsx`, `app/rx/[id]/print/AutoPrint.tsx`.
+`app/login/LoginForm.tsx` (`next` = return to an invite link), `app/join/[token]/AcceptInvite.tsx` (signed-in patient accepts another doctor's link), `app/(patient)/profile/LanguagePicker.tsx`, `app/(patient)/profile/HealthDetailsSection.tsx` + `HealthDetailsDialog.tsx` (the patient edits their own DOB, height and weight), `app/(patient)/prescriptions/DoctorFilter.tsx` (filter the prescription list by doctor, `?doctor=<id>`), `app/rx/[id]/print/AutoPrint.tsx`.
 
 ## How state is split
 

@@ -76,7 +76,7 @@ import { NotificationToggle, type NotificationState } from "@/components/layout/
 import { ErrorScreen } from "@/components/layout/ErrorScreen";
 import { SettingsRow } from "@/components/layout/SettingsRow";
 import { IconTile } from "@/components/ui/IconTile";
-import { ConversationList } from "@/components/doctor/ConversationList";
+import { ConversationList } from "@/components/chat/ConversationList";
 import { PatientPanel } from "@/components/doctor/PatientPanel";
 import { PatientsTable } from "@/components/doctor/PatientsTable";
 import { ReleaseNotes } from "@/components/doctor/ReleaseNotes";
@@ -86,6 +86,8 @@ import { FileViewer } from "@/components/chat/FileViewer";
 import { LoginForm } from "@/app/login/LoginForm";
 import { SetPasswordForm } from "@/app/set-password/SetPasswordForm";
 import { JoinForm } from "@/app/join/[token]/JoinForm";
+import { HealthDetailsDialog } from "@/app/(patient)/profile/HealthDetailsDialog";
+import { HealthDetailsSection } from "@/app/(patient)/profile/HealthDetailsSection";
 import { APP_VERSION, RELEASES } from "@/lib/releases";
 import { DURATION_OPTIONS, FREQUENCY_OPTIONS, LANGUAGES, TIMING_OPTIONS } from "@/lib/constants";
 import type { ActionResult, DraftItem, Medicine } from "@/lib/types";
@@ -102,7 +104,7 @@ const GROUPS: { group: string; items: [id: string, title: string][] }[] = [
   { group: "Chat", items: [["bubbles", "Bubbles & dividers"], ["files", "File cards"], ["messages", "Message rows"], ["composer", "Composer"], ["viewer", "File viewer"]] },
   { group: "Prescriptions", items: [["rxcards", "Prescription cards"], ["dose", "Dose schedule"], ["medicine", "Medicine row"], ["rxview", "Full prescription"], ["print", "Print / PDF"]] },
   { group: "Doctor", items: [["inbox", "Conversation list"], ["panel", "Patient panel"], ["table", "Patients table"], ["medicines", "Master medicines"], ["releases", "Release notes"]] },
-  { group: "Account", items: [["signin", "Sign in & password"], ["notifications", "Notifications"]] },
+  { group: "Account", items: [["signin", "Sign in & password"], ["notifications", "Notifications"], ["health", "Patient health details"]] },
   { group: "Edge cases", items: [["edges", "Long, empty, many"]] },
   { group: "Review", items: [["coverage", "Coverage"], ["review", "Merge & fix list"]] },
 ];
@@ -313,6 +315,12 @@ async function demoSetPassword() {
 
 const LONG_NAME = "Venkatasubramanian Raghunathan Iyer";
 
+/** The patient's other doctors, as the doctor's panel shows them (decision 26). */
+const DEMO_OTHER_DOCTORS = [
+  { id: "demo-doctor-2", full_name: "Dr. Meera Nair", specialty: "Dermatology" },
+  { id: "demo-doctor-3", full_name: "Dr. Arjun Rao", specialty: "Cardiology" },
+];
+
 /** What this page shows, and what only the running app can show (and why). */
 const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = [
   ["Button, IconButton, ButtonLink", "#buttons", "shown"],
@@ -419,6 +427,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
   const [timing, setTiming] = useState<string | null>(null);
   const [modal, setModal] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [health, setHealth] = useState(false);
   const [attach, setAttach] = useState(false);
   const [review, setReview] = useState(false);
   const [draft, setDraft] = useState("I'll send the report tonight.");
@@ -1174,6 +1183,9 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
               <Variant name="Doctor's draft, not sent" code="draft" className="w-full">
                 <PrescriptionCard draft medicines={["Paracetamol 650 mg", "ORS"]} actions={<Button variant="outline" size="sm">Continue draft</Button>} />
               </Variant>
+              <Variant name="Patient's list: which doctor issued it" code="doctorName" className="w-full">
+                <PrescriptionCard issuedAt={now} medicines={["Paracetamol 650 mg", "Vitamin D3 60K"]} doctorName="Dr. Meera Nair" />
+              </Variant>
             </div>
           </Section>
 
@@ -1208,16 +1220,34 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
         <div className="flex flex-col gap-10">
           <GroupTitle>Doctor</GroupTitle>
 
-          <Section id="inbox" title="Conversation list" file="doctor/ConversationList.tsx" use="Search, All/Unread, pending invites with a dashed avatar.">
-            <Stage size="panel" height="tall">
-              <ConversationList rows={demo.inbox} live={false} />
-            </Stage>
+          <Section id="inbox" title="Conversation list" file="chat/ConversationList.tsx" use="One component, two viewers. The doctor's inbox: search, All/Unread, pending invites with a dashed avatar. The patient's list of doctors: name, specialty, latest message, unread count.">
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Variant name="Doctor's inbox" code='viewerRole="doctor" (default)' className="w-full">
+                <Stage size="panel" height="tall">
+                  <ConversationList rows={demo.inbox} live={false} />
+                </Stage>
+              </Variant>
+              <Variant name="Patient's list of doctors" code='viewerRole="patient"' className="w-full">
+                <Stage size="panel" height="tall">
+                  <ConversationList rows={demo.patientDoctors} viewerRole="patient" live={false} />
+                </Stage>
+              </Variant>
+            </div>
           </Section>
 
           <Section id="panel" title="Patient panel" file="doctor/PatientPanel.tsx" use="Right column next to the doctor's chat.">
-            <Stage size="panel" height="tall">
-              <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} saveAction={demoSave} blockAction={demoSave2} />
-            </Stage>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Variant name="Patient" className="w-full">
+                <Stage size="panel" height="tall">
+                  <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} saveAction={demoSave} blockAction={demoSave2} />
+                </Stage>
+              </Variant>
+              <Variant name="With “Also consults”" code="otherDoctors" className="w-full">
+                <Stage size="panel" height="tall">
+                  <PatientPanel conversationId="demo" patient={demo.patient} prescriptions={[demo.prescription]} replacedRxIds={[]} reports={[demo.fileMessage, demo.imageMessage]} otherDoctors={DEMO_OTHER_DOCTORS} saveAction={demoSave} blockAction={demoSave2} />
+                </Stage>
+              </Variant>
+            </div>
           </Section>
 
           <Section id="table" title="Patients table" file="doctor/PatientsTable.tsx" use="The app's only data table. Scrolls sideways on phones.">
@@ -1277,6 +1307,34 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
                   <NotificationToggle audience={audience} preview={state} previewError={err} />
                 </Spec>
               ))}
+            </div>
+          </Section>
+
+          <Section id="health" title="Patient health details" file="app/(patient)/profile/HealthDetailsSection.tsx · HealthDetailsDialog.tsx" use="The patient edits their own date of birth, height and weight. The same rules the doctor uses.">
+            <div className="grid gap-5 md:grid-cols-2">
+              <Variant name="The section on Profile" code="Edit opens the dialog" className="w-full">
+                <Card className="flex flex-col gap-3 p-5">
+                  <h3 className="text-[17px] font-semibold">Health details</h3>
+                  <HealthDetailsSection
+                    details={{ dateOfBirth: "1988-04-12", heightCm: "172", weightKg: "74.5" }}
+                    summary={["Born 12 Apr 1988", "172 cm", "74.5 kg"]}
+                    saveAction={demoSave}
+                  />
+                </Card>
+              </Variant>
+              <Variant name="The dialog (submit to see the error)" className="w-full">
+                <Button variant="secondary" onClick={() => setHealth(true)}>
+                  Edit health details
+                </Button>
+                {health ? (
+                  <HealthDetailsDialog
+                    details={{ dateOfBirth: "1988-04-12", heightCm: "172", weightKg: "74.5" }}
+                    open
+                    onClose={() => setHealth(false)}
+                    saveAction={demoSave}
+                  />
+                ) : null}
+              </Variant>
             </div>
           </Section>
         </div>

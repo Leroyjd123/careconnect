@@ -22,11 +22,12 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/join/[token]` | patient | Make an account from the doctor's shared link ✅ |
 | `/set-password` | all | Choose a password after opening an invite link ✅ |
 | `/auth/confirm` | all | Invite link landing → `/set-password` ✅ |
-| `/home` | patient | Doctor card, latest message, Chat CTA, Prescriptions + Send a report tiles (B1) ✅ |
-| `/chat` | patient | Conversation with the doctor (B2), attach flow (B3, B4), states (B5) |
-| `/prescriptions` | patient | Issued list, newest first, "Replaced" marked (C1, C4) |
-| `/prescriptions/[id]` | patient | Full prescription, DoseSchedule, Download (print) (C2) |
-| `/profile` | patient | Name, email, language (EN/ಕನ್ನಡ/हिन्दी), privacy, help, sign out (C3) |
+| `/home` | patient | One card per doctor (name, specialty, latest message, unread count, "Open chat"), Prescriptions + Send a report tiles (B1) ✅ |
+| `/chat` | patient | One doctor → that chat. Two or more → "Your doctors" list (B2, B4, B5) ✅ |
+| `/chat/[conversationId]` | patient | The chat with one doctor. Back goes to "/chat" with two or more doctors, otherwise "/home" ✅ |
+| `/prescriptions` | patient | Issued list, newest first, "Replaced" marked, the doctor's name on each; filter chips by doctor when there are two or more (C1, C4) ✅ |
+| `/prescriptions/[id]` | patient | Full prescription, DoseSchedule, Download (print) (C2) ✅ |
+| `/profile` | patient | Name, email, language (EN/ಕನ್ನಡ/മലയാളം), own health details (date of birth, height, weight), privacy, help, sign out (C3) ✅ |
 | `/doctor` | doctor | Inbox. Desktop: list + empty conversation pane. Phone: list (D2, E1, D9) |
 | `/doctor/c/[id]` | doctor | Same 3 columns with conversation open + PatientPanel (D2, D3, D6, E2) |
 | `/doctor/settings/medicines` | doctor | Master medicines: add, edit, deactivate, merge (never delete) ✅ |
@@ -35,6 +36,17 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/privacy`, `/terms` | all | Plain-language privacy notice and terms of use (public) ✅ |
 | `/rx/[id]/print` | both | Print-friendly prescription; browser "Save as PDF" (C2 Download) |
 | `/styleguide` | dev only | All shared components |
+
+## Several doctors (Phase C, decisions 22–28)
+
+- A patient has one chat per doctor. Chats with different doctors are completely separate: messages, reports and prescriptions never mix.
+- `/chat`: no doctor → "No doctor connected yet". One doctor → that chat opens straight away. Two or more → "Your doctors" and "Tap a doctor to open your chat with them.", a list of doctors with their name, specialty, latest message and unread count.
+- `/chat/<id>`: the chat with one doctor. The back button says "Back to your doctors" when the patient has two or more doctors, otherwise "Back to home".
+- `/home`: one card per doctor, in the order the doctors were added. Each card: doctor's name, specialty, the latest message with its time, the unread count, and an "Open chat" button. Only the first card's button is the one primary button; the rest are secondary.
+- "Send a report" on home: with one doctor it opens that chat with the attach sheet; with two or more it opens the doctor's list, so the patient picks who the report is for.
+- `/prescriptions`: one list. Every card says which doctor issued it. With two or more doctors, chips below the header filter the list: "All" and one chip per doctor. The choice stays in the query string (`?doctor=<id>`), so a reload keeps it.
+- `/profile` → "Health details": the patient sees their own date of birth, height and weight, and can edit them with "Edit". The same rules the doctor uses. Every change is audit logged.
+- A doctor's `PatientPanel` may show "Also consults": the names and specialties of the patient's other doctors, and the line "Chats with other doctors stay private." It is off by default and the patient, the doctor or the clinic decides.
 
 ## Chat
 
@@ -105,8 +117,8 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 
 - Web push, opt-in per device: patients in Profile, the doctor in Settings ("Turn on notifications").
 - Sent when the other person sends a message, a file, or (to the patient) issues a prescription.
-- Text: "New message from Dr. Rao." / "Dr. Rao sent a file." / "Dr. Rao sent you a prescription." Never the content.
-- Tapping opens the chat (patient), the prescriptions list (patient, for a prescription) or the conversation (doctor).
+- The title is the sender's name ("Dr. Rao"), so the right doctor is clear on a lock screen. The body says what happened and nothing more: "New message." / "Sent you a file." / "Sent you a prescription." Never the content, never a medical detail.
+- Tapping opens that conversation: the patient goes to `/chat/<id>`, the doctor to `/doctor/c/<id>`.
 - States: on, off, blocked by the browser, iPhone not on the Home Screen (explains how), unsupported browser.
 - Signing out removes this device, so the next person on a shared phone doesn't get alerts.
 

@@ -86,3 +86,38 @@ export function ageFrom(dob: string, now = new Date()): number {
   const [ty, tm, td] = today.split("-").map(Number);
   return ty - y - (tm < m || (tm === m && td < d) ? 1 : 0);
 }
+
+/** The health details a patient and their doctor both keep up to date (decision 28). */
+export type HealthDetails = {
+  date_of_birth: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+};
+
+/** What a form sends for those three values. Empty strings mean "not set". */
+export type HealthDetailsInput = { dateOfBirth: string; heightCm: string; weightKg: string };
+
+/**
+ * Checks a date of birth, a height and a weight. The doctor's edit of a patient and the
+ * patient's own edit of their Profile use the same rules, so they live here.
+ */
+export function validateHealthDetails(
+  input: HealthDetailsInput,
+): { ok: true; values: HealthDetails } | { ok: false; error: string } {
+  const dob = input.dateOfBirth.trim() || null;
+  if (dob && (Number.isNaN(Date.parse(dob)) || dob > new Date().toISOString().slice(0, 10) || dob < "1900-01-01")) {
+    return { ok: false, error: "Check the date of birth." };
+  }
+
+  const num = (v: string, min: number, max: number) => {
+    if (!v.trim()) return { value: null as number | null, ok: true };
+    const n = Number(v.replace(",", "."));
+    return { value: Math.round(n * 10) / 10, ok: Number.isFinite(n) && n >= min && n <= max };
+  };
+  const height = num(input.heightCm, 30, 260);
+  const weight = num(input.weightKg, 1, 400);
+  if (!height.ok) return { ok: false, error: "Height should be in centimetres, between 30 and 260." };
+  if (!weight.ok) return { ok: false, error: "Weight should be in kilograms, between 1 and 400." };
+
+  return { ok: true, values: { date_of_birth: dob, height_cm: height.value, weight_kg: weight.value } };
+}

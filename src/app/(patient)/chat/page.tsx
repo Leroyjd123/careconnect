@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { getConversation, getMessages, getMyConversations, getPrescriptions, replacedIds } from "@/lib/data";
-import { Avatar } from "@/components/ui/Avatar";
+import { getMyConversations } from "@/lib/data";
 import { ButtonLink } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Feedback";
-import { Conversation } from "@/components/chat/Conversation";
-import { FileViewer } from "@/components/chat/FileViewer";
+import { ConversationList } from "@/components/chat/ConversationList";
 
 export const metadata: Metadata = { title: "Chat" };
 
-const STARTERS = ["I have a question about my medicine", "I want to send a report"];
+/**
+ * The patient's chats (PLAN §7 Phase C, decision 22).
+ * One doctor → straight into that chat. Two or more → the list of doctors.
+ */
+export default async function PatientChat({ searchParams }: { searchParams: Promise<{ attach?: string }> }) {
+  await requireProfile("patient");
+  const { attach } = await searchParams;
+  const inbox = await getMyConversations();
 
-export default async function PatientChat({ searchParams }: { searchParams: Promise<{ attach?: string; file?: string }> }) {
-  const profile = await requireProfile("patient");
-  const { attach, file } = await searchParams;
-  const [inbox] = await getMyConversations(); // MVP: one doctor per patient
-
-  if (!inbox) {
+  if (inbox.length === 0) {
     return (
       <main className="flex flex-1 items-center px-5 pt-6 pb-32">
         <EmptyState icon={MessageCircle} title="No doctor connected yet" action={<ButtonLink href="/home">Back to home</ButtonLink>}>
@@ -28,52 +28,18 @@ export default async function PatientChat({ searchParams }: { searchParams: Prom
     );
   }
 
-  const conversation = await getConversation(inbox.id);
-  if (!conversation) {
-    return (
-      <main className="flex flex-1 items-center px-5 pt-6 pb-32">
-        <EmptyState icon={MessageCircle} title="We couldn't open this chat" tone="danger" action={<ButtonLink href="/home">Back to home</ButtonLink>}>
-          Please try again in a moment.
-        </EmptyState>
-      </main>
-    );
+  // One doctor: open that chat straight away, keeping ?attach=1 for "Send a report".
+  if (inbox.length === 1) {
+    redirect(attach === "1" ? `/chat/${inbox[0].id}?attach=1` : `/chat/${inbox[0].id}`);
   }
 
-  const [messages, prescriptions] = await Promise.all([getMessages(inbox.id), getPrescriptions(inbox.id)]);
-  const doctor = conversation.doctor;
-  const openFile = file ? messages.find((m) => m.id === file && m.file_path) : undefined;
-
   return (
-    <main className="relative flex h-dvh min-h-0 flex-col p-3">
-      <Card tone="subtle" className="flex min-h-0 flex-1 flex-col p-2.5">
-        <Conversation
-          conversationId={inbox.id}
-          meId={profile.id}
-          otherName={doctor.full_name}
-          initialMessages={messages}
-          prescriptions={prescriptions}
-          replacedRxIds={replacedIds(prescriptions)}
-          fileHrefBase="/chat?file="
-          rxHrefBase="/prescriptions/"
-          attachOnOpen={attach === "1"}
-          starters={STARTERS}
-          readOnlyNotice={
-            doctor.deactivated_at
-              ? `${doctor.full_name} is no longer available here. You can still read your messages and prescriptions.`
-              : conversation.blocked_at
-                ? "You can't send messages in this chat. You can still read your messages and prescriptions."
-                : undefined
-          }
-          header={{
-            backHref: "/home",
-            backLabel: "Back to home",
-            leading: <Avatar name={doctor.full_name} doctor />,
-            title: doctor.full_name,
-            subtitle: doctor.specialty,
-          }}
-        />
-      </Card>
-      {openFile ? <FileViewer message={openFile} backHref="/chat" className="absolute inset-3 z-10" /> : null}
+    <main className="flex flex-col gap-4 p-3 pb-32">
+      <div className="px-1">
+        <h1 className="text-[28px] font-semibold tracking-tight">Your doctors</h1>
+        <p className="text-base text-ink-2">Tap a doctor to open your chat with them.</p>
+      </div>
+      <ConversationList rows={inbox} viewerRole="patient" />
     </main>
   );
 }

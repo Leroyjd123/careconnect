@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { normalizePhone } from "@/lib/utils";
+import { normalizePhone, validateHealthDetails } from "@/lib/utils";
 import { env } from "@/lib/env";
 import { EMAIL_RE, PHONE_EMAIL_DOMAIN } from "@/lib/constants";
 import type { ActionResult } from "@/lib/types";
@@ -297,18 +297,10 @@ export async function updatePatientDetails(patientId: string, input: PatientDeta
   if (!email && !phone) return { ok: false, error: "Keep an email or a mobile number, so the patient can sign in." };
 
   const dob = input.dateOfBirth.trim() || null;
-  if (dob && (Number.isNaN(Date.parse(dob)) || dob > new Date().toISOString().slice(0, 10) || dob < "1900-01-01")) {
-    return { ok: false, error: "Check the date of birth." };
-  }
-  const num = (v: string, min: number, max: number) => {
-    if (!v.trim()) return { value: null as number | null, ok: true };
-    const n = Number(v.replace(",", "."));
-    return { value: Math.round(n * 10) / 10, ok: Number.isFinite(n) && n >= min && n <= max };
-  };
-  const height = num(input.heightCm, 30, 260);
-  const weight = num(input.weightKg, 1, 400);
-  if (!height.ok) return { ok: false, error: "Height should be in centimetres, between 30 and 260." };
-  if (!weight.ok) return { ok: false, error: "Weight should be in kilograms, between 1 and 400." };
+  // The same rules the patient uses on their own Profile (lib/utils.ts).
+  const health = validateHealthDetails({ dateOfBirth: input.dateOfBirth, heightCm: input.heightCm, weightKg: input.weightKg });
+  if (!health.ok) return { ok: false, error: health.error };
+  const { height_cm: height, weight_kg: weight } = health.values;
 
   const admin = createAdminClient();
   const { data: before } = await admin
@@ -330,7 +322,7 @@ export async function updatePatientDetails(patientId: string, input: PatientDeta
 
   const { error } = await admin
     .from("profiles")
-    .update({ full_name: fullName, email: email || null, phone, date_of_birth: dob, height_cm: height.value, weight_kg: weight.value })
+    .update({ full_name: fullName, email: email || null, phone, date_of_birth: dob, height_cm: height, weight_kg: weight })
     .eq("id", patientId)
     .eq("role", "patient");
   if (error) {
@@ -338,7 +330,7 @@ export async function updatePatientDetails(patientId: string, input: PatientDeta
     return { ok: false, error: "We couldn't save these details. Please try again." };
   }
 
-  const after = { full_name: fullName, email: email || null, phone, date_of_birth: dob, height_cm: height.value, weight_kg: weight.value };
+  const after = { full_name: fullName, email: email || null, phone, date_of_birth: dob, height_cm: height, weight_kg: weight };
   await logAudit(admin, own.doctor, {
     action: "profile.details_changed",
     targetType: "profile",
