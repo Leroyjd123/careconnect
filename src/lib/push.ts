@@ -14,6 +14,7 @@ export type PushEvent =
   | "meeting_scheduled"
   | "meeting_moved"
   | "meeting_cancelled"
+  | "meeting_completed"
   /** The 15-minute reminder before a meeting starts. */
   | "meeting_reminder"
   /** A check-in was set, moved or cancelled. */
@@ -21,6 +22,7 @@ export type PushEvent =
   | "check_in_set"
   | "check_in_moved"
   | "check_in_cancelled"
+  | "check_in_done"
   /** The reminder on the day a check-in is due. */
   | "check_in_reminder";
 
@@ -134,10 +136,12 @@ function bodyFor(event: PushEvent) {
   if (event === "meeting_scheduled") return "Scheduled a meeting.";
   if (event === "meeting_moved") return "Moved a meeting.";
   if (event === "meeting_cancelled") return "Cancelled a meeting.";
+  if (event === "meeting_completed") return "Marked a meeting as done.";
   if (event === "meeting_reminder") return "Meeting in 15 minutes.";
   if (event === "check_in_set") return "Set a check-in.";
   if (event === "check_in_moved") return "Moved a check-in.";
   if (event === "check_in_cancelled") return "Cancelled a check-in.";
+  if (event === "check_in_done") return "Marked a check-in as done.";
   if (event === "check_in_reminder") return "Check-in due today.";
   if (event === "meeting") return "Set up a meeting.";
   if (event === "check_in") return "Set a check-in.";

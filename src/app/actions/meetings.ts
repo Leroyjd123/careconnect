@@ -245,7 +245,7 @@ export async function completeMeeting(id: string): Promise<ActionResult> {
     return { ok: false, error: "We couldn't update that meeting. Please try again." };
   }
 
-  await announce(supabase, "meeting", id, meeting.conversation_id, "meeting");
+  await announce(supabase, "meeting", id, meeting.conversation_id, "meeting_completed");
   revalidatePath(`/doctor/c/${meeting.conversation_id}`);
   return { ok: true };
 }
@@ -355,7 +355,7 @@ export async function completeCheckIn(id: string): Promise<ActionResult> {
     return { ok: false, error: "We couldn't update that check-in. Please try again." };
   }
 
-  await announce(supabase, "check_in", id, checkIn.conversation_id, "check_in");
+  await announce(supabase, "check_in", id, checkIn.conversation_id, "check_in_done");
   revalidatePath(`/doctor/c/${checkIn.conversation_id}`);
   return { ok: true };
 }
@@ -434,11 +434,14 @@ export async function convertCheckInToMeeting(
     .eq("doctor_id", owner.profile.id);
   if (linkError) {
     console.error("convertCheckInToMeeting: check-in not linked", linkError);
-    return { ok: false, error: "The meeting was scheduled, but the check-in wasn't updated. Please try again." };
+    // Undo the meeting, so trying again doesn't leave a second one behind.
+    const { error: undoError } = await supabase.from("meetings").update({ status: "cancelled" }).eq("id", meeting.id);
+    if (undoError) console.error("convertCheckInToMeeting: meeting not undone", undoError);
+    return { ok: false, error: "We couldn't turn this check-in into a meeting. Please try again." };
   }
 
   await announce(supabase, "meeting", meeting.id, owner.conv.id, "meeting_scheduled");
-  await announce(supabase, "check_in", checkInId, owner.conv.id, "check_in");
+  await announce(supabase, "check_in", checkInId, owner.conv.id, "check_in_done");
   revalidatePath(`/doctor/c/${owner.conv.id}`);
   return { ok: true, data: { meetingId: meeting.id } };
 }

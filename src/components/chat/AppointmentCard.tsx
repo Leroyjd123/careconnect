@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
 import { CalendarCheck, CalendarClock, CheckCircle2, CircleSlash, Video } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -68,7 +70,13 @@ export function AppointmentCard({
   actions,
   href,
 }: AppointmentCardProps) {
-  const now = new Date();
+  // Re-check the time every 30 seconds, so "Join meeting" and the badge change on their own
+  // while the chat stays open (decision 33).
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const isMeeting = type === "meeting";
   const badge = isMeeting && meeting ? meetingBadge(meeting, now) : checkIn ? checkInBadge(checkIn, now) : null;
   const joinable = isMeeting && meeting ? canJoin(meeting, now) : false;
@@ -95,9 +103,9 @@ export function AppointmentCard({
         </IconTile>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-base font-semibold">{title}</span>
-          {when ? <span className="text-[15px] text-ink-2">{when}</span> : null}
+          {when ? <span className="text-base text-ink-2">{when}</span> : null}
           {detail ? (
-            <span className={cn("min-w-0 break-words", compact ? "text-[15px] text-ink-2" : "text-[15px] text-ink")}>
+            <span className={cn("min-w-0 break-words", compact ? "text-base text-ink-2" : "text-base text-ink")}>
               {isMeeting ? detail : `About: ${detail}`}
             </span>
           ) : null}

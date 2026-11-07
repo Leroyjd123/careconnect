@@ -29,6 +29,7 @@ export const RELEASES: Release[] = [
       "Set a check-in to remind a patient to come back on a date, with a reason.",
       "The patient's home shows their doctor's next meeting, and the panel shows the next meeting and check-in.",
       "Patients can ask for a meeting from the chat with “Request a meeting”.",
+      "“Join meeting” switches on by itself 10 minutes before the start, without reloading.",
       "Your inbox shows a “Check-in due” badge when a patient is due to come back.",
       "Settings → Meetings: switch on or off marking meetings complete automatically 15 minutes after they start.",
     ],
