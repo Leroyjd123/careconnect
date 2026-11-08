@@ -124,10 +124,21 @@ export function AdminPatients({ patients, doctors, filterDoctorId }: Props) {
                     Active
                   </Badge>
                 )}
-                <Button variant="outline" size="sm" onClick={() => setEditing(patient)}>
-                  <Pencil aria-hidden="true" className="size-4" />
-                  Manage
-                </Button>
+                <div className="flex gap-2">
+                  {patient.doctors.length === 1 ? (
+                    <ButtonLink
+                      href={`/admin/c/${patient.doctors[0].conversationId}`}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Chat
+                    </ButtonLink>
+                  ) : null}
+                  <Button variant="outline" size="sm" onClick={() => setEditing(patient)}>
+                    <Pencil aria-hidden="true" className="size-4" />
+                    Manage
+                  </Button>
+                </div>
               </li>
             );
           })}

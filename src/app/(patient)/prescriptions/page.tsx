@@ -59,6 +59,7 @@ export default async function PrescriptionsPage({ searchParams }: { searchParams
                 issuedAt={rx.issued_at ?? rx.created_at}
                 medicines={(rx.prescription_items ?? []).map((i) => i.medicine)}
                 replaced={replaced.has(rx.id)}
+                cancelled={!!rx.cancelled_at}
                 latest={rx.id === latestId}
                 doctorName={rx.doctor.full_name}
                 actions={

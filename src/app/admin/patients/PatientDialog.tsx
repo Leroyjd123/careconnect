@@ -10,7 +10,7 @@ import {
   type AdminDoctor,
   type AdminPatient,
 } from "@/app/actions/admin";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field, FieldError } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
@@ -138,6 +138,9 @@ export function PatientDialog({ patient, doctors, onClose, onNotice }: Props) {
               {patient.doctors.map((d) => (
                 <li key={d.id} className="flex flex-wrap items-center gap-2 rounded-tile bg-mint/60 p-2.5">
                   <span className="min-w-0 flex-1 truncate text-[15px]">{d.full_name}</span>
+                  <ButtonLink href={`/admin/c/${d.conversationId}`} variant="ghost" size="sm">
+                    Open chat
+                  </ButtonLink>
                   {d.blockedAt ? (
                     <>
                       <span className="text-[13px] text-ink-2">Chat blocked</span>

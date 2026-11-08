@@ -39,6 +39,9 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/admin/doctors` | admin | Every doctor: name, specialty, clinic, patient count, status badge (Active / Deactivated). Search, invite, edit, deactivate ✅ |
 | `/admin/patients` | admin | Every patient: name, contact, the doctors they see, status. Search by name, mobile number or email; `?doctor=<id>` filters to one doctor's patients ✅ |
 | `/admin/clinics` | admin | Clinics: create, rename, the "also consults" setting, and the doctors in each (Q-B) ✅ |
+| `/admin/conversations` | admin | Every chat: the patient, the doctor, the last message, a Blocked badge. Search by name; `?doctor=<id>` filters ✅ |
+| `/admin/c/[id]` | admin | One chat, with the admin's actions: send as admin, edit, remove, block, cancel a prescription ✅ |
+| `/admin/audit` | admin | The audit log: filter by who, by what, and by date ✅ |
 | `/styleguide` | dev only | All shared components |
 
 ## Several doctors (Phase C, decisions 22–28)
@@ -145,6 +148,15 @@ their own home.
   name, mobile number or email. `?doctor=<id>` shows one doctor's patients only.
 - **`/admin/clinics` — Clinics.** A clinic has a name, an "also consults" setting and its
   doctors. A doctor belongs to one clinic at most (Q-B).
+- **`/admin/conversations` — Conversations.** Every chat: the patient, the doctor, the last
+  message time, and a **Blocked** badge when the chat is blocked. Search by either name.
+  `?doctor=<id>` shows one doctor's chats only. Each row opens the chat.
+- **`/admin/c/[id]` — A chat.** The same chat the doctor and the patient see, with the admin's
+  actions on it. The header names the patient and the doctor and has the **Block chat** toggle.
+- **`/admin/audit` — Audit log.** Everything an admin has changed, newest first, 50 to a page.
+  Filters: **Who** (a name, or "system"), **What happened** (**All** / **Views** / **Messages**
+  / **Prescriptions** / **People** / **Meetings**), and a date from and to. Each row says who
+  did what and when; the details open underneath, in plain words.
 
 ### What the admin can do
 
@@ -166,13 +178,55 @@ their own home.
   doctor**).
 - **Clinics**: create, rename, set the "also consults" setting, and move doctors in and out.
 
+### Moderating a chat (part 2: decisions 47–50, 55, Q-C, Q-J)
+
+- **Read every chat** (decision 47): the messages, the reports, the prescriptions, the meetings
+  and the check-ins.
+- **Send a message as the admin** (decision 48). It is labelled **"CareConnect Admin"** on both
+  sides (Q-J) and sits in the middle of the chat. It never shows as the doctor or the patient.
+- **Edit a message** (decision 49): the new words replace the old ones, and both sides see
+  **"Edited"**.
+- **Remove a message** (decision 50): both sides see **"Message removed by admin"**. A report's
+  file is deleted too.
+- **Block the chat** from the chat's header, with the same question as everywhere else.
+- **Opening a chat and opening a report are recorded** (decision 55), in the audit log.
+- **Cancel an issued prescription** (Q-C): it stays on record and shows **"Cancelled by admin"**
+  everywhere the patient and the doctor see it, including the print page. It is never edited in
+  place.
+- **Write a correction on the doctor's behalf** (Q-C): the admin writes the new prescription and
+  it is saved as a draft for that doctor. The doctor sends it to the patient from their own
+  chat. An issued prescription is never changed.
+- **Scheduling a meeting as the admin is not part of this phase.** The admin can see the meeting
+  and check-in cards, but the doctor schedules them.
+
 ### Admin copy
 
-- "Overview", "Doctors", "Patients", "Clinics", "Invite doctor", "Invite patient",
-  "Create clinic", "Manage", "Deactivate", "Reactivate", "Block chat", "Unblock chat",
-  "Block the account", "Unblock the account", "Add a doctor", "Show a patient's other doctors",
-  "Follow the clinic", "Follow the doctor", "Mark meetings complete automatically",
-  "Nothing scheduled", "Join as a doctor", "Everything on CareConnect, at a glance.",
+- "Overview", "Doctors", "Patients", "Clinics", "Conversations", "Audit log", "Invite doctor",
+  "Invite patient", "Create clinic", "Manage", "Deactivate", "Reactivate", "Block chat",
+  "Unblock chat", "Block the account", "Unblock the account", "Add a doctor", "Chats", "Chat",
+  "Open chat", "Show a patient's other doctors", "Follow the clinic", "Follow the doctor",
+  "Mark meetings complete automatically", "Nothing scheduled", "Join as a doctor",
+  "Everything on CareConnect, at a glance.", "Open prescription", "Edit", "Remove",
+  "Save change", "Remove message", "Edit this message", "Remove this message?",
+  "Write a correction", "Cancel this prescription", "Apply filters", "Clear filters",
+  "Who", "From", "To", "All", "Views", "Messages", "Prescriptions", "People", "Meetings",
+  "Blocked", "CareConnect Admin", "Message as CareConnect Admin", "Cancelled by admin",
+  "Cancelled by admin", "Edited", "Message removed by admin",
+  "Everything an admin has changed, newest first.",
+  "Nothing recorded yet", "Every change an admin makes shows up here.",
+  "No conversations yet", "When a patient starts a chat with a doctor, it shows up here.",
+  "No further details.", "Open the chat", "Page {n} of {m}", "Previous", "Next",
+  "Both the patient and the doctor will see the change, marked as edited.",
+  "Both the patient and the doctor will see “Message removed by admin”. A report's file is
+  deleted too.",
+  "Cancel this prescription? It stays on record and shows as cancelled.",
+  "This prescription was cancelled by the admin. It stays on record.",
+  "This corrects the prescription from {doctor}. The doctor sends it to the patient.",
+  "Save correction", "The correction is saved as a draft for {doctor} to send. Issued
+  prescriptions are never changed in place.",
+  "Medicines", "Add a medicine", "Diagnosis", "Advice",
+  "You can unblock the chat at any time.",
+  "This chat is read-only while it is blocked.",
   "A clinic groups doctors. A doctor belongs to one clinic at most.",
   "Create one above, then add your doctors to it.", "No doctor yet.", "No contact yet",
   "No clinic", "No clinic yet.", "There are no doctors yet. Invite a doctor first.",
@@ -222,6 +276,8 @@ their own home.
 
 - The doctor can remove a report from the file viewer ("Remove report", with a confirmation).
 - The file is deleted from Storage; the chat keeps a "Report removed by the doctor" line so the record stays honest.
+- The admin removes a report the same way: the file is deleted from Storage and the chat shows
+  "Message removed by admin" (decision 50).
 - Limits: 10 MB per file (bucket setting). Total storage is set by the Supabase plan.
 
 ## Prescriptions
@@ -235,6 +291,11 @@ their own home.
   "Ravi will see this in his chat and under Prescriptions. Once issued it is locked. To correct it, you issue a new version that replaces this one, and both stay on record."
 - Issue → locked, card posted in chat, success banner "Prescription issued. Ravi can see it in his chat and under Prescriptions."
 - Correction: "Issue a correction" on an issued card → new draft prefilled, `replacesId` set. Older one shows "Replaced".
+- The admin cancels an issued prescription (Q-C): the row stays, with a "Cancelled by admin" badge
+  (words + an icon) on the card in chat, on the full prescription, on the patient's list and on the
+  print page. Only `cancelled_at` and `cancelled_by` change; nothing else in the row does.
+- The admin writes a correction on the doctor's behalf (Q-C): a new draft with the conversation's
+  doctor as its doctor, so the doctor issues it from their own chat. The admin never issues it.
 - Patient view: medicine name, dose + timing, DoseSchedule slots, duration, doctor's advice, Download PDF (print page), "Ask Dr. … about this".
 - Print page includes doctor name, specialty, `reg_no`, patient name, date, medicines table, advice. `[REG NO]` placeholder until filled.
 

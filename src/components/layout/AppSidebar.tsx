@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Building2, Inbox, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, Pill, Settings, Stethoscope, UserPlus, Users } from "lucide-react";
+import { Building2, Inbox, LayoutDashboard, LogOut, MessageSquareText, PanelLeftClose, PanelLeftOpen, Pill, ScrollText, Settings, Stethoscope, UserPlus, Users } from "lucide-react";
 import { setLayoutCookie } from "@/components/layout/LayoutToggle";
 import { LAYOUT_COOKIES } from "@/lib/constants";
 import { Avatar } from "@/components/ui/Avatar";
@@ -38,6 +38,8 @@ const ICONS = {
   doctors: Stethoscope,
   clinics: Building2,
   medicines: Pill,
+  conversations: MessageSquareText,
+  audit: ScrollText,
 } as const;
 
 /** The doctor's links. The admin passes its own (PLAN §6: one sidebar, different links). */

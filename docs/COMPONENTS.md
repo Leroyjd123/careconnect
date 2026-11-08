@@ -38,14 +38,14 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 
 | Component | File | Use for | Status |
 |---|---|---|---|
-| `MessageBubble`, `ChatDivider` | `chat/MessageBubble.tsx` | Bubbles (`mine` decides side/colour), day and "new" dividers. | ✅ |
+| `MessageBubble`, `ChatDivider` | `chat/MessageBubble.tsx` | Bubbles (`mine` decides side/colour), day and "new" dividers. `author="admin"`: the admin's own message — centred, neutral, labelled "CareConnect Admin" (decision 48, Q-J). | ✅ |
 | `FileCard`, `FileTypeTile` | `chat/FileCard.tsx` | Attachment rows in chat, Reports list, upload preview. `href` makes the row open the viewer. | ✅ |
-| `Conversation` | `chat/Conversation.tsx` | Message list + realtime + mark-read + sending + composer. Used by `/chat` AND `/doctor/c/[id]`; the role only changes props (`header`, `fileHrefBase`, `rxHrefBase`, `correctionHrefBase`, `starters`, `readOnlyNotice`: replaces the composer with a Banner when the conversation is blocked or the doctor deactivated, 0005). | ✅ |
+| `Conversation` | `chat/Conversation.tsx` | Message list + realtime + mark-read + sending + composer. Used by `/chat`, `/doctor/c/[id]` AND `/admin/c/[id]`; the role only changes props (`header`, `fileHrefBase`, `rxHrefBase`, `correctionHrefBase`, `starters`, `readOnlyNotice`: replaces the composer with a Banner when the conversation is blocked or the doctor deactivated, 0005). `viewerRole="admin"`: the admin sends through `sendAdminMessage` (labelled "CareConnect Admin"), does not mark anything read, cannot attach a file (RLS only lets a chat member upload one), and gets the Edit / Remove buttons on each message (decisions 48–50). | ✅ |
 | `Composer` | `chat/Composer.tsx` | Floating input pill: attach button, auto-growing textarea, send. `offline` shows the banner. | ✅ |
-| `MessageItem` | `chat/MessageItem.tsx` | Switch on `message.kind` → text bubble / FileCard / PrescriptionCard. Also renders pending and failed sends. | ✅ |
+| `MessageItem` | `chat/MessageItem.tsx` | Switch on `message.kind` → text bubble / FileCard / PrescriptionCard. Also renders pending and failed sends. `viewerRole="admin"`: the admin's moderation buttons (`adminActions`). A removed message shows "Message removed by admin" (decision 50); an edited one shows "Edited" (decision 49). | ✅ |
 | `AttachSheet` | `chat/AttachSheet.tsx` | Dialog sheet: take photo / choose photo / choose file → preview → note → send. | ✅ |
 | `FileViewer` | `chat/FileViewer.tsx` | PDF/image viewer on a 5-minute signed URL, with Download. Doctor gets `onRemove` (Remove report, with confirm). Opened by `?file=<messageId>`. |
-| `ConversationList` | `chat/ConversationList.tsx` | One list, two viewers. `viewerRole="doctor"` (default): the inbox, with search + All/Unread, pending invites with a dashed avatar; rendered once by `doctor/(inbox)/layout.tsx`, hides itself on a phone when a conversation is open. `viewerRole="patient"`: the patient's list of doctors (name, specialty, latest message, unread count) on `/chat`; links to `/chat/<id>`. `dueCheckIns` (optional): conversation ids with a check-in due today or overdue → a "Check-in due" badge. | ✅ |
+| `ConversationList` | `chat/ConversationList.tsx` | One list, two viewers. `viewerRole="doctor"` (default): the inbox, with search + All/Unread, pending invites with a dashed avatar; rendered once by `doctor/(inbox)/layout.tsx`, hides itself on a phone when a conversation is open. `viewerRole="patient"`: the patient's list of doctors (name, specialty, latest message, unread count) on `/chat`; links to `/chat/<id>`. `viewerRole="admin"`: every chat on `/admin/conversations`; links to `/admin/c/<id>`, shows the patient's name with the doctor's under it, and a "Blocked" badge when the chat is blocked. `dueCheckIns` (optional): conversation ids with a check-in due today or overdue → a "Check-in due" badge. | ✅ |
 | `AppointmentCard` | `chat/AppointmentCard.tsx` | The card for a meeting and for a check-in, switched by `type` (decision 72). Meeting states: Scheduled / Starting soon / Now / Completed / Cancelled. Check-in states: Scheduled ("Due Fri, 15 Nov") / Due today / Overdue / Done / Cancelled. Every state is a Badge with words **and** an icon. "Join meeting" opens the link in a new tab and is only live from 10 minutes before the start (decision 33). `compact` for the panel and the patient's home; `actions` for the doctor's buttons; `href` for a "Manage" link. | ✅ |
 | `AppointmentDialog` | `chat/AppointmentDialog.tsx` | The popup for a meeting and for a check-in, switched by `type`. A new appointment opens on the Meeting tab; the `Segmented` switches to Check-in. Meeting form: date, time, length (`ChipGroup`: 15 default, 30, 45, 60, Custom), link (`TextInput type=url`), optional note. Check-in form: "In" chips (3 days, 1 week, 2 weeks, 1 month, Custom date) → the due date, plus a required reason. Overlap with the doctor's other meetings → a `Banner` warning, still allowed (decision 41). An existing appointment: Reschedule / Cancel (confirm) / Mark done; a check-in can also be turned into a meeting. Opened by `?appt=meeting` / `?appt=check_in` / `?appt=<id>`. | ✅ |
 
@@ -53,9 +53,9 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 
 | Component | File | Use for | Status |
 |---|---|---|---|
-| `PrescriptionCard` | `rx/PrescriptionCard.tsx` | Card in chat (both sides) and in the patient list. `replaced` / `latest` change the badge. `doctorName` adds the issuing doctor (the patient's list). | ✅ |
+| `PrescriptionCard` | `rx/PrescriptionCard.tsx` | Card in chat (both sides) and in the patient list. `replaced` / `latest` change the badge. `doctorName` adds the issuing doctor (the patient's list). `cancelled`: the admin cancelled it (Q-C) → a "Cancelled by admin" badge with an icon. | ✅ |
 | `DoseSchedule` | `rx/DoseSchedule.tsx` | Morning / Afternoon / Night slots from "1-0-1". | ✅ |
-| `PrescriptionView` | `rx/PrescriptionView.tsx` | Full read-only prescription. Patient detail, doctor "View" and the print page (`variant="print"`). | ✅ |
+| `PrescriptionView` | `rx/PrescriptionView.tsx` | Full read-only prescription. Patient detail, doctor "View" and the print page (`variant="print"`). A cancelled prescription shows a "Cancelled by admin" badge (Q-C). | ✅ |
 | `PrescriptionComposer` | `rx/PrescriptionComposer.tsx` | Draft editor: medicines, diagnosis, advice, 1.5 s autosave, review. ONE component for the wide popup and the phone sheet. | ✅ |
 | `MedicineFields` | `rx/MedicineFields.tsx` | One medicine row inside the composer. Suggests from the master list (fills the usual dose); "Save to my medicines" for new names. | ✅ |
 | `ReviewIssueDialog` | `rx/ReviewIssueDialog.tsx` | Dialog: patient identity strip + table + lock notice + Issue. | ✅ |
@@ -82,8 +82,15 @@ existing primitives).
 
 | Part | File | What it does | Status |
 |---|---|---|---|
-| Shell | `admin/layout.tsx` | `requireProfile("admin")`, then the `AppSidebar` with the admin's four links. Same shape as `doctor/layout.tsx`. | ✅ |
+| Shell | `admin/layout.tsx` | `requireProfile("admin")`, then the `AppSidebar` with the admin's links (Overview, Conversations, Doctors, Patients, Clinics, Audit log). Same shape as `doctor/layout.tsx`. | ✅ |
 | Overview | `admin/page.tsx` | Counts only (decision 56): doctors, patients, chats, meetings this week. Four cards, no charts. | ✅ |
+| Conversations | `admin/conversations/page.tsx` + `AdminConversations.tsx` | Every chat: the patient, the doctor, the last message and a "Blocked" badge. The rows are the shared `ConversationList` with `viewerRole="admin"`. `?doctor=<id>` filters to one doctor's chats. | ✅ |
+| A chat | `admin/c/[id]/page.tsx` | The shared `Conversation` with `viewerRole="admin"`. The header names the patient and the doctor and has the Block chat toggle. Opening the chat writes one "admin.conversation_viewed" audit row. | ✅ |
+| Chat header | `admin/c/[id]/AdminConversationHeader.tsx` | Both names, each linking to their admin profile, and the per-chat block (decision 11) behind a confirmation. | ✅ |
+| Chat popups | `admin/c/[id]/AdminConversationPopups.tsx` | The file viewer, the prescription with "Cancel this prescription" and "Write a correction" (Q-C). | ✅ |
+| Correction | `admin/c/[id]/AdminCorrectionDialog.tsx` | The admin writes a correction on the doctor's behalf. Saved as a draft with the conversation's doctor, so the doctor issues it (Q-C). Reuses `MedicineFields`. | ✅ |
+| Audit log | `admin/audit/page.tsx` + `AdminAudit.tsx` | The filters (who, what, from, to) and the table. The filters live in the query string. | ✅ |
+| Audit table | `components/admin/AuditLogTable.tsx` | The one new shared component (PLAN §6, approved). Newest first, 50 to a page, the action codes in plain words, the details in an expandable row. | ✅ |
 | Doctors | `admin/doctors/page.tsx` + `AdminDoctors.tsx` | The list: name, specialty, clinic, patient count, status badge (Active / Deactivated). Search. "Patients" links to `/admin/patients?doctor=<id>`. | ✅ |
 | Doctor popup | `admin/doctors/DoctorDialog.tsx` | Name, specialty, registration number, clinic; "also consults" (On / Off / Follow the clinic); auto-complete (On / Off); deactivate / reactivate behind a confirmation. | ✅ |
 | Invite doctor | `admin/doctors/InviteDoctorDialog.tsx` | A one-time link or an email (decision 44). Only the admin can invite doctors (decision 18). | ✅ |
@@ -103,6 +110,7 @@ existing primitives).
 | `saveDraft`, `issuePrescription`, `deleteDraft` | `actions/prescriptions.ts` |
 | `scheduleMeeting`, `updateMeeting`, `cancelMeeting`, `completeMeeting`, `setMeetingAutoComplete`, `scheduleCheckIn`, `updateCheckIn`, `completeCheckIn`, `cancelCheckIn`, `convertCheckInToMeeting` | `actions/meetings.ts` |
 | `getAdminOverview`, `getAdminDoctors`, `getAdminPatients`, `getAdminClinics`, `createDoctorInviteLink`, `inviteDoctorByEmail`, `updateAdminDoctor`, `setDoctorDeactivated`, `updateAdminDoctorSettings`, `createAdminPatientInviteLink`, `inviteAdminPatient`, `addDoctorToPatient`, `setAdminConversationBlocked`, `setAdminAccountBlocked`, `updateAdminPatientSettings`, `createClinic`, `renameClinic`, `updateClinicSettings`, `setDoctorClinic`, `joinWithDoctorInviteLink` | `actions/admin.ts` — every one starts with `requireProfile("admin")`; every service-role write writes an `audit_log` row |
+| `logAdminConversationView`, `logAdminFileView`, `sendAdminMessage`, `editAdminMessage`, `removeAdminMessage`, `cancelAdminPrescription`, `createAdminCorrectionDraft` | `actions/admin.ts` — Phase E part 2. Every one starts with `requireProfile("admin")` before `createAdminClient()`; every write writes an `audit_log` row |
 | `addMedicine`, `updateMedicine`, `setMedicineActive`, `mergeMedicine` | `actions/medicines.ts` |
 | `updateMyProfile`, `updateMyHealthDetails` | `actions/profile.ts` |
 
@@ -112,7 +120,11 @@ existing primitives).
 `getPrescription`, `getMedicineSuggestions`, `getOtherDoctors`, `replacedIds`,
 `getAppointments` (a conversation's meetings + check-ins), `getAppointment`, `getUpcomingForPatient` (the patient's
 next meeting per doctor), `getDoctorDueCheckIns` (conversations with a check-in due today or overdue),
-`getDoctorMeetingsBetween` (the doctor's other meetings, for the overlap warning).
+`getDoctorMeetingsBetween` (the doctor's other meetings, for the overlap warning),
+`getAdminConversations` (every chat, for the admin's list; `?doctor=<id>` filters),
+`getAdminAuditLog` (the audit log, newest first, 50 to a page; filtered by actor, action group and dates),
+`getAdminActorNames` (the names of the actors in the audit rows),
+`AUDIT_ACTION_GROUPS` (the action codes behind the audit screen's filters).
 
 ## Page-local client components
 

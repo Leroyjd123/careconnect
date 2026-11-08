@@ -8,9 +8,11 @@ import { requireProfile } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { EMAIL_RE, PHONE_EMAIL_DOMAIN } from "@/lib/constants";
+import { EMAIL_RE, PHONE_EMAIL_DOMAIN, ATTACHMENTS_BUCKET } from "@/lib/constants";
 import { addDays, normalizePhone, todayInAppZone } from "@/lib/utils";
-import type { ActionResult, Clinic, Profile } from "@/lib/types";
+import { notifyConversationAsSystem } from "@/lib/push";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ActionResult, Clinic, DraftItem, Message, Profile } from "@/lib/types";
 
 /**
  * Admin actions (PLAN §7 Phase E).
@@ -680,6 +682,378 @@ export async function inviteAdminPatient(input: {
 
   revalidatePath("/admin/patients");
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Conversations, messages and files (decisions 47–50, 54–55, Q-J)
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * The admin opens a chat (decision 55: views are recorded).
+ * Called from the server page, once per conversation, not per re-render.
+ */
+export async function logAdminConversationView(conversationId: string): Promise<ActionResult> {
+  const admin = await requireProfile("admin");
+  const client = createAdminClient();
+
+  const { data: conv } = await client
+    .from("conversations")
+    .select("id, doctor_id, patient_id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (!conv) return { ok: false, error: "Chat not found." };
+
+  await logAudit(client, admin, {
+    action: "admin.conversation_viewed",
+    targetType: "conversation",
+    targetId: conversationId,
+  });
+
+  return { ok: true };
+}
+
+/**
+ * The admin opens a report (decision 55: views of files are recorded too).
+ * The file itself is served by getFileUrl() with the normal client, which RLS opens to
+ * the admin.
+ */
+export async function logAdminFileView(messageId: string, conversationId: string): Promise<ActionResult> {
+  const admin = await requireProfile("admin");
+  const client = createAdminClient();
+
+  const { data: message } = await client
+    .from("messages")
+    .select("id, file_name")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (!message) return { ok: false, error: "File not found." };
+
+  await logAudit(client, admin, {
+    action: "admin.file_viewed",
+    targetType: "message",
+    targetId: messageId,
+    details: { conversation_id: conversationId, file_name: message.file_name },
+  });
+
+  return { ok: true };
+}
+
+/**
+ * The admin sends a message (decision 48). It is labelled "CareConnect Admin" on both
+ * sides (Q-J): the DB trigger sets sender_role from the admin's profile.
+ */
+export async function sendAdminMessage(conversationId: string, body: string): Promise<ActionResult<Message>> {
+  const admin = await requireProfile("admin");
+  const client = createAdminClient();
+
+  const text = body.trim();
+  if (!text) return { ok: false, error: "Type a message first." };
+  if (text.length > 4000) return { ok: false, error: "That message is too long. Please split it up." };
+
+  const { data: conv } = await client
+    .from("conversations")
+    .select("id, doctor_id, patient_id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (!conv) return { ok: false, error: "Chat not found." };
+
+  const { data, error } = await client
+    .from("messages")
+    .insert({ conversation_id: conversationId, sender_id: admin.id, kind: "text", body: text })
+    .select("*")
+    .single();
+  if (error || !data) {
+    console.error("sendAdminMessage failed", error);
+    return { ok: false, error: "Not sent. Check your internet and try again." };
+  }
+
+  await logAudit(client, admin, {
+    action: "admin.message_sent",
+    targetType: "message",
+    targetId: data.id,
+    details: { conversation_id: conversationId },
+  });
+
+  // Both sides get the same short note. Never the message itself.
+  await notifyConversationAsSystem(conversationId, "message", "CareConnect Admin");
+  revalidatePath(`/admin/c/${conversationId}`);
+  return { ok: true, data: data as Message };
+}
+
+/**
+ * Keeps the conversation's inbox preview honest after the admin edits or removes a
+ * message. The DB trigger only runs on insert, so without this the inbox would keep
+ * showing the old words.
+ */
+async function refreshConversationPreview(client: SupabaseClient, conversationId: string) {
+  const { data } = await client
+    .from("messages")
+    .select("kind, body, file_name, created_at")
+    .eq("conversation_id", conversationId)
+    .is("removed_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const last = (data ?? [])[0] as { kind: string; body: string | null; file_name: string | null } | undefined;
+  if (!last) {
+    await client.from("conversations").update({ last_message_preview: null, last_message_at: null }).eq("id", conversationId);
+    return;
+  }
+  const preview =
+    last.kind === "text"
+      ? (last.body ?? "").slice(0, 140)
+      : last.kind === "file"
+        ? `Sent ${last.file_name ?? "a file"}`
+        : last.kind === "meeting"
+          ? "Video meeting"
+          : last.kind === "check_in"
+            ? "Check-in"
+            : "Prescription";
+  await client.from("conversations").update({ last_message_preview: preview }).eq("id", conversationId);
+}
+
+/**
+ * The admin edits a message (decision 49). The body changes and edited_at is set, so
+ * both sides see "Edited".
+ */
+export async function editAdminMessage(messageId: string, body: string): Promise<ActionResult> {
+  const admin = await requireProfile("admin");
+  const client = createAdminClient();
+
+  const text = body.trim();
+  if (!text) return { ok: false, error: "Type a message first." };
+  if (text.length > 4000) return { ok: false, error: "That message is too long. Please split it up." };
+
+  const { data: before } = await client
+    .from("messages")
+    .select("id, body, conversation_id, kind, removed_at")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (!before) return { ok: false, error: "Message not found." };
+  if (before.removed_at) return { ok: false, error: "This message was removed." };
+  if (before.kind !== "text") return { ok: false, error: "Only text messages can be edited." };
+
+  const { error } = await client
+    .from("messages")
+    .update({ body: text, edited_at: new Date().toISOString() })
+    .eq("id", messageId);
+  if (error) {
+    console.error("editAdminMessage failed", error);
+    return { ok: false, error: "We couldn't change this message. Please try again." };
+  }
+
+  // The before/after body is the record decision 49 asks for.
+  await logAudit(client, admin, {
+    action: "message.edited",
+    targetType: "message",
+    targetId: messageId,
+    details: { before: { body: before.body }, after: { body: text }, conversation_id: before.conversation_id },
+  });
+
+  // The inbox preview showed the old words.
+  await refreshConversationPreview(client, before.conversation_id);
+  revalidatePath(`/admin/c/${before.conversation_id}`);
+  return { ok: true };
+}
+
+/**
+ * The admin removes a message (decision 50). Everyone sees "Message removed by admin".
+ * A file message also loses its file from Storage.
+ */
+export async function removeAdminMessage(messageId: string): Promise<ActionResult> {
+  const admin = await requireProfile("admin");
+  const client = createAdminClient();
+
+  const { data: before } = await client
+    .from("messages")
+    .select("id, body, conversation_id, kind, file_path, file_name, removed_at")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (!before) return { ok: false, error: "Message not found." };
+  if (before.removed_at) return { ok: false, error: "This message was already removed." };
+
+  const removedAt = new Date().toISOString();
+  // A removed report loses its file details too, like remove_report() does, so the
+  // chat does not point at a file that is gone.
+  const after = {
+    removed_at: removedAt,
+    removed_by: admin.id,
+    ...(before.kind === "file" && before.file_path
+      ? { file_path: null, file_name: null, file_size: null, file_type: null }
+      : {}),
+  };
+  const { error } = await client
+    .from("messages")
+    .update(after)
+    .eq("id", messageId)
+    .is("removed_at", null);
+  if (error) {
+    console.error("removeAdminMessage failed", error);
+    return { ok: false, error: "We couldn't remove this message. Please try again." };
+  }
+
+  // A report's file goes too, so nothing is left behind.
+  if (before.kind === "file" && before.file_path) {
+    const { error: storageError } = await client.storage.from(ATTACHMENTS_BUCKET).remove([before.file_path]);
+    if (storageError) console.error("removeAdminMessage: file not deleted", before.file_path, storageError);
+  }
+
+  await logAudit(client, admin, {
+    action: "message.removed",
+    targetType: "message",
+    targetId: messageId,
+    details: {
+      before: { body: before.body, file_name: before.file_name },
+      after: { removed_at: removedAt, removed_by: admin.id },
+      conversation_id: before.conversation_id,
+    },
+  });
+
+  // The inbox preview showed the removed words.
+  await refreshConversationPreview(client, before.conversation_id);
+  revalidatePath(`/admin/c/${before.conversation_id}`);
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Prescriptions (Q-C: cancel, and a correction on the doctor's behalf)
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * The admin cancels an issued prescription (Q-C). The row stays on record and shows
+ * as "Cancelled by admin"; nothing else about it changes. The DB trigger allows
+ * exactly this one change, once.
+ */
+export async function cancelAdminPrescription(prescriptionId: string): Promise<ActionResult> {
+  const admin = await requireProfile("admin");
+  const client = createAdminClient();
+
+  const { data: before } = await client
+    .from("prescriptions")
+    .select("id, status, cancelled_at, cancelled_by, doctor_id, conversation_id")
+    .eq("id", prescriptionId)
+    .maybeSingle();
+  if (!before) return { ok: false, error: "Prescription not found." };
+  if (before.cancelled_at) return { ok: false, error: "This prescription is already cancelled." };
+  if (before.status !== "issued") return { ok: false, error: "Only an issued prescription can be cancelled." };
+
+  const cancelledAt = new Date().toISOString();
+  const { error } = await client
+    .from("prescriptions")
+    .update({ cancelled_at: cancelledAt, cancelled_by: admin.id })
+    .eq("id", prescriptionId)
+    .is("cancelled_at", null);
+  if (error) {
+    console.error("cancelAdminPrescription failed", error);
+    return { ok: false, error: "We couldn't cancel this prescription. Please try again." };
+  }
+
+  await logAudit(client, admin, {
+    action: "rx.cancelled_by_admin",
+    targetType: "prescription",
+    targetId: prescriptionId,
+    details: {
+      before: { cancelled_at: null, cancelled_by: null },
+      after: { cancelled_at: cancelledAt, cancelled_by: admin.id },
+      doctor_id: before.doctor_id,
+      conversation_id: before.conversation_id,
+    },
+  });
+
+  revalidatePath(`/admin/c/${before.conversation_id}`);
+  revalidatePath("/prescriptions");
+  return { ok: true };
+}
+
+/**
+ * The admin writes a correction of an issued prescription, on the doctor's behalf (Q-C).
+ *
+ * The draft is created with the conversation's doctor as the doctor, so the doctor sees
+ * it in their own panel and issues it from there: issue_prescription() checks auth.uid(),
+ * so only the signed-in doctor can issue it. The admin never issues it.
+ */
+export async function createAdminCorrectionDraft(input: {
+  conversationId: string;
+  replacesId: string;
+  items: DraftItem[];
+  diagnosis?: string;
+  advice?: string;
+}): Promise<ActionResult<{ id: string }>> {
+  const admin = await requireProfile("admin");
+  const client = createAdminClient();
+
+  const { data: conv } = await client
+    .from("conversations")
+    .select("id, doctor_id, patient_id")
+    .eq("id", input.conversationId)
+    .maybeSingle();
+  if (!conv) return { ok: false, error: "Chat not found." };
+
+  const { data: original } = await client
+    .from("prescriptions")
+    .select("id, status, doctor_id, conversation_id")
+    .eq("id", input.replacesId)
+    .maybeSingle();
+  if (!original) return { ok: false, error: "Prescription not found." };
+  if (original.status !== "issued") return { ok: false, error: "Only an issued prescription can be corrected." };
+  if (original.conversation_id !== input.conversationId) {
+    return { ok: false, error: "That prescription belongs to a different chat." };
+  }
+
+  const items = input.items
+    .map((i) => ({
+      medicine: i.medicine.trim(),
+      dose: i.dose.trim(),
+      frequency: i.frequency.trim(),
+      duration: i.duration.trim(),
+      timing: i.timing?.trim() || null,
+    }))
+    .filter((i) => i.medicine);
+  if (!items.length) return { ok: false, error: "Add at least one medicine." };
+  const incomplete = items.find((i) => !i.dose || !i.frequency || !i.duration);
+  if (incomplete) return { ok: false, error: `Add dose, frequency and duration for ${incomplete.medicine}.` };
+
+  const { data: draft, error } = await client
+    .from("prescriptions")
+    .insert({
+      conversation_id: input.conversationId,
+      doctor_id: conv.doctor_id,
+      patient_id: conv.patient_id,
+      replaces_id: input.replacesId,
+      diagnosis: input.diagnosis?.trim() || null,
+      advice: input.advice?.trim() || null,
+      status: "draft",
+    })
+    .select("id")
+    .single();
+  if (error || !draft) {
+    console.error("createAdminCorrectionDraft failed", error);
+    return { ok: false, error: "We couldn't start the correction. Please try again." };
+  }
+
+  const { error: itemError } = await client
+    .from("prescription_items")
+    .insert(items.map((i, position) => ({ ...i, position, prescription_id: draft.id })));
+  if (itemError) {
+    // Don't leave a half-made draft behind.
+    await client.from("prescription_items").delete().eq("prescription_id", draft.id);
+    await client.from("prescriptions").delete().eq("id", draft.id);
+    console.error("createAdminCorrectionDraft items failed", itemError);
+    return { ok: false, error: "We couldn't save the medicines. Please try again." };
+  }
+
+  await logAudit(client, admin, {
+    action: "admin.correction_draft_created",
+    targetType: "prescription",
+    targetId: draft.id,
+    details: {
+      before: { replaces_id: input.replacesId },
+      after: { status: "draft", doctor_id: conv.doctor_id, medicines: items.map((i) => i.medicine) },
+      conversation_id: input.conversationId,
+    },
+  });
+
+  revalidatePath(`/admin/c/${input.conversationId}`);
+  return { ok: true, data: { id: draft.id } };
 }
 
 /**

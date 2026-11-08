@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarClock, Clock, Search, UserPlus } from "lucide-react";
+import { CalendarClock, Clock, Lock, Search, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge, CountBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -30,8 +30,8 @@ export function ConversationList({
   dueCheckIns = [],
 }: {
   rows: InboxRow[];
-  /** "doctor" = the inbox; "patient" = the patient's list of doctors. */
-  viewerRole?: "doctor" | "patient";
+  /** "doctor" = the inbox; "patient" = the patient's list of doctors; "admin" = every chat. */
+  viewerRole?: "doctor" | "patient" | "admin";
   live?: boolean;
   /** Conversation ids with a check-in due. Optional, so old callers keep working. */
   dueCheckIns?: string[];
@@ -39,15 +39,20 @@ export function ConversationList({
   const router = useRouter();
   const pathname = usePathname();
   const patient = viewerRole === "patient";
+  const admin = viewerRole === "admin";
   const due = useMemo(() => new Set(dueCheckIns), [dueCheckIns]);
-  // The doctor's chats live at /doctor/c/<id>, the patient's at /chat/<id>.
+  // The doctor's chats live at /doctor/c/<id>, the patient's at /chat/<id>, the admin's at /admin/c/<id>.
   const activeId = patient
     ? pathname.startsWith("/chat/")
       ? pathname.split("/")[2]
       : null
-    : pathname.startsWith("/doctor/c/")
-      ? pathname.split("/")[3]
-      : null;
+    : admin
+      ? pathname.startsWith("/admin/c/")
+        ? pathname.split("/")[3]
+        : null
+      : pathname.startsWith("/doctor/c/")
+        ? pathname.split("/")[3]
+        : null;
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
@@ -70,7 +75,11 @@ export function ConversationList({
     return rows.filter(
       (r) =>
         (filter === "all" || r.unread_count > 0) &&
-        (!q || r.other_name.toLowerCase().includes(q) || (r.last_message_preview ?? "").toLowerCase().includes(q)),
+        (!q ||
+          r.other_name.toLowerCase().includes(q) ||
+          // The admin searches by either name.
+          (r.other_doctor_name ?? "").toLowerCase().includes(q) ||
+          (r.last_message_preview ?? "").toLowerCase().includes(q)),
     );
   }, [rows, query, filter]);
 
@@ -86,7 +95,9 @@ export function ConversationList({
     >
       <div className="flex flex-col gap-3 px-4 pt-4">
         <div className="flex items-center justify-between gap-2">
-          {patient ? null : (
+          {patient ? null : admin ? (
+            <h1 className="text-[22px] font-semibold tracking-tight">Conversations</h1>
+          ) : (
             <>
               <h1 className="text-[22px] font-semibold tracking-tight">Inbox</h1>
               <ButtonLink href="/doctor?invite=1" variant="soft" size="sm">
@@ -99,19 +110,21 @@ export function ConversationList({
         <TextInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={patient ? "Search doctors" : "Search patients"}
-          aria-label={patient ? "Search doctors" : "Search patients"}
+          placeholder={patient ? "Search doctors" : admin ? "Search by name" : "Search patients"}
+          aria-label={patient ? "Search doctors" : admin ? "Search by name" : "Search patients"}
           className="h-11"
         />
-        <Segmented
-          label="Filter conversations"
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { value: "all", label: "All" },
-            { value: "unread", label: unreadTotal > 0 ? `Unread · ${unreadTotal}` : "Unread" },
-          ]}
-        />
+        {!admin ? (
+          <Segmented
+            label="Filter conversations"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: "all", label: "All" },
+              { value: "unread", label: unreadTotal > 0 ? `Unread · ${unreadTotal}` : "Unread" },
+            ]}
+          />
+        ) : null}
       </div>
 
       {visible.length === 0 ? (
@@ -130,14 +143,14 @@ export function ConversationList({
             return (
               <li key={c.id}>
                 <Link
-                  href={patient ? `/chat/${c.id}` : `/doctor/c/${c.id}`}
+                  href={patient ? `/chat/${c.id}` : admin ? `/admin/c/${c.id}` : `/doctor/c/${c.id}`}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex gap-3 rounded-tile p-3 text-ink no-underline hover:text-ink",
                     active ? "bg-white/90 shadow-lift" : "hover:bg-white/70",
                   )}
                 >
-                  <Avatar name={c.other_name} seed={c.other_id} doctor={patient} pending={!patient && invited} />
+                  <Avatar name={c.other_name} seed={c.other_id} doctor={patient} pending={!patient && !admin && invited} />
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <div className="flex justify-between gap-2">
                       <span className={cn("truncate", patient ? "text-base" : "text-[15px]", c.unread_count > 0 ? "font-semibold" : "font-medium")}>
@@ -152,8 +165,12 @@ export function ConversationList({
                     {patient && c.other_specialty ? (
                       <span className="truncate text-sm text-ink-2">{c.other_specialty}</span>
                     ) : null}
+                    {/* The admin's row names both people: "Patient · Dr. X". */}
+                    {admin && c.other_doctor_name ? (
+                      <span className="truncate text-[13px] text-ink-2">{c.other_doctor_name}</span>
+                    ) : null}
                     <div className="flex items-center justify-between gap-2">
-                      {!patient && invited ? (
+                      {!patient && !admin && invited ? (
                         <span className="flex items-center gap-1 text-[13px] text-ink-2">
                           <Clock aria-hidden="true" className="size-3.5" /> Invite pending
                         </span>
@@ -168,10 +185,18 @@ export function ConversationList({
                           {c.last_message_preview ?? "No messages yet"}
                         </span>
                       )}
-                      <CountBadge count={c.unread_count} />
+                      {!admin ? <CountBadge count={c.unread_count} /> : null}
                     </div>
+                    {/* The admin sees the chat's block (0005): text + icon, never colour alone. */}
+                    {admin && c.blocked_at ? (
+                      <span className="mt-1 flex items-center gap-1.5">
+                        <Badge tone="warning" icon={<Lock aria-hidden="true" />}>
+                          Blocked
+                        </Badge>
+                      </span>
+                    ) : null}
                     {/* A check-in is due today or overdue: say so, with an icon (never colour alone). */}
-                    {!patient && due.has(c.id) ? (
+                    {!patient && !admin && due.has(c.id) ? (
                       <span className="mt-1 flex items-center gap-1.5">
                         <Badge tone="warning" icon={<CalendarClock aria-hidden="true" />}>
                           Check-in due

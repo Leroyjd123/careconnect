@@ -97,6 +97,9 @@ export function AdminDoctors({ doctors, clinics }: Props) {
                 <ButtonLink href={`/admin/patients?doctor=${doctor.id}`} variant="ghost" size="sm">
                   Patients
                 </ButtonLink>
+                <ButtonLink href={`/admin/conversations?doctor=${doctor.id}`} variant="ghost" size="sm">
+                  Chats
+                </ButtonLink>
                 <Button variant="outline" size="sm" onClick={() => setEditing(doctor)}>
                   <Pencil aria-hidden="true" className="size-4" />
                   Manage

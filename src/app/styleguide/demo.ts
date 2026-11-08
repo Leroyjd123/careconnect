@@ -1,5 +1,5 @@
 // Fake data for /styleguide only. Fixed dates so server and browser render the same.
-import type { CheckIn, DraftItem, InboxRow, Meeting, Message, PrescriptionWithPeople, Profile } from "@/lib/types";
+import type { AuditEntry, CheckIn, DraftItem, InboxRow, Meeting, Message, PrescriptionWithPeople, Profile } from "@/lib/types";
 
 export const NOW = "2026-10-12T04:50:00.000Z";
 export const EARLIER = "2026-10-08T09:15:00.000Z";
@@ -61,6 +61,80 @@ export const fileMessage: Message = {
 };
 
 export const imageMessage: Message = { ...fileMessage, id: "demo-image", body: null, file_name: "Rash_photo.jpg", file_type: "image/jpeg", file_size: 812000 };
+
+/** A message the admin sent (decision 48, Q-J). */
+export const adminMessage: Message = {
+  ...fileMessage,
+  id: "demo-admin",
+  kind: "text",
+  body: "Please book a follow-up with Dr. Vipin John.",
+  file_path: null,
+  file_name: null,
+  file_size: null,
+  file_type: null,
+  sender_role: "admin",
+};
+
+/** A message the admin edited (decision 49). */
+export const editedMessage: Message = {
+  ...fileMessage,
+  id: "demo-edited",
+  kind: "text",
+  body: "Please book a follow-up with Dr. Vipin John.",
+  file_path: null,
+  file_name: null,
+  file_size: null,
+  file_type: null,
+  edited_at: NOW,
+};
+
+/** A message the admin removed (decision 50). */
+export const removedMessage: Message = {
+  ...fileMessage,
+  id: "demo-removed-by-admin",
+  kind: "text",
+  body: "This message was removed.",
+  file_path: null,
+  file_name: null,
+  file_size: null,
+  file_type: null,
+  removed_at: NOW,
+  removed_by: "demo-admin-id",
+};
+
+/** The audit log rows for the styleguide. */
+export const auditRows: AuditEntry[] = [
+  {
+    id: "a1",
+    actor_id: "demo-admin-id",
+    actor_role: "admin",
+    action: "admin.conversation_viewed",
+    target_type: "conversation",
+    target_id: "c1",
+    details: {},
+    created_at: NOW,
+  },
+  {
+    id: "a2",
+    actor_id: doctor.id,
+    actor_role: "doctor",
+    action: "message.edited",
+    target_type: "message",
+    target_id: "demo-edited",
+    details: { before: { body: "Please book a follow-up." }, after: { body: "Please book a follow-up with Dr. Vipin John." } },
+    created_at: EARLIER,
+  },
+  {
+    id: "a3",
+    actor_id: null,
+    actor_role: "system",
+    action: "meeting.reminded",
+    target_type: "meeting",
+    target_id: "m1",
+    details: {},
+    created_at: "2026-10-10T04:50:00.000Z",
+  },
+];
 
 export const prescription: PrescriptionWithPeople = {
   id: "demo-rx",

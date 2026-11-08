@@ -10,27 +10,34 @@ type MessageBubbleProps = {
   /** Remove padding when the content is a card (file, prescription). */
   bare?: boolean;
   tone?: "default" | "pending" | "failed";
+  /** The admin's messages (decision 48): centred and neutral, labelled "CareConnect Admin". */
+  author?: "admin";
   children: ReactNode;
 };
 
 /** One chat bubble. Mine = right + mint. Theirs = left + white glass. */
-export function MessageBubble({ mine, createdAt, status, bare, tone = "default", children }: MessageBubbleProps) {
+export function MessageBubble({ mine, createdAt, status, bare, tone = "default", author, children }: MessageBubbleProps) {
+  const admin = author === "admin";
   return (
     <div
       className={cn(
         "flex flex-col gap-1",
         // Cards (file, prescription) get a fixed comfortable width; text hugs its content.
         bare ? "w-[85%] max-w-[360px]" : "max-w-[80%] sm:max-w-[62%]",
-        mine ? "self-end items-end" : "self-start items-start",
+        // The admin's message sits in the middle: it belongs to neither side.
+        admin ? "self-center items-center" : mine ? "self-end items-end" : "self-start items-start",
       )}
     >
+      {admin ? <span className="px-1 text-[13px] font-semibold text-ink-label">CareConnect Admin</span> : null}
       <div
         className={cn(
           "w-full backdrop-blur-lg",
           bare ? "p-2" : "px-4 py-2.5 text-base leading-relaxed whitespace-pre-wrap break-words",
-          mine
-            ? "rounded-tile rounded-br-md border border-white/70 bg-mint-300/85"
-            : "rounded-tile rounded-bl-md border border-white/90 bg-white/85 shadow-lift",
+          admin
+            ? "rounded-tile border border-line bg-white/80 text-ink"
+            : mine
+              ? "rounded-tile rounded-br-md border border-white/70 bg-mint-300/85"
+              : "rounded-tile rounded-bl-md border border-white/90 bg-white/85 shadow-lift",
           tone === "pending" && "border-dashed border-sage opacity-90",
           tone === "failed" && "border-[1.5px] border-danger/50 bg-white/90",
         )}

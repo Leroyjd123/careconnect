@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { FileText, Lock } from "lucide-react";
+import { FileText, Lock, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { IconTile } from "@/components/ui/IconTile";
@@ -14,6 +14,8 @@ type PrescriptionCardProps = {
   /** Doctor's unissued draft: dashed outline, "Not sent". */
   draft?: boolean;
   replaced?: boolean;
+  /** The admin cancelled it (Q-C): it stays on record, marked "Cancelled by admin". */
+  cancelled?: boolean;
   /** Newest issued prescription, in the patient's list. */
   latest?: boolean;
   /** Who issued it. The patient's list shows it, so several doctors' prescriptions stay apart. */
@@ -24,7 +26,7 @@ type PrescriptionCardProps = {
  * The prescription card that appears in chat (both sides), the doctor's panel and the
  * patient's list. Issued prescriptions are locked, so this card is read-only by design.
  */
-export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced, latest, doctorName }: PrescriptionCardProps) {
+export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced, cancelled, latest, doctorName }: PrescriptionCardProps) {
   const count = `${medicines.length} ${medicines.length === 1 ? "medicine" : "medicines"}`;
 
   return (
@@ -40,6 +42,10 @@ export function PrescriptionCard({ issuedAt, medicines, actions, draft, replaced
         </div>
         {draft ? (
           <Badge tone="outline">Not sent</Badge>
+        ) : cancelled ? (
+          <Badge tone="danger" icon={<XCircle aria-hidden="true" />}>
+            Cancelled by admin
+          </Badge>
         ) : replaced ? (
           <Badge tone="outline">Replaced</Badge>
         ) : latest ? (

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Lock } from "lucide-react";
+import { Lock, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { DoseSchedule } from "@/components/rx/DoseSchedule";
@@ -34,6 +34,10 @@ export function PrescriptionView({ prescription, replaced, variant = "screen", a
           </div>
           {prescription.status === "draft" ? (
             <Badge tone="outline">Draft · not sent</Badge>
+          ) : prescription.cancelled_at ? (
+            <Badge tone="danger" icon={<XCircle aria-hidden="true" />}>
+              Cancelled by admin
+            </Badge>
           ) : replaced ? (
             <Badge tone="outline">Replaced</Badge>
           ) : (

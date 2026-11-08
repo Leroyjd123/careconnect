@@ -19,7 +19,7 @@ type AppointmentCardProps = {
   /** The check-in to show. */
   checkIn?: CheckIn | null;
   /** Who is looking: the doctor sees the actions, the patient only joins. */
-  viewerRole?: "doctor" | "patient";
+  viewerRole?: "doctor" | "patient" | "admin";
   /** True for the small card in the patient panel and on the patient's home. */
   compact?: boolean;
   /** Doctor actions: Reschedule, Cancel, Mark done. */

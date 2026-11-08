@@ -10,16 +10,21 @@ type SegmentedProps<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   className?: string;
+  /**
+   * How many options sit side by side. The default is one row with every option; pass
+   * a class like "[--seg-cols:2] sm:[--seg-cols:3]" to wrap on a phone.
+   */
+  columnsClass?: string;
 };
 
 /** Pill switcher: All/Unread, Reports/Prescriptions, language. Exactly one option is on. */
-export function Segmented<T extends string>({ label, options, value, onChange, className }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ label, options, value, onChange, className, columnsClass }: SegmentedProps<T>) {
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn("grid gap-1 rounded-2xl bg-mint-200/70 p-1", className)}
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      className={cn("grid gap-1 rounded-2xl bg-mint-200/70 p-1", columnsClass, className)}
+      style={{ gridTemplateColumns: columnsClass ? "repeat(var(--seg-cols, 2), minmax(0, 1fr))" : `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((o) => {
         const selected = o.value === value;

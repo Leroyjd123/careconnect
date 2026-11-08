@@ -41,7 +41,8 @@ export default function PrivacyPage() {
               </p>
               <p>
                 A small CareConnect team can open conversations when needed for support, safety or a legal request. Every time they
-                do, it is recorded.
+                do, it is recorded. They can also correct or remove a message, and cancel a prescription, when they need to. Your
+                doctor and you both see that this happened.
               </p>
               <p>
                 Your data is stored securely with our service providers (Supabase for the database and files, Vercel for the website).
@@ -59,7 +60,8 @@ export default function PrivacyPage() {
           body: (
             <p>
               For as long as you use CareConnect, and afterwards for as long as the law requires medical records to be kept. Your doctor
-              can remove reports; prescriptions are never edited after they&apos;re issued, so your record stays accurate.
+              can remove reports; prescriptions are never edited after they&apos;re issued, so your record stays accurate. A cancelled
+              prescription stays on record and is marked as cancelled.
             </p>
           ),
         },

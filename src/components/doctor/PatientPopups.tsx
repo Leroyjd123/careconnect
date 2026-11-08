@@ -210,6 +210,7 @@ export function PatientPopups({
                     issuedAt={rx.status === "draft" ? undefined : (rx.issued_at ?? rx.created_at)}
                     medicines={(rx.prescription_items ?? []).map((i) => i.medicine)}
                     replaced={replaced.has(rx.id)}
+                    cancelled={!!rx.cancelled_at}
                     actions={
                       <ButtonLink href={`${base}?rx=${rx.id}`} variant="outline" size="sm">
                         {rx.status === "draft" ? "Continue draft" : "View"}

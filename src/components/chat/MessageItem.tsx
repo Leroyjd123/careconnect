@@ -20,9 +20,11 @@ type MessageItemProps = {
   /** The check-in this card shows (kind = "check_in"). */
   checkIn?: CheckIn;
   /** Who is looking: the doctor sees the actions, the patient only joins. */
-  viewerRole?: "doctor" | "patient";
+  viewerRole?: "doctor" | "patient" | "admin";
   /** Doctor actions on the appointment card: Reschedule, Cancel, Mark done. */
   appointmentActions?: ReactNode;
+  /** Admin only: "Edit" and "Remove" on a message (decisions 49–50). */
+  adminActions?: ReactNode;
   /** Text after the time: "Seen", "Sending…", "Not sent". */
   status?: ReactNode;
   tone?: "default" | "pending" | "failed";
@@ -45,6 +47,7 @@ export function MessageItem({
   checkIn,
   viewerRole = "patient",
   appointmentActions,
+  adminActions,
   status,
   tone,
   fileHref,
@@ -53,11 +56,28 @@ export function MessageItem({
   actions,
 }: MessageItemProps) {
   const bare = message.kind !== "text" && !message.deleted_at;
+  // The admin's own messages are labelled and centred (decision 48, Q-J).
+  const isAdmin = message.sender_role === "admin";
 
   return (
-    <MessageBubble mine={mine} createdAt={message.created_at} status={status} tone={tone} bare={bare}>
-      {message.kind === "text" ? (
-        message.body
+    <MessageBubble
+      mine={mine}
+      createdAt={message.created_at}
+      status={status}
+      tone={tone}
+      bare={bare}
+      author={isAdmin ? "admin" : undefined}
+    >
+      {message.removed_at ? (
+        <p className="flex items-center gap-2 px-2 py-1 text-[15px] text-ink-2 italic">
+          <FileX aria-hidden="true" className="size-4 shrink-0" />
+          Message removed by admin
+        </p>
+      ) : message.kind === "text" ? (
+        <>
+          {message.body}
+          {message.edited_at ? <span className="ml-1 text-[13px] text-ink-2">· Edited</span> : null}
+        </>
       ) : message.kind === "file" && message.deleted_at ? (
         <p className="flex items-center gap-2 text-[15px] text-ink-2 italic">
           <FileX aria-hidden="true" className="size-4 shrink-0" />
@@ -87,6 +107,7 @@ export function MessageItem({
           issuedAt={prescription.issued_at ?? message.created_at}
           medicines={(prescription.prescription_items ?? []).map((i) => i.medicine)}
           replaced={replaced}
+          cancelled={!!prescription.cancelled_at}
           actions={
             <>
               {rxHref ? (
@@ -105,6 +126,7 @@ export function MessageItem({
       ) : (
         <p className="p-2 text-[15px] text-ink-2">Prescription</p>
       )}
+      {adminActions ? <div className="mt-2 flex flex-wrap gap-2">{adminActions}</div> : null}
       {actions ? <div className="mt-2 flex gap-2">{actions}</div> : null}
     </MessageBubble>
   );

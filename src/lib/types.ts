@@ -60,6 +60,10 @@ export type InboxRow = {
   last_message_at: string | null;
   last_message_preview: string | null;
   unread_count: number;
+  /** The chat is blocked (0005). Only the admin's list shows this. */
+  blocked_at?: string | null;
+  /** The doctor's name (the admin's list shows "Patient · Dr. X"). */
+  other_doctor_name?: string | null;
 };
 
 export type MessageKind = "text" | "file" | "prescription" | "meeting" | "check_in";

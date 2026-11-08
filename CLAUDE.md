@@ -31,6 +31,7 @@ npm run build      # must pass before you say a task is done
 src/app/(patient)/…        patient screens: /home /chat /prescriptions /profile
 src/app/doctor/…           doctor screens: /doctor /doctor/c/[id] /doctor/patients
 src/app/admin/…            admin screens: /admin /admin/doctors /admin/patients /admin/clinics
+                           /admin/conversations /admin/c/[id] /admin/audit
 src/app/actions/*.ts       ALL writes. Server actions, grouped by domain. Return ActionResult.
 src/lib/data.ts            ALL server reads. Pages call these; no inline queries in pages.
 src/lib/supabase/*         server.ts (default), client.ts (browser: realtime + uploads only), admin.ts (invites only)
@@ -77,12 +78,16 @@ src/components/patient/*   patient-only composites (only if not shareable)
   The admin's one exception inside `actions/admin.ts`: `joinWithDoctorInviteLink()`, where the one-time token is the boundary.
 - Every exported function in `src/app/actions/admin.ts` starts with `requireProfile("admin")` BEFORE it creates the
   service-role client. Every admin screen (`src/app/admin/**`) calls `requireProfile("admin")` at the top of its layout.
+- The admin's messages are labelled "CareConnect Admin" (Q-J) and are never sent as the doctor or the patient.
 - Every service-role write that changes a meeting, check-in, block, patient details, message or prescription
   must insert its own `audit_log` row. DB triggers only log writes made with a user session (`auth.uid()` set).
+  The admin's views of chats and files are logged too (decision 55).
 - Files are private. Show them with `getFileUrl()` (5-minute signed URL). Never make the bucket public or store URLs.
 - Uploads go browser → Storage via `lib/upload.ts`, then `sendAttachment()`. Never send file bytes through a server action.
 - Issued prescriptions are immutable (DB trigger). Corrections = new draft with `replacesId`, then issue.
   Only exception: the admin may set `cancelled_at`/`cancelled_by` once (service role); nothing else changes.
+  The admin never issues a prescription: `issue_prescription()` checks `auth.uid()`, so a correction the
+  admin writes stays a DRAFT for that doctor to issue from their own chat.
 - Notifications go through `notifyConversation()` in `lib/push.ts`. Never put message text or medical detail in a
   notification: it shows on lock screens. Name the sender only.
 - Schema changes: add a new numbered file in `supabase/migrations/`, update `src/lib/types.ts` in the same change,

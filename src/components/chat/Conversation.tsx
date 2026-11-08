@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Search, Video, X } from "lucide-react";
+import { MessageCircle, Pencil, Search, Trash2, Video, X } from "lucide-react";
 import { markRead, sendAttachment, sendMessage } from "@/app/actions/messages";
+import { sendAdminMessage, editAdminMessage, removeAdminMessage } from "@/app/actions/admin";
 import { Button, ButtonLink, IconButton } from "@/components/ui/Button";
 import { Banner, EmptyState } from "@/components/ui/Feedback";
-import { TextInput } from "@/components/ui/Field";
+import { TextArea, TextInput } from "@/components/ui/Field";
+import { Dialog } from "@/components/ui/Dialog";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ChatDivider } from "@/components/chat/MessageBubble";
 import { MessageItem } from "@/components/chat/MessageItem";
@@ -39,7 +41,7 @@ type ConversationProps = {
   meetings?: Meeting[];
   checkIns?: CheckIn[];
   /** Who is looking. The doctor sees the appointment actions; the patient only joins. */
-  viewerRole?: "doctor" | "patient";
+  viewerRole?: "doctor" | "patient" | "admin";
   /** Where an appointment popup opens, e.g. "/doctor/c/<id>?appt=". */
   apptHrefBase?: string;
   header: { backHref?: string; backLabel?: string; leading?: ReactNode; title: string; subtitle?: ReactNode; actions?: ReactNode };
@@ -89,6 +91,12 @@ export function Conversation({
   const [offline, setOffline] = useState(false);
   const [attachOpen, setAttachOpen] = useState(!!attachOnOpen && !readOnlyNotice);
   const [query, setQuery] = useState<string | null>(null);
+  // The admin's moderation: the message being edited, and the one being removed.
+  const [adminEdit, setAdminEdit] = useState<Message | null>(null);
+  const [adminEditBody, setAdminEditBody] = useState("");
+  const [adminRemove, setAdminRemove] = useState<Message | null>(null);
+  const [adminBusy, setAdminBusy] = useState(false);
+  const [adminError, setAdminError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   // The composer's input, so "Request a meeting" can put the text in and focus it.
   const requestRef = useRef<HTMLTextAreaElement>(null);
@@ -131,8 +139,10 @@ export function Conversation({
   }, []);
 
   useEffect(() => {
+    // The admin is not a chat member, so there is nothing for them to mark read.
+    if (viewerRole === "admin") return;
     void markRead(conversationId).then(() => router.refresh());
-  }, [conversationId, router]);
+  }, [conversationId, router, viewerRole]);
 
   useEffect(() => {
     const supabase = getBrowserClient();
@@ -176,7 +186,10 @@ export function Conversation({
               const uploaded = await uploadAttachment(conversationId, item.file!);
               return sendAttachment({ ...uploaded, conversationId, note: item.body ?? undefined });
             })()
-          : await sendMessage(conversationId, item.body ?? "");
+          : viewerRole === "admin"
+            ? // The admin sends through the service role, labelled "CareConnect Admin" (decision 48).
+              await sendAdminMessage(conversationId, item.body ?? "")
+            : await sendMessage(conversationId, item.body ?? "");
         if (!result.ok || !result.data) throw new Error("not sent");
         const message = result.data;
         setConfirmed((prev) => [...prev, message]);
@@ -188,7 +201,7 @@ export function Conversation({
         inFlight.current.delete(item.tempId);
       }
     },
-    [conversationId, router],
+    [conversationId, router, viewerRole],
   );
 
   // Everything queues first, then this sends it. Offline messages wait here until the browser is back.
@@ -213,6 +226,36 @@ export function Conversation({
     if (!text) return;
     setDraft("");
     queue(text);
+  }
+
+  /** The admin edits a message (decision 49). */
+  async function saveAdminEdit() {
+    if (!adminEdit) return;
+    setAdminBusy(true);
+    setAdminError(null);
+    const result = await editAdminMessage(adminEdit.id, adminEditBody);
+    setAdminBusy(false);
+    if (!result.ok) {
+      setAdminError(result.error);
+      return;
+    }
+    setAdminEdit(null);
+    router.refresh();
+  }
+
+  /** The admin removes a message (decision 50). */
+  async function confirmAdminRemove() {
+    if (!adminRemove) return;
+    setAdminBusy(true);
+    setAdminError(null);
+    const result = await removeAdminMessage(adminRemove.id);
+    setAdminBusy(false);
+    if (!result.ok) {
+      setAdminError(result.error);
+      return;
+    }
+    setAdminRemove(null);
+    router.refresh();
   }
 
   const searching = query !== null && query.trim().length > 0;
@@ -247,7 +290,7 @@ export function Conversation({
             meeting_id: null,
             check_in_id: null,
             // Local-only row; bubbles use `mine`, not sender_role. Phase E passes the real viewer role.
-            sender_role: "patient" as const,
+            sender_role: viewerRole === "admin" ? ("admin" as const) : ("patient" as const),
             edited_at: null,
             removed_at: null,
             removed_by: null,
@@ -344,6 +387,37 @@ export function Conversation({
                 }
                 tone={p ? (p.status === "failed" ? "failed" : "pending") : "default"}
                 status={p ? pendingStatus[p.status] : message.id === lastSeenId ? "Seen" : undefined}
+                adminActions={
+                  viewerRole === "admin" && !message.removed_at ? (
+                    <>
+                      {message.kind === "text" ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setAdminEditBody(message.body ?? "");
+                            setAdminError(null);
+                            setAdminEdit(message);
+                          }}
+                        >
+                          <Pencil aria-hidden="true" className="size-4" />
+                          Edit
+                        </Button>
+                      ) : null}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setAdminError(null);
+                          setAdminRemove(message);
+                        }}
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                        Remove
+                      </Button>
+                    </>
+                  ) : undefined
+                }
                 fileHref={message.file_path ? `${fileHrefBase}${message.id}` : undefined}
                 rxHref={rx ? `${rxHrefBase}${rx.id}` : undefined}
                 correctHref={rx && correctionHrefBase && !replaced.has(rx.id) ? `${correctionHrefBase}${rx.id}` : undefined}
@@ -394,20 +468,71 @@ export function Conversation({
             value={draft}
             onChange={setDraft}
             onSend={sendDraft}
-            onAttach={() => setAttachOpen(true)}
+            // The admin sends text only: RLS only lets a chat member upload a file.
+            onAttach={viewerRole === "admin" ? undefined : () => setAttachOpen(true)}
             offline={offline}
-            placeholder={`Message ${otherName}`}
+            placeholder={viewerRole === "admin" ? `Message as CareConnect Admin` : `Message ${otherName}`}
             inputRef={requestRef}
           />
         </>
       )}
 
-      <AttachSheet
-        open={attachOpen}
-        onClose={() => setAttachOpen(false)}
-        recipientName={otherName}
-        onSend={(file, note) => queue(note.trim() || null, file)}
-      />
+      {viewerRole === "admin" ? null : (
+        <AttachSheet
+          open={attachOpen}
+          onClose={() => setAttachOpen(false)}
+          recipientName={otherName}
+          onSend={(file, note) => queue(note.trim() || null, file)}
+        />
+      )}
+
+      {/* The admin edits a message (decision 49). */}
+      {adminEdit ? (
+        <Dialog
+          open
+          onClose={() => setAdminEdit(null)}
+          title="Edit this message"
+          description="Both the patient and the doctor will see the change, marked as edited."
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setAdminEdit(null)}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={() => void saveAdminEdit()} disabled={adminBusy}>
+                Save change
+              </Button>
+            </>
+          }
+        >
+          <div className="flex flex-col gap-3">
+            {adminError ? <Banner tone="danger">{adminError}</Banner> : null}
+            <TextArea value={adminEditBody} onChange={(e) => setAdminEditBody(e.target.value)} rows={5} />
+          </div>
+        </Dialog>
+      ) : null}
+
+      {/* The admin removes a message (decision 50). */}
+      {adminRemove ? (
+        <Dialog
+          open
+          onClose={() => setAdminRemove(null)}
+          title="Remove this message?"
+          description="Both the patient and the doctor will see “Message removed by admin”. A report's file is deleted too."
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setAdminRemove(null)}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={() => void confirmAdminRemove()} disabled={adminBusy}>
+                <Trash2 aria-hidden="true" className="size-4" />
+                Remove message
+              </Button>
+            </>
+          }
+        >
+          {adminError ? <Banner tone="danger">{adminError}</Banner> : null}
+        </Dialog>
+      ) : null}
     </div>
   );
 }

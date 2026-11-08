@@ -66,6 +66,7 @@ import { Composer } from "@/components/chat/Composer";
 import { AttachSheet } from "@/components/chat/AttachSheet";
 import { PrescriptionCard } from "@/components/rx/PrescriptionCard";
 import { DoseSchedule } from "@/components/rx/DoseSchedule";
+import { AuditLogTable } from "@/components/admin/AuditLogTable";
 import { MedicineFields } from "@/components/rx/MedicineFields";
 import { PrescriptionView } from "@/components/rx/PrescriptionView";
 import { ReviewIssueDialog } from "@/components/rx/ReviewIssueDialog";
@@ -357,6 +358,8 @@ const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = 
   ["Dialog, AttachSheet, ReviewIssueDialog, InviteDialog", "#dialogs", "shown"],
   ["TabBar, AppSidebar, PageHeader", "#nav", "shown"],
   ["MessageBubble, ChatDivider, MessageItem, FileCard, Composer", "#bubbles", "shown"],
+  ["The admin's message bubble, edited and removed states", "#adminmessages", "shown"],
+  ["AuditLogTable (the admin's audit log)", "#auditlog", "shown"],
   ["FileViewer", "#viewer", "shown"],
   ["PrescriptionCard, DoseSchedule, MedicineFields, PrescriptionView", "#rxcards", "shown"],
   ["ConversationList, PatientPanel, PatientDetailsDialog, PatientsTable, ReleaseNotes", "#inbox", "shown"],
@@ -1209,6 +1212,50 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
             </div>
           </Section>
 
+          <Section
+            id="adminmessages"
+            title="Admin messages & moderation"
+            file="chat/MessageItem.tsx · chat/MessageBubble.tsx"
+            use="The admin's own message is labelled and centred. Edited and removed messages are marked in words. The admin's Edit and Remove buttons are small ghost buttons under the bubble."
+          >
+            <div className="flex w-full max-w-md flex-col gap-3">
+              <MessageItem message={demo.adminMessage} mine={false} />
+              <MessageItem message={demo.editedMessage} mine={false} />
+              <MessageItem message={demo.removedMessage} mine={false} />
+              <MessageItem
+                message={{ ...demo.adminMessage, id: "demo-admin-actions" }}
+                mine={false}
+                adminActions={
+                  <>
+                    <Button size="sm" variant="ghost">
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="ghost">
+                      Remove
+                    </Button>
+                  </>
+                }
+              />
+            </div>
+          </Section>
+
+          <Section
+            id="auditlog"
+            title="Audit log table"
+            file="admin/AuditLogTable.tsx"
+            use="One row per change: who, what and when, in plain words. The details open underneath. The rows here are fake."
+          >
+            <div className="w-full">
+              <AuditLogTable
+                rows={demo.auditRows}
+                actorNames={{ "demo-admin-id": "CareConnect Admin", [demo.doctor.id]: demo.doctor.full_name }}
+                total={demo.auditRows.length}
+                page={1}
+                queryBase="#auditlog"
+              />
+            </div>
+          </Section>
+
           <Section id="apptcards" title="Appointment cards" file="chat/AppointmentCard.tsx" use="One card for a meeting and for a check-in, switched by type. Every state has a badge with words and an icon; “Join meeting” only opens 10 minutes before the start.">
             <div className="grid gap-4 lg:grid-cols-2">
               <Variant name="Meeting · Scheduled" className="w-full">
@@ -1372,6 +1419,9 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
               </Variant>
               <Variant name="Patient's list: which doctor issued it" code="doctorName" className="w-full">
                 <PrescriptionCard issuedAt={now} medicines={["Paracetamol 650 mg", "Vitamin D3 60K"]} doctorName="Dr. Meera Nair" />
+              </Variant>
+              <Variant name="Cancelled by the admin" code="cancelled" className="w-full">
+                <PrescriptionCard issuedAt={now} medicines={["Paracetamol 650 mg"]} cancelled actions={<ButtonLink href="#rxcards" variant="outline">View prescription</ButtonLink>} />
               </Variant>
             </div>
           </Section>

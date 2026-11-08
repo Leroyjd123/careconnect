@@ -474,8 +474,8 @@ Phase P notes (2026-11-07):
 
 ### Phase E: superadmin (v0.8.0)
 
-**Part 1 (done): the shell, the overview, doctors, patients, clinics.** Part 2 (chat moderation, admin
-messages, prescription cancel, the audit log screen) is still to do.
+**Part 1 (done): the shell, the overview, doctors, patients, clinics. Part 2 (done): chat
+moderation, admin messages, prescription cancel, the audit log screen.**
 
 - [x] `src/app/admin/layout.tsx` with `requireProfile("admin")`. `homeFor('admin')` = `/admin`. Middleware allows it.
 - [x] `/admin`: counts (doctors, patients, conversations, meetings this week).
@@ -484,9 +484,11 @@ messages, prescription cancel, the audit log screen) is still to do.
 - [x] `/admin/patients`: list + search, invite and assign to one or more doctors, add a doctor, edit details,
       block per conversation or whole account, show-other-doctors setting.
 - [x] `/admin/clinics` (per Q-B/Q-E): name, show-other-doctors setting, member doctors.
-- [ ] `/admin/c/[id]`: `Conversation` with `viewerRole="admin"`: send as "Admin", edit/remove messages,
-      remove reports, schedule meetings, prescription cancel + correction per Q-C. Viewing writes an audit row.
-- [ ] `/admin/audit`: filter by actor, action, date.
+- [x] `/admin/conversations`: every chat, search by name, `?doctor=` filter, the shared `ConversationList`
+      with `viewerRole="admin"`.
+- [x] `/admin/c/[id]`: `Conversation` with `viewerRole="admin"`: send as "Admin", edit/remove messages,
+      remove reports, prescription cancel + correction per Q-C. Viewing writes an audit row.
+- [x] `/admin/audit`: filter by actor, action, date.
 - [x] `src/app/actions/admin.ts` for all of the above; every action writes `audit_log`.
 
 #### Phase E part 1 notes
@@ -510,6 +512,36 @@ messages, prescription cancel, the audit log screen) is still to do.
   no patient and no conversation, and lands on `/doctor`.
 - **`?doctor=<id>`** filters the admin's patient list to one doctor's patients.
 - **Clinics have no delete** in this part. Not asked for; see §8.
+
+#### Phase E part 2 notes
+
+- **The admin's correction is a DRAFT for the doctor, not an issued prescription.** `issue_prescription()`
+  checks `auth.uid()` and `can_write()`, and `auth.uid()` is NULL for a service-role call, so the
+  admin cannot issue on the doctor's behalf (verified against the live database: "This conversation is
+  read-only"). Rather than reimplement the RPC in TypeScript, `createAdminCorrectionDraft()` writes the
+  draft with the conversation's doctor as its doctor, and the doctor issues it from their own chat.
+  Leroy chose this (option A) when asked.
+- **The admin's message is labelled by `sender_role`.** The DB trigger sets `sender_role` from the
+  sender's profile, so `sendAdminMessage()` inserts with `sender_id = admin.id` and the bubble shows
+  "CareConnect Admin" (Q-J) through `MessageBubble`'s new `author="admin"` prop.
+- **The admin cannot attach a file.** RLS's `attachments_upload` policy needs `can_write()`, which
+  needs to be a chat member. The admin's composer is text-only.
+- **The admin's Edit / Remove buttons live in the shared `Conversation`**, not in a new file: the shared
+  component is already a client component that calls server actions, and a server page cannot pass a
+  function to a client component.
+- **One "viewed" audit row per chat.** The server page calls `logAdminConversationView()` once, so a
+  re-render does not write another row.
+- **The inbox preview is refreshed by the app.** The `touch_conversation` trigger only runs on insert,
+  so after the admin edits or removes a message the app rewrites `last_message_preview` itself
+  (`refreshConversationPreview()`). Without it the doctor's inbox would keep showing the old words.
+- **A removed report loses its file details**, like `remove_report()` does, and the file is deleted
+  from Storage.
+- **Scheduling a meeting as the admin is out of scope for now** (see §8). The admin sees the meeting
+  and check-in cards; the doctor schedules them.
+- **`Segmented` grew a `columnsClass` prop** so the audit screen's six groups wrap on a phone
+  instead of squeezing into one row.
+- **`AuditLogTable` is the only new shared component** (PLAN §6, approved). Everything else is a
+  page-local file in the route folder.
 
 ### Phase G: landing (v0.9.0)
 - [ ] `/` shows the landing to signed-out visitors; signed-in users still redirect to their home.
@@ -546,8 +578,9 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 | Q-O | **The Settings on/off switch uses `Segmented`** because the design system has no switch primitive. Two pills ("On" / "Off") are a bit heavy for a boolean. Should a switch primitive be added to the design system? | Leave it as `Segmented` for now; add a switch only when a second boolean needs it. | Nothing — Phase D shipped. |
 | Q-P | **The ASCII designs for the "Schedule" menu** (Meeting / Check-in) and the `⋯` menu (Edit details, Block, Invite again) from Phase P are still not built. Phase D used a single "Schedule" button that opens the popup with the Segmented inside, instead of a two-item menu. Should it become a real menu? | Keep the single button. The popup's Segmented does the same job with fewer parts. | Nothing — Phase D shipped. |
 | Q-Q | **Should a clinic be deletable?** Phase E part 1 can create a clinic, rename it, set its setting and move doctors in and out — but not delete it. A clinic with no doctors is harmless, and deleting one would clear every doctor in it. | Add a delete later, but only for a clinic with no doctors, and with a confirmation. | Nothing — part 1 shipped without it. |
-| Q-R | **Should the admin see a patient's date of birth, height and weight?** Part 1 shows the name, the contact and the doctors; the health details are not in the admin's list. The doctor sees them in their own panel. | Keep the admin's list to what the admin needs to manage access. The details stay with the doctor. | Nothing — part 1 shipped. |
-| Q-S | **Should the admin be able to send a message to a patient or a doctor?** Decision 48 says the admin's messages are labelled "Admin", but that is part 2 (`/admin/c/[id]`). Part 1 has no way to message anyone. | Build it in part 2, with the chat moderation. | Part 2. |
+| Q-S | ~~**Should the admin be able to send a message to a patient or a doctor?**~~ Built in part 2: the admin sends inside a chat, labelled "CareConnect Admin" (decision 48, Q-J). | – | Done in part 2. |
+| Q-T | **Can the admin schedule a meeting or a check-in?** Part 2 lets the admin read the meeting and check-in cards but not create them: `schedule_meeting()` and `post_appointment_message()` check `auth.uid()` and the conversation's doctor, so the admin cannot post one on their behalf without a new migration or a new RPC. The task brief said scheduling as admin is out of scope unless it is a trivial reuse of `AppointmentDialog`. It is not trivial. | Either leave it to the doctor (the current state), or add a migration in 0006 that lets the admin post an appointment the way `issue_prescription()` would need to be changed. | Nothing — part 2 shipped without it. |
+| Q-U | **Should the admin see a patient's date of birth, height and weight?** Part 1 shows the name, the contact and the doctors; the health details are not in the admin's list. The doctor sees them in their own panel. | Keep the admin's list to what the admin needs to manage access. The details stay with the doctor. | Nothing — part 1 shipped. |
 
 ---
 
@@ -555,6 +588,7 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 
 | Date | Change | By |
 |---|---|---|
+| 2026-11-11 | Phase E part 2 built: `/admin/conversations`, `/admin/c/[id]`, `/admin/audit`. `AuditLogTable` approved and built. The admin's correction is a draft for the doctor (issue_prescription checks auth.uid()). Q-S resolved, Q-T and Q-U added. | Cline |
 | 2026-11-07 | Added check-ins (68–72), patient panel redesign Phase P (73–74); components approved; meeting components renamed Appointment*. | Claude |
 | 2026-11-07 | Open questions Q-A…Q-J answered yes; landing inspirations and proposed components added. | Claude |
 | 2026-11-07 | Plan created from Leroy's answers to 66 questions. | Claude |
