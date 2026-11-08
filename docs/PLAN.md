@@ -53,8 +53,8 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 | C | Patient with several doctors | v0.7.0 | ✅ done 2026-11-07 |
 | P | Patient panel → summary + popups | v0.7.0 | ✅ done 2026-11-07 |
 | D | Meetings + check-ins | v0.7.0 | ✅ done 2026-11-11 |
-| E | Superadmin panel + audit log | v0.8.0 | ◐ part 1 done 2026-11-11 (shell, overview, doctors, patients, clinics). Part 2 to do |
-| G | Landing page | v0.9.0 | ☐ components approved |
+| E | Superadmin panel + audit log | v0.8.0 | ✅ done 2026-11-11 (part 1: shell, overview, doctors, patients, clinics. Part 2: conversations, chat moderation, prescriptions, audit log) |
+| G | Landing page | v0.9.0 | ✅ done 2026-11-11 (placeholder images, decision 65 changed 2026-11-08) |
 | F | Docs, consent, releases | each release | ☐ |
 
 Order: **A → B → C → P → D → E → G → F** (F's doc updates also happen inside each phase).
@@ -160,7 +160,7 @@ Numbers match the original question list so answers can be traced.
 | 62 | Sections and look follow design inspirations Leroy will provide. Do not design before receiving them. |
 | 63 | Not "hyperlocal" in the product; the pitch mentions local doctors reaching local patients more easily. |
 | 64 | Pricing line: "No charges". Never "free pilot". |
-| 65 | Minimal imagery. Leroy generates and supplies images. Do not use stock photos or AI images yourself. |
+| 65 | **Placeholder images for now** (changed 2026-11-08, approved by Leroy). Every image slot is in `src/lib/landing.ts` (`LANDING_IMAGES`), where all `src` are `null` and the page draws a placeholder box at the final size. Leroy supplies the real images later and fills in the `src`; nothing else changes. No stock photos, no AI images, no external image URLs, no real patient data. |
 | 66 | English only. |
 
 ### Resolved open questions (2026-11-07, all "yes")
@@ -544,18 +544,44 @@ moderation, admin messages, prescription cancel, the audit log screen.**
   page-local file in the route folder.
 
 ### Phase G: landing (v0.9.0)
-- [ ] `/` shows the landing to signed-out visitors; signed-in users still redirect to their home.
-- [ ] Middleware: `/` public. `robots.ts` + `sitemap.ts` allow `/`, `/privacy`, `/terms` only.
-- [ ] Inspirations (2026-11-07): Zarla (centred hero, eyebrow, one CTA + reassurance line), PlushCare (split hero,
+- [x] `/` shows the landing to signed-out visitors; signed-in users still redirect to their home.
+- [x] Middleware: `/` public. `robots.ts` + `sitemap.ts` allow `/`, `/privacy`, `/terms` only.
+- [x] Inspirations (2026-11-07): Zarla (centred hero, eyebrow, one CTA + reassurance line), PlushCare (split hero,
       feature tiles with image, round-icon feature list + photo, chip cloud), Amazon One Medical (big display
       headlines with a coloured second line, rotating word, "With the app you can" checklist beside a phone).
-- [ ] Sections: header → hero (split, phone screenshot) → "Get in touch with your patients for {rotating word}"
+- [x] Sections: header → hero (split, phone screenshot) → "Get in touch with your patients for {rotating word}"
       → feature tiles (Chat, Reports, Prescriptions, Video meetings, Multilingual, Privacy) → "Your patients can"
       checklist + phone → chip marquee "What you can handle" → privacy strip → FAQ → closing CTA → footer.
-- [ ] Images: real app screenshots from seeded demo data (no real patient data). Other imagery only from Leroy.
-- [ ] Font: Inter, heavy weight, tight tracking for display headlines (decision 67).
-- [ ] Contact: `mailto:leroy.social@gmail.com`. No WhatsApp. Pricing line "No charges".
-- [ ] Images only from Leroy. English only. Copy into `docs/SPEC.md` § Landing.
+- [x] Images: placeholder boxes (decision 65, changed 2026-11-08). The slots are in `src/lib/landing.ts`.
+- [x] Font: Inter, heavy weight, tight tracking for display headlines (decision 67).
+- [x] Contact: `mailto:leroy.social@gmail.com`. No WhatsApp. Pricing line "No charges".
+- [x] English only. Copy into `docs/SPEC.md` § Landing.
+
+#### Phase G notes
+
+- **The images are placeholders** (decision 65, changed 2026-11-08). `src/lib/landing.ts` holds every slot in
+  one `LANDING_IMAGES` map; all `src` are `null`, so the page draws a box at the final size and aspect
+  ratio with a lucide icon and the words "Image coming soon". Leroy drops the real files into
+  `public/landing/` and fills in the `src`: `next/image` then renders them with no other change. The
+  slots are listed in `docs/SPEC.md` § Landing → "Images needed".
+- **Six marketing components only** (PLAN §6): `MarketingHeader`, `DisplayHeading`, `RotatingWord`,
+  `ChipMarquee`, `FeatureChecklist`, `PhoneFrame`, in `src/components/marketing/`. The page's sections are
+  page-local parts in `src/app/` (`FeatureTiles.tsx`, `PrivacyStrip.tsx`, `FaqList.tsx`, `LandingFooter.tsx`).
+- **`Card` grew `tone="feature"`** — the allowed extension in §6, for the landing page's feature tiles.
+- **`RotatingWord` and `ChipMarquee` are the only client components on the landing page.** Both respect
+  `prefers-reduced-motion` (the word stands still, the row does not scroll), both pause when the pointer
+  is over them, and neither announces a change: the whole word list and the whole chip list are in the
+  markup for screen readers.
+- **The FAQ is a native `<details>`/`<summary>`**, so it opens without any JavaScript.
+- **The reassurance line is "No charges. Set up in a day."** — decision 64's "No charges" plus a claim
+  about setup time. Not checked with Leroy; see §8 Q-V.
+- **Nothing invented.** No testimonials, no numbers, no clinic names, no logos and no "trusted by" strip,
+  because the app cannot back any of them up yet. Each omission is listed in §8.
+- **One primary button in the hero.** The other calls to action are `secondary`/`ghost`, except the closing
+  one, which is the hero's `primary` repeated in a different section.
+- **The robots rules are anchored** (`/$`, `/privacy$`, `/terms$`) so they match those three pages exactly,
+  with `Disallow: /` for everything else. `sitemap.ts` lists the same three.
+- **`/sitemap.xml` had to be added to the middleware's public files**, or it was redirected to the login.
 
 ### Phase F: docs, consent, releases (runs inside each phase)
 - [ ] Consent checkbox on `/join` and `/set-password`; sets `terms_accepted_at`.
@@ -581,6 +607,11 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 | Q-S | ~~**Should the admin be able to send a message to a patient or a doctor?**~~ Built in part 2: the admin sends inside a chat, labelled "CareConnect Admin" (decision 48, Q-J). | – | Done in part 2. |
 | Q-T | **Can the admin schedule a meeting or a check-in?** Part 2 lets the admin read the meeting and check-in cards but not create them: `schedule_meeting()` and `post_appointment_message()` check `auth.uid()` and the conversation's doctor, so the admin cannot post one on their behalf without a new migration or a new RPC. The task brief said scheduling as admin is out of scope unless it is a trivial reuse of `AppointmentDialog`. It is not trivial. | Either leave it to the doctor (the current state), or add a migration in 0006 that lets the admin post an appointment the way `issue_prescription()` would need to be changed. | Nothing — part 2 shipped without it. |
 | Q-U | **Should the admin see a patient's date of birth, height and weight?** Part 1 shows the name, the contact and the doctors; the health details are not in the admin's list. The doctor sees them in their own panel. | Keep the admin's list to what the admin needs to manage access. The details stay with the doctor. | Nothing — part 1 shipped. |
+| Q-V | **Is "Set up in a day" a promise we can keep?** The landing page's hero reassurance line is "No charges. Set up in a day." — decision 64's "No charges" plus a claim about how long setup takes. It was not checked with Leroy. | Keep it if a doctor can really be set up in a day (invite them, they invite their patients). Otherwise change it to something we can promise, like "No charges. No contracts." | Nothing — the line is in the page and easy to change. |
+| Q-W | **Should the landing page have testimonials, a number of users, or clinic logos?** All three were left out, because inventing them would be a lie and the app cannot yet back them up. | Add them only when there is something real to show: a clinic that agreed to be named, or a doctor willing to be quoted. | Nothing — the sections are absent for now. |
+| Q-X | **Should the landing page say who runs CareConnect?** The footer says "© 2026 CareConnect" and gives the contact address, but the page never says whether CareConnect is a company, a clinic or a person. | Say it plainly, once Leroy decides the wording. | Nothing — the page is neutral on this. |
+| Q-Y | **Should the FAQ mention that CareConnect is invite-only, and that the doctor chooses who joins?** It says patients join through a link or an invitation from their doctor, which is true today. | Keep it: it answers the first question doctors ask. | Nothing — it is in the FAQ. |
+| Q-Z | **Is there a "how it works" section for a doctor who wants to see the steps?** The page lists what the app does and what patients can do, but it does not walk through "you invite a patient, they join, you chat". | Add a short three-step strip if Leroy wants one. It can reuse the `FeatureChecklist`. | Nothing — the strip is absent for now. |
 
 ---
 
@@ -588,6 +619,7 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 
 | Date | Change | By |
 |---|---|---|
+| 2026-11-11 | Phase G built: the landing page at `/`. The six approved marketing components, `Card tone="feature"`, placeholder images. Decision 65 changed (placeholders). Q-V…Q-Z added. | Cline |
 | 2026-11-11 | Phase E part 2 built: `/admin/conversations`, `/admin/c/[id]`, `/admin/audit`. `AuditLogTable` approved and built. The admin's correction is a draft for the doctor (issue_prescription checks auth.uid()). Q-S resolved, Q-T and Q-U added. | Cline |
 | 2026-11-07 | Added check-ins (68–72), patient panel redesign Phase P (73–74); components approved; meeting components renamed Appointment*. | Claude |
 | 2026-11-07 | Open questions Q-A…Q-J answered yes; landing inspirations and proposed components added. | Claude |

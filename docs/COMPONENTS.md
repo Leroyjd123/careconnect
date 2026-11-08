@@ -9,7 +9,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 |---|---|---|---|
 | `Button`, `ButtonLink`, `IconButton`, `Spinner`, `buttonStyles()` | `ui/Button.tsx` | Every button and button-styled link. Variants: primary, secondary (glass), outline (on solid white, e.g. PrescriptionCard), soft, ghost, danger. | ✅ |
 | `IconTile` | `ui/IconTile.tsx` | The 44px rounded icon square. `tone`: soft (mint) or solid (forest). Never hand-build it. | ✅ |
-| `Card` | `ui/Card.tsx` | Every surface. Tones: glass, subtle, strong, solid, dashed (not sent yet). `as={Link}` for clickable tiles. | ✅ |
+| `Card` | `ui/Card.tsx` | Every surface. Tones: glass, subtle, strong, solid, dashed (not sent yet), feature (the landing page's tiles). `as={Link}` for clickable tiles. | ✅ |
 | `Field`, `TextInput`, `TextArea`, `InputAddon`, `FieldError` | `ui/Field.tsx` | Every form control with label, hint and error. | ✅ |
 | `Segmented` | `ui/Segmented.tsx` | Exactly-one-of switches: All/Unread, Reports/Prescriptions, language. | ✅ |
 | `ChipGroup` | `ui/ChipGroup.tsx` | Quick picks: frequency, duration, timing, patient filters. `allowCustom` adds a "Custom…" chip with a text input. | ✅ |
@@ -98,6 +98,26 @@ existing primitives).
 | Patient popup | `admin/patients/PatientDialog.tsx` | Their doctors, block/unblock per chat, "add a doctor" (never move), "also consults", block/unblock the whole account (decision 12). | ✅ |
 | Invite patient | `admin/patients/InvitePatientDialog.tsx` | Name + email, then tick one or more doctors (decision 45). | ✅ |
 | Clinics | `admin/clinics/page.tsx` + `AdminClinics.tsx` | Create, rename, the "also consults" setting, and the doctors in each clinic (Q-B). | ✅ |
+
+## Marketing — `src/components/marketing` (the landing page only, PLAN §6)
+
+The six pieces the landing page at `/` is built from. They are not used inside the app.
+
+| Component | File | What it does | Status |
+|---|---|---|---|
+| `MarketingHeader` | `marketing/MarketingHeader.tsx` | The public top bar: the logo, the anchor links, "Sign in" and "Get in touch". Props: `links` ({href, label}), `signInHref`, `contactHref`. The anchor links hide on a phone. | ✅ |
+| `DisplayHeading` | `marketing/DisplayHeading.tsx` | The big headline (decision 67): Inter, heavy, tight tracking, an optional eyebrow, and a coloured accent line. Props: `eyebrow`, `children`, `accent`, `size` ("md" | "lg"), `as` ("h1" | "h2" | "h3"). | ✅ |
+| `RotatingWord` | `marketing/RotatingWord.tsx` | The headline word that cycles. Props: `words`, `interval`. Respects reduced motion (the first word stays), pauses on hover, and puts the whole list in the markup for screen readers — nothing is announced on every change. A client component. | ✅ |
+| `ChipMarquee` | `marketing/ChipMarquee.tsx` | The slow-scrolling row of chips. Props: `chips`, `label`, `duration`. Pauses on hover, static with reduced motion, and the second row is `aria-hidden` so the chips are read once. A client component. | ✅ |
+| `FeatureChecklist` | `marketing/FeatureChecklist.tsx` | The check list ("Your patients can"). Props: `title`, `subtitle`, `items` ({label, detail}), `columns` (1 | 2). | ✅ |
+| `PhoneFrame` | `marketing/PhoneFrame.tsx` | The phone around an app screenshot. Props: `image` (a `LandingImage`). While the image is missing it draws a placeholder box at the final size (decision 65). | ✅ |
+
+**The landing page's own parts** (page-local, in `src/app/`): `FeatureTiles.tsx`, `PrivacyStrip.tsx`,
+`FaqList.tsx`, `LandingFooter.tsx`. The page is `src/app/page.tsx`.
+
+**The images** live in one place: `src/lib/landing.ts` (`LANDING_IMAGES`, plus the rotating words, the
+chips, the checklist and the FAQ). Every `src` is `null` until Leroy supplies the real files; the slot
+list is in `docs/SPEC.md` § Landing → "Images needed".
 
 ## Server actions — `src/app/actions` (already written; build UI on these)
 

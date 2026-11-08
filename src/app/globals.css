@@ -107,6 +107,19 @@
   }
 }
 
+/* The landing page's chip row: one long loop, paused on hover. */
+@keyframes cc-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+.cc-pause {
+  animation-play-state: paused !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

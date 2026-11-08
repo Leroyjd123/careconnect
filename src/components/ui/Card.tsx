@@ -1,7 +1,7 @@
 import type { ElementType, ComponentPropsWithoutRef } from "react";
 import { cn } from "@/lib/utils";
 
-type Tone = "glass" | "subtle" | "strong" | "solid" | "dashed";
+type Tone = "glass" | "subtle" | "strong" | "solid" | "dashed" | "feature";
 
 const tones: Record<Tone, string> = {
   glass: "glass shadow-float",     // default card over the background
@@ -9,6 +9,7 @@ const tones: Record<Tone, string> = {
   strong: "glass-strong shadow-modal", // dialogs, sheets
   solid: "bg-white border border-line-soft shadow-lift", // content on top of glass (medicine rows)
   dashed: "bg-white/70 border border-dashed border-sage", // not sent yet (draft prescription)
+  feature: "bg-white/85 border border-line-soft shadow-lift", // the landing page's feature tiles
 };
 
 type CardProps<T extends ElementType> = {

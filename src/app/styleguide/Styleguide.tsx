@@ -67,6 +67,13 @@ import { AttachSheet } from "@/components/chat/AttachSheet";
 import { PrescriptionCard } from "@/components/rx/PrescriptionCard";
 import { DoseSchedule } from "@/components/rx/DoseSchedule";
 import { AuditLogTable } from "@/components/admin/AuditLogTable";
+import { MarketingHeader } from "@/components/marketing/MarketingHeader";
+import { DisplayHeading } from "@/components/marketing/DisplayHeading";
+import { RotatingWord } from "@/components/marketing/RotatingWord";
+import { ChipMarquee } from "@/components/marketing/ChipMarquee";
+import { FeatureChecklist } from "@/components/marketing/FeatureChecklist";
+import { PhoneFrame } from "@/components/marketing/PhoneFrame";
+import { LANDING_IMAGES, MARQUEE_CHIPS, PATIENT_CAN, ROTATING_WORDS } from "@/lib/landing";
 import { MedicineFields } from "@/components/rx/MedicineFields";
 import { PrescriptionView } from "@/components/rx/PrescriptionView";
 import { ReviewIssueDialog } from "@/components/rx/ReviewIssueDialog";
@@ -108,6 +115,7 @@ const GROUPS: { group: string; items: [id: string, title: string][] }[] = [
   { group: "Prescriptions", items: [["rxcards", "Prescription cards"], ["dose", "Dose schedule"], ["medicine", "Medicine row"], ["rxview", "Full prescription"], ["print", "Print / PDF"]] },
   { group: "Doctor", items: [["inbox", "Conversation list"], ["panel", "Patient panel"], ["table", "Patients table"], ["medicines", "Master medicines"], ["releases", "Release notes"]] },
   { group: "Account", items: [["signin", "Sign in & password"], ["notifications", "Notifications"], ["health", "Patient health details"]] },
+  { group: "Marketing", items: [["marketing", "Landing page pieces"]] },
   { group: "Edge cases", items: [["edges", "Long, empty, many"]] },
   { group: "Review", items: [["coverage", "Coverage"], ["review", "Merge & fix list"]] },
 ];
@@ -360,6 +368,7 @@ const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = 
   ["MessageBubble, ChatDivider, MessageItem, FileCard, Composer", "#bubbles", "shown"],
   ["The admin's message bubble, edited and removed states", "#adminmessages", "shown"],
   ["AuditLogTable (the admin's audit log)", "#auditlog", "shown"],
+  ["MarketingHeader, DisplayHeading, RotatingWord, ChipMarquee, FeatureChecklist, PhoneFrame", "#marketing", "shown"],
   ["FileViewer", "#viewer", "shown"],
   ["PrescriptionCard, DoseSchedule, MedicineFields, PrescriptionView", "#rxcards", "shown"],
   ["ConversationList, PatientPanel, PatientDetailsDialog, PatientsTable, ReleaseNotes", "#inbox", "shown"],
@@ -955,6 +964,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
                   ["strong", "Dialog or sheet"],
                   ["solid", "On top of glass"],
                   ["dashed", "Not sent yet (draft)"],
+                  ["feature", "Landing feature tile"],
                 ] as const
               ).map(([t, name]) => (
                 <Variant key={t} name={name} code={`tone="${t}"`} className="w-full">
@@ -1576,7 +1586,63 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
           </Section>
         </div>
 
-        {/* ═════════ EDGE CASES ═════════ */}
+        {/* ═════════ MARKETING ═════════ */}
+        <div className="flex flex-col gap-10">
+          <GroupTitle>Marketing</GroupTitle>
+          <Section
+            id="marketing"
+            title="Landing page pieces"
+            file="components/marketing/*.tsx · lib/landing.ts"
+            use="The six pieces the landing page is built from. The images are placeholders until Leroy supplies the real ones (decision 65)."
+          >
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Variant name="MarketingHeader" code="the public top bar" className="w-full">
+                <div className="w-full overflow-hidden rounded-tile">
+                  <MarketingHeader
+                    links={[
+                      { href: "#marketing", label: "Features" },
+                      { href: "#marketing", label: "Privacy" },
+                    ]}
+                    signInHref="#marketing"
+                    contactHref="#marketing"
+                  />
+                </div>
+              </Variant>
+              <Variant name="DisplayHeading" code="size=&quot;lg&quot; or &quot;md&quot;" className="w-full">
+                <div className="flex flex-col gap-6">
+                  <DisplayHeading as="h3" size="lg" eyebrow="For doctors and clinics">
+                    Stay in touch with your patients, anywhere, anytime.
+                  </DisplayHeading>
+                  <DisplayHeading as="h3" size="md" eyebrow="What CareConnect does">
+                    Everything a patient needs, in one place
+                  </DisplayHeading>
+                </div>
+              </Variant>
+              <Variant name="RotatingWord" code="the word cycles" className="w-full">
+                <p className="text-[26px] font-bold tracking-tight text-forest">
+                  <RotatingWord words={ROTATING_WORDS} />
+                </p>
+                <p className="mt-2 text-[13px] text-ink-2">
+                  The whole list is read once by a screen reader. With reduced motion the first word stays.
+                </p>
+              </Variant>
+              <Variant name="ChipMarquee" code="pauses on hover" className="w-full">
+                <ChipMarquee chips={MARQUEE_CHIPS} label="What you can handle" />
+              </Variant>
+              <Variant name="FeatureChecklist" code="columns={1|2}" className="w-full">
+                <FeatureChecklist
+                  title="Your patients can"
+                  subtitle="Everything happens in the app, so nothing is lost in a phone call."
+                  items={PATIENT_CAN.map((label) => ({ label }))}
+                />
+              </Variant>
+              <Variant name="PhoneFrame" code="a placeholder until the real image lands" className="w-full">
+                <PhoneFrame image={LANDING_IMAGES["hero-chat"]} />
+              </Variant>
+            </div>
+          </Section>
+        </div>
+
         <div className="flex flex-col gap-10">
           <GroupTitle>Edge cases</GroupTitle>
           <Section id="edges" title="Long, empty, many" file="Same components, harder content" use="Long names must not break layouts. Empty lists must say what to do next. Big counts must stay readable.">

@@ -18,6 +18,7 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 
 | Route | Who | Screen (canvas ref) |
 |---|---|---|
+| `/` | signed out | The landing page for doctors and clinics. A signed-in user is sent to their home ✅ |
 | `/login` | all | Email + password ✅ |
 | `/join/[token]` | patient | Make an account from the doctor's shared link ✅. A doctor link (from the admin) opens "Join as a doctor" instead ✅ |
 | `/set-password` | all | Choose a password after opening an invite link ✅ |
@@ -320,6 +321,96 @@ their own home.
 - Tapping opens that conversation: the patient goes to `/chat/<id>`, the doctor to `/doctor/c/<id>`.
 - States: on, off, blocked by the browser, iPhone not on the Home Screen (explains how), unsupported browser.
 - Signing out removes this device, so the next person on a shared phone doesn't get alerts.
+
+## Landing (Phase G, decisions 60–67)
+
+The public page at `/`. Signed-out visitors see it; a signed-in user is sent to their own home
+(`/doctor`, `/home` or `/admin`). English only (decision 66). It is pitched at doctors and clinics in
+India, not at patients (decision 60).
+
+**Rules for the whole page**
+
+- One contact, an email: `mailto:leroy.social@gmail.com` (decision 61). No WhatsApp, no phone number, no form.
+- The pricing line is **"No charges"** (decision 64). Never "free pilot", never a price.
+- The pitch may say local doctors reach their local patients more easily (decision 63). The product is
+  **not** "hyperlocal": nothing on the page suggests a marketplace, doctor discovery or booking.
+- Only features that exist in the app today. No booking, no built-in video, no payments, no ratings,
+  no discovery, no group chats, no AI.
+- Nothing invented: no testimonials, no user numbers, no clinic names, no logos, no "trusted by" strip
+  (see PLAN §8 Q-W).
+- Display headlines are Inter, heavy, tight tracking (decision 67). Tokens only.
+
+### The sections, in order
+
+1. **Header** — logo, anchor links (Features, Your patients, Privacy, Questions), "Sign in" → `/login`,
+   "Get in touch" → the mailto. The anchor links are hidden on a phone.
+2. **Hero** — a split: the headline on the left, the phone on the right. Eyebrow "For doctors and
+   clinics". One primary button, "Get in touch" → the mailto, with the reassurance line under it.
+3. **The rotating line** — "Get in touch with your patients for {reports / prescriptions / follow-ups /
+   video meetings}".
+4. **Feature tiles** — six `Card tone="feature"` tiles: Chat, Reports, Prescriptions, Video meetings,
+   Multilingual, Privacy. Each has an icon, a title, a line and an image slot.
+5. **"Your patients can"** — a `FeatureChecklist` beside a second phone.
+6. **The chip row** — `ChipMarquee`, "What you can handle".
+7. **The privacy strip** — files stay private, every admin view is recorded, India's privacy law.
+8. **The FAQ** — seven questions, native `<details>`/`<summary>`.
+9. **The closing call to action** — "Let your patients reach you more easily".
+10. **The footer** — Privacy, Terms, the contact address, "© 2026 CareConnect".
+
+### The copy
+
+- **Eyebrow**: "For doctors and clinics".
+- **Hero headline**: "Stay in touch with your patients, anywhere, anytime."
+- **Hero line**: "CareConnect gives local practices a private place to message their patients, take their
+  reports, issue prescriptions and arrange video meetings."
+- **Hero button**: "Get in touch".
+- **Hero reassurance**: "No charges. Set up in a day." (PLAN §8 Q-V — the setup-time claim was not checked).
+- **Rotating words**: "reports", "prescriptions", "follow-ups", "video meetings".
+- **Feature section eyebrow**: "What CareConnect does". **Heading**: "Everything a patient needs, in one
+  place".
+- **Chat**: "A private chat for each patient. One thread, so nothing gets lost."
+- **Reports**: "They send a photo or a PDF of a report, and it opens right in the chat."
+- **Prescriptions**: "Write one and the patient sees it, and can download it as a PDF."
+- **Video meetings**: "Paste your meeting link, pick a time, and both of you get a reminder."
+- **Multilingual**: "Patients can pick English, Kannada or Malayalam for their app."
+- **Privacy (tile)**: "Files stay private. Only the patient and their doctor can open them."
+- **Checklist title**: "Your patients can". **Subtitle**: "Everything happens in the app, so nothing is lost
+  in a phone call." Items: "Message you any time, and read your replies" · "Send a report or a photo of a
+  report" · "See the prescription you were given" · "Download it as a PDF" · "Join a video meeting you
+  agreed on" · "Know when to come back for a check-up".
+- **Chips eyebrow**: "What you can handle". **Heading**: "A lot of small things, every day". Chips: "Blood
+  test reports" · "Prescriptions" · "Follow-up check-ins" · "Video meetings" · "Medicine reminders" ·
+  "Photo reports" · "Chat" · "Kannada, Malayalam and English".
+- **Privacy eyebrow**: "Privacy". **Heading**: "Their reports are their own". Items: "Files stay private" —
+  "A report opens only for the patient who sent it and the doctor they sent it to." · "Every admin view is
+  recorded" — "When the CareConnect admin opens a chat or a file, it is written down, with their name and
+  the time." · "Built for India's privacy law" — "We keep only what care needs, and we do not sell or share
+  your patients' data."
+- **FAQ eyebrow**: "Questions". **Heading**: "Things doctors ask us". The questions and answers are in
+  `src/lib/landing.ts` (`FAQ`).
+- **Closing heading**: "Let your patients reach you more easily". **Line**: "Tell us how your practice
+  works. We will set it up and walk you through it. No charges." **Button**: "Get in touch".
+- **Footer**: "Privacy", "Terms", the contact address, "© 2026 CareConnect".
+
+### Images needed
+
+Every image slot is in **`src/lib/landing.ts`** (`LANDING_IMAGES`). All `src` are `null` for now, so the
+page draws a placeholder box at the final size with the words "Image coming soon" (decision 65, changed
+2026-11-08). Drop the files into `public/landing/` and fill in the `src`; nothing else changes.
+
+| Key | Where it shows | Size (px) | What it should show |
+|---|---|---|---|
+| `hero-chat` | The hero, in the phone frame | 720 × 1320 (9:16.5) | A patient messaging their doctor in the app |
+| `patient-home` | "Your patients can", in the phone frame | 720 × 1320 (9:16.5) | The patient's home screen, with one card per doctor |
+| `feature-chat` | Feature tile 1 (Chat) | 640 × 480 (4:3) | A chat between a patient and their doctor |
+| `feature-reports` | Feature tile 2 (Reports) | 640 × 480 (4:3) | A patient sending a report to their doctor |
+| `feature-prescriptions` | Feature tile 3 (Prescriptions) | 640 × 480 (4:3) | A prescription the doctor issued |
+| `feature-meetings` | Feature tile 4 (Video meetings) | 640 × 480 (4:3) | A video meeting card in the chat |
+| `feature-languages` | Feature tile 5 (Multilingual) | 640 × 480 (4:3) | The language choice in the patient's profile |
+| `feature-privacy` | Feature tile 6 (Privacy) | 640 × 480 (4:3) | A private report, open only to the patient and their doctor |
+
+Rules: no stock photos, no AI images, no external image URLs, no real patient data. Real app screenshots
+are fine, with seeded demo data.
 
 ## Accessibility & copy
 

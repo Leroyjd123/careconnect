@@ -29,6 +29,8 @@ npm run build      # must pass before you say a task is done
 
 ```
 src/app/(patient)/…        patient screens: /home /chat /prescriptions /profile
+src/app/page.tsx           the landing page at / (signed-out visitors only)
+src/components/marketing/… the landing page's pieces (MarketingHeader, DisplayHeading, …)
 src/app/doctor/…           doctor screens: /doctor /doctor/c/[id] /doctor/patients
 src/app/admin/…            admin screens: /admin /admin/doctors /admin/patients /admin/clinics
                            /admin/conversations /admin/c/[id] /admin/audit
