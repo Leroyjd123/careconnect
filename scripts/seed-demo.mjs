@@ -20,6 +20,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 // A standalone Node script, outside the Next app, so it builds its own service-role client.
 // eslint-disable-next-line no-restricted-imports
 import { createClient } from "@supabase/supabase-js";
@@ -236,7 +237,7 @@ const CHATS = [
 ];
 
 // ── Demo files ───────────────────────────────────────────────────
-const FILE_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), "demo-files");
+const FILE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "demo-files");
 const MIME = { ".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
 const FILES = {};
 for (const folder of ["reports", "checkups", "prescriptions"]) {
@@ -345,6 +346,30 @@ function meetingStart(kind, startDay) {
   return istAt(-Math.max(1, Math.floor(startDay / 2)), 17, 0);    // completed
 }
 
+/** Add the demo files to an already-seeded chat, at the right point in its history. */
+async function backfillFiles(conversationId, pId, chat, kase) {
+  const { count } = await db.from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", conversationId).eq("kind", "file");
+  if (count) return;
+  const { data: first } = await db.from("messages").select("created_at").eq("conversation_id", conversationId).order("created_at").limit(1).maybeSingle();
+  if (!first) return;
+  const begin = Date.parse(first.created_at);
+  const wanted = [];
+  if (chat.prior) wanted.push({ folder: chat.prior, at: begin - 5 * MIN });
+  if (kase.file) wanted.push({ folder: kase.file, at: begin + kase.history.length * 25 * MIN - 10 * MIN });
+  for (const w of wanted) {
+    const f = nextFile(w.folder);
+    if (!f) continue;
+    const up = await uploadFile(conversationId, f);
+    if (!up) continue;
+    must(await db.from("messages").insert({ conversation_id: conversationId, sender_id: pId, kind: "file", ...up, created_at: iso(w.at), read_at: iso(w.at + 7 * MIN) }), "file message");
+    summary.files++;
+  }
+  // The insert trigger moved the chat's "latest message" to this older file; put it back.
+  const { data: last } = await db.from("messages").select("kind, body, file_name, created_at").eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(1).single();
+  const preview = { text: last.body?.slice(0, 140), file: `Sent ${last.file_name ?? "a file"}`, meeting: "Video meeting", check_in: "Check-in" }[last.kind] ?? "Prescription";
+  must(await db.from("conversations").update({ last_message_at: last.created_at, last_message_preview: preview }).eq("id", conversationId), "restore preview");
+}
+
 for (const chat of CHATS) {
   const dId = doctorId[chat.d];
   const pId = patientId[chat.p];
@@ -356,7 +381,11 @@ for (const chat of CHATS) {
     summary.chats++;
   }
   const { count } = await db.from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", conv.id);
-  if (count) continue; // never mix demo lines into a chat that already has messages
+  if (count) {
+    // Already seeded. Only add the demo files if this chat has none yet (files added to demo-files later).
+    await backfillFiles(conv.id, pId, chat, kase);
+    continue; // never mix demo lines into a chat that already has messages
+  }
 
   // Build the timeline: history near the start, recent lines ending `lastMin` ago.
   const begin = NOW - chat.start * DAY + 10 * HOUR;
