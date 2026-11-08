@@ -83,6 +83,8 @@ src/components/patient/*   patient-only composites (only if not shareable)
 - The admin's messages are labelled "CareConnect Admin" (Q-J) and are never sent as the doctor or the patient.
 - Every service-role write that changes a meeting, check-in, block, patient details, message or prescription
   must insert its own `audit_log` row. DB triggers only log writes made with a user session (`auth.uid()` set).
+- `audit_log` is append-only (0006): nothing may update or delete its rows, the service role included.
+  Never delete user accounts that have audit rows; deactivate or block them instead.
   The admin's views of chats and files are logged too (decision 55).
 - Files are private. Show them with `getFileUrl()` (5-minute signed URL). Never make the bucket public or store URLs.
 - Uploads go browser → Storage via `lib/upload.ts`, then `sendAttachment()`. Never send file bytes through a server action.

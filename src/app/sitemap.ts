@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
+import { env } from "@/lib/env";
 
 /**
  * Only the three public pages: the landing page, the privacy notice and the terms.
  * Everything else in the app needs a signed-in account, so it is never listed.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = env.siteUrl();
   const now = new Date();
   return ["", "/privacy", "/terms"].map((path) => ({
     url: `${base}${path}`,

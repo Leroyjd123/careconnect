@@ -11,10 +11,10 @@ import { FeatureChecklist } from "@/components/marketing/FeatureChecklist";
 import { PhoneFrame } from "@/components/marketing/PhoneFrame";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { FaqList } from "./FaqList";
-import { FeatureTiles } from "./FeatureTiles";
-import { PrivacyStrip } from "./PrivacyStrip";
-import { LandingFooter } from "./LandingFooter";
+import { FaqList } from "./_landing/FaqList";
+import { FeatureTiles } from "./_landing/FeatureTiles";
+import { PrivacyStrip } from "./_landing/PrivacyStrip";
+import { LandingFooter } from "./_landing/LandingFooter";
 
 export const metadata: Metadata = {
   title: "CareConnect: stay in touch with your patients",

@@ -15,6 +15,15 @@ Hard rules:
 - Never change a decision in docs/PLAN.md §3; add the question to §8 and ask.
 - Never apply migrations to the live Supabase project yourself.
 
+Live data (added 2026-11-08 after test scripts changed real accounts):
+- There is ONE Supabase project and it is live (the Vercel review site uses it). Treat it as production.
+- NEVER change any user's password, email or auth data (no auth.admin.updateUserById / deleteUser in scripts).
+- NEVER delete or update rows with the service-role key from a script, and NEVER touch audit_log
+  (it is append-only; the database refuses changes).
+- Don't write scripts that read SUPABASE_SERVICE_ROLE_KEY from .env.local. Test through the app in the browser.
+- To test as a role, ask Leroy to sign in, or ask him for dedicated test accounts. Don't create your own.
+- If a check needs data that doesn't exist, STOP and ask instead of seeding or cleaning the live database.
+
 When a phase is done:
 - Tick its boxes in docs/PLAN.md (§2 and §7), update docs/WORKLOG.md, COMPONENTS.md, /styleguide, SPEC.md, src/lib/releases.ts as relevant.
 - Run: npm run typecheck && npm run lint && npm run build (all must pass).
