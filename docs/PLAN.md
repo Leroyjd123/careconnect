@@ -55,6 +55,7 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 | D | Meetings + check-ins | v0.7.0 | ✅ done 2026-11-11 |
 | E | Superadmin panel + audit log | v0.8.0 | ✅ done 2026-11-11 (part 1: shell, overview, doctors, patients, clinics. Part 2: conversations, chat moderation, prescriptions, audit log) |
 | G | Landing page | v0.9.0 | ✅ done 2026-11-11 (placeholder images, decision 65 changed 2026-11-08) |
+| H | Admin chat, meetings view, profile pages, admin redesign | v0.9.x | ☐ (decisions 75–81) |
 | F | Docs, consent, releases | each release | ☐ |
 
 Order: **A → B → C → P → D → E → G → F** (F's doc updates also happen inside each phase).
@@ -188,6 +189,17 @@ Numbers match the original question list so answers can be traced.
 | 72 | Meetings and check-ins share ONE card and ONE popup, switched by `type`: `AppointmentCard`, `AppointmentDialog` (replaces the approved `MeetingCard` / `MeetingDialog` names; same designs). |
 | 73 | **Patient panel redesign**: the right-hand panel becomes a read-only **summary** ("description field"). Every create/edit action opens a **popup** (`Dialog`): New prescription, Schedule meeting, Schedule check-in, Edit details, Block, View all reports, View all prescriptions. Nothing is edited inside the panel itself. |
 | 74 | The doctor's inbox list and chat header stay as they are (screenshot of 2026-11-07 approved as the baseline look). |
+
+### Added 2026-11-08 (after the Phase G review)
+| # | Decision |
+|---|---|
+| 75 | **Admin direct chat**: the admin can chat 1:1 with any doctor or patient. It appears in their normal chat list as "CareConnect Admin", next to their medical chats. Needs a migration (conversations with the admin as one side). |
+| 76 | **Admin meetings view**: `/admin/meetings` lists every meeting and check-in (filters: doctor, patient, status, date range). |
+| 77 | **Profile pages** (all three roles): a collated page per doctor and per patient: details, clinic, doctors/patients, prescriptions, reports, meetings, check-ins. Admin sees everything; a doctor sees a patient's profile limited to their own chat with that patient; a patient sees their doctor's public profile (name, specialty, clinic, reg no). |
+| 78 | **Admin redesign**: the admin screens get a full design pass (Claude), using the existing design system. |
+| 79 | **Demo data**: `scripts/seed-demo.mjs` (insert-only, repeatable). Demo logins use `@careconnect.demo` emails. |
+| 80 | **Speed**: Vercel functions pinned to `bom1` (Mumbai), next to the Supabase project (ap-south-1), in `vercel.json`. |
+| 81 | Agents never change auth data or delete live rows from scripts (`.clinerules`, 2026-11-08). |
 
 ### Explicitly out of scope (from an older "marketplace" blueprint, reviewed and rejected)
 Public sign-up, doctor discovery or search, location / radius / pincode, patient self-booking calendar,
