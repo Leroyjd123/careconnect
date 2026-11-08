@@ -8,3 +8,7 @@ out
 next-env.d.ts
 .DS_Store
 supabase/.temp
+
+# Demo files (sample medical documents never go in git)
+scripts/demo-files/*
+!scripts/demo-files/README.md
