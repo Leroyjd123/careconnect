@@ -703,6 +703,19 @@ export async function logAdminConversationView(conversationId: string): Promise<
     .maybeSingle();
   if (!conv) return { ok: false, error: "Chat not found." };
 
+  // The page re-renders after every admin action and file open. One "viewed" row per
+  // visit is the record (decision 55); skip it if this admin viewed this chat in the last 30 minutes.
+  const since = new Date(Date.now() - 30 * 60_000).toISOString();
+  const { data: recent } = await client
+    .from("audit_log")
+    .select("id")
+    .eq("actor_id", admin.id)
+    .eq("action", "admin.conversation_viewed")
+    .eq("target_id", conversationId)
+    .gte("created_at", since)
+    .limit(1);
+  if (recent?.length) return { ok: true };
+
   await logAudit(client, admin, {
     action: "admin.conversation_viewed",
     targetType: "conversation",
