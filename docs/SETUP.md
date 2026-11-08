@@ -125,3 +125,19 @@ Notes:
 - Without `CRON_SECRET` set, the route always answers 401. That is deliberate.
 - The route marks a meeting complete 15 minutes after it starts only when the doctor has
   "Mark meetings complete automatically" switched on (Settings → Meetings).
+
+## Region (speed)
+
+The Supabase project is in Mumbai (ap-south-1). `vercel.json` pins Vercel's server functions to
+`bom1` (Mumbai) so every page's database calls stay in the same city. Without it Vercel runs them in
+Washington DC (iad1) and each page waits for several India ↔ US round trips. If the Supabase project
+ever moves, change `regions` to match.
+
+## Demo data
+
+`scripts/seed-demo.mjs` adds 3 clinics, 3 more doctors, 5 more patients, and chats with messages,
+prescriptions, meetings and check-ins. Insert-only and repeatable; it never changes existing accounts.
+
+    DEMO_PASSWORD='…' node --env-file=.env.local scripts/seed-demo.mjs
+
+New demo logins use `@careconnect.demo` emails and the DEMO_PASSWORD you pass (not stored anywhere).
