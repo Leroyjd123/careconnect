@@ -8,6 +8,8 @@
 // - New demo accounts use @careconnect.demo emails and DEMO_PASSWORD (never committed).
 // - Uses the service role, so it writes one audit_log row ("demo.seeded") for the run.
 
+// A standalone Node script, outside the Next app, so it builds its own service-role client.
+// eslint-disable-next-line no-restricted-imports
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,23 +24,35 @@ const must = (r, what) => {
   return r.data;
 };
 
-const CLINICS = ["Asha Family Clinic (demo)", "Sunrise Heart Centre (demo)", "Lakeview Children's Clinic (demo)"];
+// Udupi and Madikeri (Kodagu) area, so the demo feels local (decision 63).
+const CLINICS = [
+  "Udupi Family Clinic",           // 0 · Udupi
+  "Manipal Heart Care",            // 1 · Manipal
+  "Malpe Children's Clinic",       // 2 · Malpe
+  "Madikeri Health Centre",        // 3 · Madikeri
+  "Kushalnagar Community Clinic",  // 4 · Kushalnagar
+];
 
 const DOCTORS = [
   // The existing doctor account keeps its login; it only gets a clinic if it has none.
-  { email: "doctor@careconnect.com", existing: true, clinic: 0 },
-  { email: "dr.ananya@careconnect.demo", name: "Dr. Ananya Rao", specialty: "General Physician", reg: "KMC 48211", phone: "+919845000101", clinic: 0 },
-  { email: "dr.vikram@careconnect.demo", name: "Dr. Vikram Menon", specialty: "Cardiologist", reg: "TCMC 30987", phone: "+919845000102", clinic: 1 },
-  { email: "dr.fatima@careconnect.demo", name: "Dr. Fatima Sheikh", specialty: "Paediatrician", reg: "KMC 51320", phone: "+919845000103", clinic: 2 },
+  { email: "doctor@careconnect.com", existing: true, clinic: 0 },                                                                                   // 0
+  { email: "dr.shenoy@careconnect.demo", name: "Dr. Prakash Shenoy", specialty: "General Physician", reg: "KMC 48211", phone: "+919845000101", clinic: 0 },   // 1
+  { email: "dr.kamath@careconnect.demo", name: "Dr. Shwetha Kamath", specialty: "Cardiologist", reg: "KMC 30987", phone: "+919845000102", clinic: 1 },       // 2
+  { email: "dr.bhat@careconnect.demo", name: "Dr. Raghavendra Bhat", specialty: "Paediatrician", reg: "KMC 51320", phone: "+919845000103", clinic: 2 },      // 3
+  { email: "dr.poonacha@careconnect.demo", name: "Dr. Kavya Poonacha", specialty: "Diabetologist", reg: "KMC 44876", phone: "+919845000104", clinic: 3 },    // 4
+  { email: "dr.muthanna@careconnect.demo", name: "Dr. Ganapathy Muthanna", specialty: "Orthopaedic Surgeon", reg: "KMC 39542", phone: "+919845000105", clinic: 3 }, // 5
+  { email: "dr.hegde@careconnect.demo", name: "Dr. Sushma Hegde", specialty: "Gynaecologist", reg: "KMC 52219", phone: "+919845000106", clinic: 4 },         // 6
 ];
 
 const PATIENTS = [
-  { email: "patient@yopmail.com", existing: true, doctors: [0, 1] },
-  { email: "ravi.kumar@careconnect.demo", name: "Ravi Kumar", phone: "+919900000201", dob: "1968-04-12", h: 172, w: 81, lang: "kn", doctors: [1, 2] },
-  { email: "lakshmi.nair@careconnect.demo", name: "Lakshmi Nair", phone: "+919900000202", dob: "1975-09-30", h: 158, w: 64, lang: "ml", doctors: [2] },
-  { email: "arjun.shetty@careconnect.demo", name: "Arjun Shetty", phone: "+919900000203", dob: "1992-01-18", h: 178, w: 74, lang: "en", doctors: [0, 1] },
-  { email: "meera.iyer@careconnect.demo", name: "Meera Iyer", phone: "+919900000204", dob: "2016-06-05", h: 121, w: 23, lang: "en", doctors: [3] },
-  { email: "sameer.khan@careconnect.demo", name: "Sameer Khan", phone: "+919900000205", dob: "1984-11-22", h: 169, w: 88, lang: "en", doctors: [1, 3] },
+  { email: "patient@yopmail.com", existing: true, doctors: [0, 2] },
+  { email: "ramesh.acharya@careconnect.demo", name: "Ramesh Acharya", phone: "+919900000201", dob: "1962-04-12", h: 168, w: 79, lang: "kn", doctors: [1, 2] },
+  { email: "sunitha.pai@careconnect.demo", name: "Sunitha Pai", phone: "+919900000202", dob: "1978-09-30", h: 156, w: 62, lang: "kn", doctors: [6] },
+  { email: "deepak.kotian@careconnect.demo", name: "Deepak Kotian", phone: "+919900000203", dob: "1990-01-18", h: 176, w: 74, lang: "en", doctors: [0, 5] },
+  { email: "anvi.rao@careconnect.demo", name: "Anvi Rao", phone: "+919900000204", dob: "2017-06-05", h: 118, w: 21, lang: "kn", doctors: [3] },
+  { email: "bopanna.kariappa@careconnect.demo", name: "Bopanna Kariappa", phone: "+919900000205", dob: "1958-11-22", h: 171, w: 84, lang: "en", doctors: [4, 5] },
+  { email: "pooja.ammaiah@careconnect.demo", name: "Pooja Ammaiah", phone: "+919900000206", dob: "1987-03-09", h: 160, w: 58, lang: "en", doctors: [4, 6] },
+  { email: "nagesh.poojary@careconnect.demo", name: "Nagesh Poojary", phone: "+919900000207", dob: "1971-08-14", h: 165, w: 70, lang: "kn", doctors: [1] },
 ];
 
 const CHAT = [

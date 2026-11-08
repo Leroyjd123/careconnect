@@ -135,9 +135,13 @@ ever moves, change `regions` to match.
 
 ## Demo data
 
-`scripts/seed-demo.mjs` adds 3 clinics, 3 more doctors, 5 more patients, and chats with messages,
-prescriptions, meetings and check-ins. Insert-only and repeatable; it never changes existing accounts.
+`scripts/seed-demo.mjs` adds 5 clinics around Udupi and Madikeri, 6 more doctors, 7 more patients, and chats
+with messages, prescriptions, meetings and check-ins. Insert-only and repeatable; it never changes existing accounts.
 
     DEMO_PASSWORD='…' node --env-file=.env.local scripts/seed-demo.mjs
+
+To start again from a clean database: run `scripts/reset-demo.sql` in the Supabase SQL editor (keeps only
+doctor@careconnect.com, patient@yopmail.com and admin@careconnect.com), empty the `attachments` bucket in
+Storage, then run the seed.
 
 New demo logins use `@careconnect.demo` emails and the DEMO_PASSWORD you pass (not stored anywhere).

@@ -15,6 +15,12 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.1",
+    date: "2026-11-08",
+    title: "Patients can find their way around again",
+    fixed: ["With more than one doctor, the bottom menu shows again on the list of your doctors, with a new Chats tab."],
+  },
+  {
     version: "0.9.0",
     date: "2026-11-08",
     title: "CareConnect for doctors and clinics",
