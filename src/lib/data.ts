@@ -409,3 +409,323 @@ export async function getAdminActorNames(ids: string[]): Promise<Record<string, 
   return names;
 }
 
+// ─────────────────────────────────────────────────────────────────
+// The admin's appointments (decision 76) and the profile pages (77)
+// ─────────────────────────────────────────────────────────────────
+
+/** One row of the admin's appointments list: a meeting or a check-in, with both people. */
+export type AdminAppointment = {
+  type: "meeting" | "check_in";
+  id: string;
+  conversationId: string;
+  doctorId: string;
+  doctorName: string;
+  patientId: string;
+  patientName: string;
+  clinicName: string | null;
+  /** The meeting's start, or the check-in's due date. */
+  when: string;
+  /** The meeting's status, or the check-in's. */
+  status: string;
+  meeting: Meeting | null;
+  checkIn: CheckIn | null;
+};
+
+/** The filters for the admin's appointments list. */
+export type AdminAppointmentFilters = {
+  /** "all" | "meeting" | "check_in". */
+  type?: string;
+  /** The status, e.g. "scheduled". Empty means every status. */
+  status?: string;
+  /** The doctor's id. */
+  doctorId?: string;
+  /** The patient's id. */
+  patientId?: string;
+  /** The clinic's id (the doctor's clinic). */
+  clinicId?: string;
+  /** YYYY-MM-DD, inclusive. */
+  from?: string;
+  to?: string;
+  page?: number;
+};
+
+/**
+ * Every meeting and check-in, for the admin (decision 76). Upcoming first, then the
+ * past. RLS's `or is_admin()` opens both tables to the admin, so this runs with the
+ * normal client.
+ */
+export async function getAdminAppointments(filters: AdminAppointmentFilters = {}): Promise<{
+  rows: AdminAppointment[];
+  total: number;
+  meetingCount: number;
+  checkInCount: number;
+}> {
+  await requireProfile("admin");
+  const supabase = await createClient();
+  const page = Math.max(1, filters.page ?? 1);
+  const perPage = 50;
+
+  // The people, and the clinic behind each doctor.
+  const { data: people } = await supabase.from("profiles").select("id, full_name, clinic_id");
+  const peopleRows = (people ?? []) as { id: string; full_name: string; clinic_id: string | null }[];
+  const nameById = new Map<string, string>();
+  const clinicIdByPerson = new Map<string, string | null>();
+  for (const p of peopleRows) {
+    nameById.set(p.id, p.full_name || "Unknown");
+    clinicIdByPerson.set(p.id, p.clinic_id);
+  }
+  const { data: clinics } = await supabase.from("clinics").select("id, name");
+  const clinicNameById = new Map<string, string>();
+  for (const c of (clinics ?? []) as { id: string; name: string }[]) clinicNameById.set(c.id, c.name);
+
+  const wantType = filters.type && filters.type !== "all" ? filters.type : null;
+  // A clinic filter means "the doctors in this clinic".
+  const clinicDoctorIds = filters.clinicId
+    ? peopleRows.filter((p) => p.clinic_id === filters.clinicId).map((p) => p.id)
+    : null;
+
+  const fromIso = filters.from ? `${filters.from}T00:00:00.000Z` : null;
+  const toIso = filters.to ? `${filters.to}T23:59:59.999Z` : null;
+  // An impossible id, so a query for one type returns nothing from the other table.
+  const NONE = "00000000-0000-0000-0000-000000000000";
+
+  // Both tables are read in full, so the two kinds can be merged and sorted together
+  // ("upcoming first, then the past") and the page cut out of the sorted list.
+  let meetingQuery = supabase.from("meetings").select("*");
+  if (wantType === "check_in") meetingQuery = meetingQuery.eq("id", NONE);
+  if (filters.doctorId) meetingQuery = meetingQuery.eq("doctor_id", filters.doctorId);
+  if (filters.patientId) meetingQuery = meetingQuery.eq("patient_id", filters.patientId);
+  if (clinicDoctorIds) meetingQuery = meetingQuery.in("doctor_id", clinicDoctorIds);
+  if (filters.status) meetingQuery = meetingQuery.eq("status", filters.status);
+  if (fromIso) meetingQuery = meetingQuery.gte("starts_at", fromIso);
+  if (toIso) meetingQuery = meetingQuery.lte("starts_at", toIso);
+
+  let checkInQuery = supabase.from("check_ins").select("*");
+  if (wantType === "meeting") checkInQuery = checkInQuery.eq("id", NONE);
+  if (filters.doctorId) checkInQuery = checkInQuery.eq("doctor_id", filters.doctorId);
+  if (filters.patientId) checkInQuery = checkInQuery.eq("patient_id", filters.patientId);
+  if (clinicDoctorIds) checkInQuery = checkInQuery.in("doctor_id", clinicDoctorIds);
+  if (filters.status) checkInQuery = checkInQuery.eq("status", filters.status);
+  if (filters.from) checkInQuery = checkInQuery.gte("due_on", filters.from);
+  if (filters.to) checkInQuery = checkInQuery.lte("due_on", filters.to);
+
+  const [meetings, checkIns] = await Promise.all([meetingQuery, checkInQuery]);
+  if (meetings.error) console.error("getAdminAppointments: meetings failed", meetings.error);
+  if (checkIns.error) console.error("getAdminAppointments: check_ins failed", checkIns.error);
+
+  const clinicNameFor = (doctorId: string) => {
+    const clinicId = clinicIdByPerson.get(doctorId);
+    return clinicId ? (clinicNameById.get(clinicId) ?? null) : null;
+  };
+
+  const rows: AdminAppointment[] = [];
+  for (const m of (meetings.data ?? []) as Meeting[]) {
+    rows.push({
+      type: "meeting",
+      id: m.id,
+      conversationId: m.conversation_id,
+      doctorId: m.doctor_id,
+      doctorName: nameById.get(m.doctor_id) ?? "Doctor",
+      patientId: m.patient_id,
+      patientName: nameById.get(m.patient_id) ?? "Patient",
+      clinicName: clinicNameFor(m.doctor_id),
+      when: m.starts_at,
+      status: m.status,
+      meeting: m,
+      checkIn: null,
+    });
+  }
+  for (const c of (checkIns.data ?? []) as CheckIn[]) {
+    rows.push({
+      type: "check_in",
+      id: c.id,
+      conversationId: c.conversation_id,
+      doctorId: c.doctor_id,
+      doctorName: nameById.get(c.doctor_id) ?? "Doctor",
+      patientId: c.patient_id,
+      patientName: nameById.get(c.patient_id) ?? "Patient",
+      clinicName: clinicNameFor(c.doctor_id),
+      when: c.due_on,
+      status: c.status,
+      meeting: null,
+      checkIn: c,
+    });
+  }
+
+  // Upcoming first (soonest first), then the past (most recent first).
+  const now = Date.now();
+  const timeOf = (r: AdminAppointment) =>
+    r.type === "meeting" ? Date.parse(r.when) : Date.parse(`${r.when}T12:00:00`);
+  const isPast = (r: AdminAppointment) => r.status !== "scheduled" || timeOf(r) < now;
+  rows.sort((a, b) => {
+    const aPast = isPast(a);
+    const bPast = isPast(b);
+    if (aPast !== bPast) return aPast ? 1 : -1;
+    return aPast ? timeOf(b) - timeOf(a) : timeOf(a) - timeOf(b);
+  });
+
+  // The counts are for the filtered set, before the page is cut out of it.
+  const meetingCount = rows.filter((r) => r.type === "meeting").length;
+  const checkInCount = rows.filter((r) => r.type === "check_in").length;
+  const total = rows.length;
+
+  return { rows: rows.slice((page - 1) * perPage, page * perPage), total, meetingCount, checkInCount };
+}
+
+/** One person's profile by id, with the clinic name. Null when they don't exist. */
+export const getProfileById = cache(async (id: string): Promise<(Profile & { clinicName: string | null }) | null> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*, clinic:clinics(name)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+  const row = data as unknown as Profile & { clinic: { name: string } | null };
+  return { ...row, clinicName: row.clinic?.name ?? null };
+});
+
+/** Every chat of one person, for the admin's profile pages. */
+export const getChatsOfPerson = cache(
+  async (personId: string, role: "doctor" | "patient"): Promise<AdminConversation[]> => {
+    const supabase = await createClient();
+    const column = role === "doctor" ? "doctor_id" : "patient_id";
+    const { data, error } = await supabase
+      .from("conversations")
+      .select(
+        "id, doctor_id, patient_id, last_message_at, last_message_preview, blocked_at, doctor:profiles!conversations_doctor_id_fkey(id, full_name, status, specialty), patient:profiles!conversations_patient_id_fkey(id, full_name, status, specialty)",
+      )
+      .eq(column, personId)
+      .order("last_message_at", { ascending: false, nullsFirst: false });
+    if (error) {
+      console.error("getChatsOfPerson failed", error);
+      return [];
+    }
+    const rows = (data ?? []) as unknown as {
+      id: string;
+      doctor_id: string;
+      patient_id: string;
+      last_message_at: string | null;
+      last_message_preview: string | null;
+      blocked_at: string | null;
+      doctor: { id: string; full_name: string; status: ProfileStatus; specialty: string | null } | null;
+      patient: { id: string; full_name: string; status: ProfileStatus; specialty: string | null } | null;
+    }[];
+    return rows.map((r) => {
+      const doctorName = r.doctor?.full_name ?? "Doctor";
+      const patientName = r.patient?.full_name ?? "Patient";
+      return {
+        id: r.id,
+        doctorId: r.doctor_id,
+        doctorName,
+        patientId: r.patient_id,
+        patientName,
+        lastMessageAt: r.last_message_at,
+        blockedAt: r.blocked_at,
+        messageCount: 0,
+        row: {
+          id: r.id,
+          other_id: r.patient_id,
+          other_name: patientName,
+          other_status: r.patient?.status ?? "active",
+          other_specialty: r.doctor?.specialty ?? null,
+          last_message_at: r.last_message_at,
+          last_message_preview: r.last_message_preview,
+          unread_count: 0,
+          blocked_at: r.blocked_at,
+          other_doctor_name: doctorName,
+        },
+      };
+    });
+  },
+);
+
+/**
+ * The number of prescriptions a doctor has issued, and how many appointments they have
+ * this month. For the admin's doctor profile.
+ */
+export const getDoctorStats = cache(async (doctorId: string): Promise<{ prescriptions: number; meetingsThisMonth: number }> => {
+  const supabase = await createClient();
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+
+  const [prescriptions, meetings] = await Promise.all([
+    supabase.from("prescriptions").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId).eq("status", "issued"),
+    supabase.from("meetings").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId).gte("starts_at", monthStart.toISOString()),
+  ]);
+  return { prescriptions: prescriptions.count ?? 0, meetingsThisMonth: meetings.count ?? 0 };
+});
+
+/** The report (file) messages of one conversation, newest first. */
+export const getConversationReports = cache(async (conversationId: string): Promise<Message[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .eq("kind", "file")
+    .not("file_path", "is", null)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("getConversationReports failed", error);
+    return [];
+  }
+  return (data ?? []) as Message[];
+});
+
+/** The prescriptions of one person, for the admin's profile pages. */
+export const getPrescriptionsOfPerson = cache(
+  async (personId: string, role: "doctor" | "patient"): Promise<PrescriptionWithPeople[]> => {
+    const supabase = await createClient();
+    const column = role === "doctor" ? "doctor_id" : "patient_id";
+    const { data, error } = await supabase
+      .from("prescriptions")
+      .select(RX_SELECT)
+      .eq(column, personId)
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("getPrescriptionsOfPerson failed", error);
+      return [];
+    }
+    return ((data ?? []) as unknown as PrescriptionWithPeople[]).map(sortItems);
+  },
+);
+
+/** The appointments of one person, for the admin's profile pages. */
+export const getAppointmentsOfPerson = cache(
+  async (personId: string, role: "doctor" | "patient"): Promise<{ meetings: Meeting[]; checkIns: CheckIn[] }> => {
+    const supabase = await createClient();
+    const column = role === "doctor" ? "doctor_id" : "patient_id";
+    const [meetings, checkIns] = await Promise.all([
+      supabase.from("meetings").select("*").eq(column, personId).order("starts_at", { ascending: false }),
+      supabase.from("check_ins").select("*").eq(column, personId).order("due_on", { ascending: false }),
+    ]);
+    if (meetings.error) console.error("getAppointmentsOfPerson: meetings failed", meetings.error);
+    if (checkIns.error) console.error("getAppointmentsOfPerson: check_ins failed", checkIns.error);
+    return {
+      meetings: (meetings.data ?? []) as Meeting[],
+      checkIns: (checkIns.data ?? []) as CheckIn[],
+    };
+  },
+);
+
+/**
+ * The doctor's own chat with one patient, if there is one. The doctor's patient profile
+ * page only exists for a patient the doctor actually talks to.
+ */
+export const getConversationBetween = cache(
+  async (doctorId: string, patientId: string): Promise<ConversationWithPeople | null> => {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("conversations")
+      .select("*, doctor:profiles!conversations_doctor_id_fkey(*), patient:profiles!conversations_patient_id_fkey(*)")
+      .eq("doctor_id", doctorId)
+      .eq("patient_id", patientId)
+      .maybeSingle();
+    return (data as ConversationWithPeople | null) ?? null;
+  },
+);
+
+
+

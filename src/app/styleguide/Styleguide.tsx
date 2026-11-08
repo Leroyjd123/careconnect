@@ -74,6 +74,7 @@ import { ChipMarquee } from "@/components/marketing/ChipMarquee";
 import { FeatureChecklist } from "@/components/marketing/FeatureChecklist";
 import { PhoneFrame } from "@/components/marketing/PhoneFrame";
 import { LANDING_IMAGES, MARQUEE_CHIPS, PATIENT_CAN, ROTATING_WORDS } from "@/lib/landing";
+import { ProfileSummary } from "@/components/profile/ProfileSummary";
 import { MedicineFields } from "@/components/rx/MedicineFields";
 import { PrescriptionView } from "@/components/rx/PrescriptionView";
 import { ReviewIssueDialog } from "@/components/rx/ReviewIssueDialog";
@@ -115,6 +116,7 @@ const GROUPS: { group: string; items: [id: string, title: string][] }[] = [
   { group: "Prescriptions", items: [["rxcards", "Prescription cards"], ["dose", "Dose schedule"], ["medicine", "Medicine row"], ["rxview", "Full prescription"], ["print", "Print / PDF"]] },
   { group: "Doctor", items: [["inbox", "Conversation list"], ["panel", "Patient panel"], ["table", "Patients table"], ["medicines", "Master medicines"], ["releases", "Release notes"]] },
   { group: "Account", items: [["signin", "Sign in & password"], ["notifications", "Notifications"], ["health", "Patient health details"]] },
+  { group: "Profile", items: [["profile", "Profile summary"]] },
   { group: "Marketing", items: [["marketing", "Landing page pieces"]] },
   { group: "Edge cases", items: [["edges", "Long, empty, many"]] },
   { group: "Review", items: [["coverage", "Coverage"], ["review", "Merge & fix list"]] },
@@ -369,6 +371,7 @@ const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = 
   ["The admin's message bubble, edited and removed states", "#adminmessages", "shown"],
   ["AuditLogTable (the admin's audit log)", "#auditlog", "shown"],
   ["MarketingHeader, DisplayHeading, RotatingWord, ChipMarquee, FeatureChecklist, PhoneFrame", "#marketing", "shown"],
+  ["ProfileSummary (the collated profile page)", "#profile", "shown"],
   ["FileViewer", "#viewer", "shown"],
   ["PrescriptionCard, DoseSchedule, MedicineFields, PrescriptionView", "#rxcards", "shown"],
   ["ConversationList, PatientPanel, PatientDetailsDialog, PatientsTable, ReleaseNotes", "#inbox", "shown"],
@@ -1581,6 +1584,49 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
                     saveAction={demoSave}
                   />
                 ) : null}
+              </Variant>
+            </div>
+          </Section>
+        </div>
+
+        {/* ═════════ PROFILE ═════════ */}
+        <div className="flex flex-col gap-10">
+          <GroupTitle>Profile</GroupTitle>
+          <Section
+            id="profile"
+            title="Profile summary"
+            file="components/profile/ProfileSummary.tsx"
+            use="The collated profile page (decision 77). One body, three scopes: the admin sees everything, a doctor sees one patient limited to their own chat, a patient sees their doctor's public details."
+          >
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Variant name="The admin's view" code="viewerRole=&quot;admin&quot;" className="w-full">
+                <ProfileSummary
+                  viewerRole="admin"
+                  person={demo.patient}
+                  chats={[
+                    { id: "c1", otherName: demo.doctor.full_name, otherRole: "doctor" },
+                    { id: "c2", otherName: "Dr. Prakash Shenoy", otherRole: "doctor", blockedAt: demo.NOW },
+                  ]}
+                  prescriptions={[demo.prescription]}
+                  reports={[demo.fileMessage]}
+                  meetings={[demo.meetingScheduled, demo.meetingCompleted]}
+                  checkIns={[demo.checkInScheduled, demo.checkInDone]}
+                  stats={[
+                    { label: "Doctors", value: 2 },
+                    { label: "Prescriptions", value: 3 },
+                    { label: "Reports", value: 1 },
+                  ]}
+                />
+              </Variant>
+              <Variant name="The patient's view" code="viewerRole=&quot;patient&quot;" className="w-full">
+                <ProfileSummary
+                  viewerRole="patient"
+                  person={demo.doctor}
+                  specialty={demo.doctor.specialty}
+                  clinicName="Manipal Clinic"
+                  meetings={[demo.meetingScheduled]}
+                  checkIns={[demo.checkInScheduled]}
+                />
               </Variant>
             </div>
           </Section>

@@ -46,7 +46,13 @@ export default async function PatientHome() {
                 <Avatar name={doctor.other_name} doctor size="lg" ring />
                 <div className="flex min-w-0 flex-col">
                   <span className="text-xs font-semibold tracking-wider text-ink-label uppercase">Your doctor</span>
-                  <span className="truncate text-xl font-semibold">{doctor.other_name}</span>
+                  {/* The doctor's name opens their profile (decision 77). */}
+                  <Link
+                    href={`/doctors/${doctor.other_id}`}
+                    className="truncate text-xl font-semibold text-ink no-underline hover:text-forest hover:underline"
+                  >
+                    {doctor.other_name}
+                  </Link>
                   {doctor.other_specialty ? <span className="truncate text-sm text-ink-2">{doctor.other_specialty}</span> : null}
                 </div>
               </div>

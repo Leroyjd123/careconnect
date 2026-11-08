@@ -10,6 +10,7 @@ import { AppSidebar, type AppNavItem } from "@/components/layout/AppSidebar";
 const ADMIN_NAV: AppNavItem[] = [
   { href: "/admin", label: "Overview", icon: "overview", exact: true },
   { href: "/admin/conversations", label: "Conversations", icon: "conversations" },
+  { href: "/admin/meetings", label: "Meetings", icon: "meetings" },
   { href: "/admin/doctors", label: "Doctors", icon: "doctors" },
   { href: "/admin/patients", label: "Patients", icon: "patients" },
   { href: "/admin/clinics", label: "Clinics", icon: "clinics" },

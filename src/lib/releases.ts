@@ -15,6 +15,17 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.0",
+    date: "2026-11-11",
+    title: "Profiles and meetings",
+    added: [
+      "The admin can now see every meeting and check-in on CareConnect, with filters for the doctor, the patient, the clinic and the date.",
+      "Every doctor and every patient has a profile page: their details, their chats, their prescriptions, their reports and their appointments.",
+      "A doctor can open a patient's full profile, limited to their own chat with that patient.",
+      "A patient can open their doctor's profile, with their public details and what is coming up.",
+    ],
+  },
+  {
     version: "0.9.1",
     date: "2026-11-08",
     title: "Patients can find their way around again",

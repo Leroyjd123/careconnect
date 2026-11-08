@@ -147,6 +147,9 @@ export function PatientsTable({
                             Resend
                           </Button>
                         ) : null}
+                        <ButtonLink href={`/doctor/patients/${patient.id}`} variant="ghost" size="sm">
+                          Profile
+                        </ButtonLink>
                         <ButtonLink href={`/doctor/c/${conversationId}`} variant="soft" size="sm">
                           Open chat
                         </ButtonLink>

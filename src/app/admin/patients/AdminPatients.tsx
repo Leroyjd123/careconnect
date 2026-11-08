@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Ban, Check, Clock, Pencil, UserPlus, Users } from "lucide-react";
 import { type AdminDoctor, type AdminPatient } from "@/app/actions/admin";
 import { Avatar } from "@/components/ui/Avatar";
@@ -99,7 +100,12 @@ export function AdminPatients({ patients, doctors, filterDoctorId }: Props) {
               <li key={patient.id} className="mb-2 flex flex-wrap items-center gap-3 rounded-tile bg-white/80 p-3">
                 <Avatar name={patient.full_name} seed={patient.id} size="sm" pending={invited} />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[15px] font-semibold">{patient.full_name}</span>
+                  <Link
+                    href={`/admin/patients/${patient.id}`}
+                    className="truncate text-[15px] font-semibold text-ink no-underline hover:text-forest hover:underline"
+                  >
+                    {patient.full_name}
+                  </Link>
                   <span className="truncate text-[13px] text-ink-2">
                     {[patient.email, patient.phone].filter(Boolean).join(" · ") || "No contact yet"}
                   </span>

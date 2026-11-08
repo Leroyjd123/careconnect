@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Ban, Check, Pencil, Stethoscope, Users } from "lucide-react";
 import { type AdminDoctor } from "@/app/actions/admin";
 import { Avatar } from "@/components/ui/Avatar";
@@ -75,7 +76,12 @@ export function AdminDoctors({ doctors, clinics }: Props) {
             <li key={doctor.id} className="mb-2 flex flex-wrap items-center gap-3 rounded-tile bg-white/80 p-3">
               <Avatar name={doctor.full_name} seed={doctor.id} doctor size="sm" />
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[15px] font-semibold">{doctor.full_name}</span>
+                <Link
+                  href={`/admin/doctors/${doctor.id}`}
+                  className="truncate text-[15px] font-semibold text-ink no-underline hover:text-forest hover:underline"
+                >
+                  {doctor.full_name}
+                </Link>
                 <span className="truncate text-[13px] text-ink-2">
                   {[doctor.specialty, doctor.clinicName].filter(Boolean).join(" · ") || "No specialty set"}
                 </span>

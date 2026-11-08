@@ -43,6 +43,11 @@ Design reference: the Round 2 hi-fi canvas (glass, mint, forest green). Tokens i
 | `/admin/conversations` | admin | Every chat: the patient, the doctor, the last message, a Blocked badge. Search by name; `?doctor=<id>` filters ✅ |
 | `/admin/c/[id]` | admin | One chat, with the admin's actions: send as admin, edit, remove, block, cancel a prescription ✅ |
 | `/admin/audit` | admin | The audit log: filter by who, by what, and by date ✅ |
+| `/admin/meetings` | admin | Every meeting and check-in, upcoming first. Filters: type, status, doctor, patient, clinic, from, to. Read-only ✅ |
+| `/admin/doctors/[id]` | admin | One doctor: details, their patients, the counts, what is coming up ✅ |
+| `/admin/patients/[id]` | admin | One patient: details, their doctors, every chat, prescriptions, reports, appointments ✅ |
+| `/doctor/patients/[id]` | doctor | One patient, limited to the doctor's own chat with them ✅ |
+| `/doctors/[id]` | patient | Their doctor's public details and what is coming up with them ✅ |
 | `/styleguide` | dev only | All shared components |
 
 ## Several doctors (Phase C, decisions 22–28)
@@ -264,6 +269,57 @@ their own home.
   "The invitation was sent but the chats couldn't be created. Please try again.",
   "already sees this patient."
 - The admin is labelled **"Admin"** in the UI (decision 8, Q-J).
+
+## Admin meetings view (Phase H, decision 76)
+
+`/admin/meetings` lists **every meeting and check-in** on CareConnect. It is read-only here:
+the doctor schedules and changes their own appointments, so the admin only looks.
+
+- **One list, both kinds.** Meetings and check-ins together, **upcoming soonest first, then
+  the past** (most recent first).
+- **Counts at the top**: "N meetings", "N check-ins", "N in total".
+- **Filters, all in the query string**: type (**All** / **Meetings** / **Check-ins**), status
+  (**Any status** / **Scheduled** / **Completed** / **Done** / **Cancelled**), doctor, patient,
+  clinic, and a date from and to. 50 to a page (`?page=`).
+- **Each row**: the `AppointmentCard` (compact), then "Dr. X · Patient Y · Clinic", then
+  "Open the chat" → `/admin/c/<conversationId>`.
+
+### Copy
+
+- "Meetings", "Every meeting and check-in on CareConnect."
+- "N meetings", "N check-ins", "N in total".
+- Filters: "Filter by what it is", "All", "Meetings", "Check-ins", "Doctor", "Patient", "Clinic",
+  "Status", "From", "To", "Every doctor", "Every patient", "Every clinic", "Any status",
+  "Scheduled", "Completed", "Done", "Cancelled", "Apply filters", "Clear filters".
+- "Open the chat".
+- Empty: "Nothing here" · "No appointment matches these filters." · "No meetings or check-ins yet."
+
+## Profile pages (Phase H, decision 77)
+
+One collated page per doctor and per patient, for all three roles. The body is the shared
+`ProfileSummary`; what each role sees is decided by the page and again by RLS.
+
+| Route | Who | What they see |
+|---|---|---|
+| `/admin/doctors/[id]` | admin | The doctor's details, clinic, status and settings; their patients (links to their chats); the counts (**Patients**, **Prescriptions issued**, **Meetings this month**); their upcoming meetings and check-ins. The "Manage" button opens the same `DoctorDialog` the doctors list uses. |
+| `/admin/patients/[id]` | admin | The patient's details (date of birth → age, height, weight, language, contact), status and blocks; their doctors; every chat (links to `/admin/c/<id>`); all their prescriptions; their reports (opening one uses the audited `?file=` flow); their meetings and check-ins. The "Manage" button opens the same `PatientDialog` the patients list uses. |
+| `/doctor/patients/[id]` | doctor | **Only** a patient the doctor has a conversation with; otherwise "not found". Everything comes from **that one chat**: details, prescriptions, reports, meetings, check-ins, and "Also consults" (names only). Never another doctor's chats or data. |
+| `/doctors/[id]` | patient | **Only** a doctor the patient has a conversation with; otherwise "not found". Public details only: name, specialty, clinic name, registration number, plus the upcoming meetings and check-ins with that doctor. |
+
+**Why `/doctors/[id]` and not `/chat/[conversationId]/doctor`**: the doctor is identified by their
+id, not by the chat, so one URL works for every doctor the patient has and can be linked from
+the chat header and the home card. It lives inside the `(patient)` group, so the patient's tab
+bar stays.
+
+### Copy
+
+- "Full profile" (the doctor's patient panel), "Profile" (the patients table row).
+- "Also consults", "Coming up", "Past", "Chats", "Patients".
+- "Specialty", "Registration number", "Clinic", "Date of birth", "Height", "Weight", "Email",
+  "Mobile", "Joined", "Not set", "No clinic".
+- "No prescriptions yet.", "No reports yet.", "No chats yet.", "Chat blocked".
+- "Nothing scheduled yet" · "Your doctor will add a meeting or a check-in here."
+- "Manage".
 
 ## Master medicines
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { REQUEST_MEETING_TEXT } from "@/lib/constants";
 import { getConversation, getAppointments, getMessages, getMyConversations, getPrescriptions, replacedIds } from "@/lib/data";
@@ -70,7 +71,12 @@ export default async function PatientConversation({
           header={{
             backHref,
             backLabel: backHref === "/chat" ? "Back to your doctors" : "Back to home",
-            leading: <Avatar name={doctor.full_name} doctor />,
+            // The doctor's face opens their profile (decision 77).
+            leading: (
+              <Link href={`/doctors/${doctor.id}`} aria-label={`${doctor.full_name}, your doctor's profile`} className="rounded-full">
+                <Avatar name={doctor.full_name} doctor />
+              </Link>
+            ),
             title: doctor.full_name,
             subtitle: doctor.specialty,
           }}

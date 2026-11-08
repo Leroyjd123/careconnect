@@ -33,7 +33,10 @@ src/app/page.tsx           the landing page at / (signed-out visitors only)
 src/components/marketing/… the landing page's pieces (MarketingHeader, DisplayHeading, …)
 src/app/doctor/…           doctor screens: /doctor /doctor/c/[id] /doctor/patients
 src/app/admin/…            admin screens: /admin /admin/doctors /admin/patients /admin/clinics
-                           /admin/conversations /admin/c/[id] /admin/audit
+                           /admin/conversations /admin/c/[id] /admin/audit /admin/meetings
+                           /admin/doctors/[id] /admin/patients/[id]
+src/components/profile/…  ProfileSummary: the collated profile page, one body for three roles
+src/app/(patient)/doctors/…  the patient's view of their doctor (/doctors/[id])
 src/app/actions/*.ts       ALL writes. Server actions, grouped by domain. Return ActionResult.
 src/lib/data.ts            ALL server reads. Pages call these; no inline queries in pages.
 src/lib/supabase/*         server.ts (default), client.ts (browser: realtime + uploads only), admin.ts (invites only)

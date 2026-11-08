@@ -68,7 +68,7 @@ Status: ✅ built — reuse it, extend it with a prop, never copy it.
 | `PatientPanel` | `doctor/PatientPanel.tsx` | Read-only summary of the patient (decision 73): identity, details, latest prescription, latest reports, "Also consults". Nothing is edited here — every action opens a popup. `variant="sheet"` is the phone version. `otherDoctors` adds the "Also consults" section (names only). Hideable on desktop. | ✅ |
 | `PatientPopups` | `doctor/PatientPopups.tsx` | The doctor's popups for one patient, opened by the query string: `?rx=new` / `?rx=<id>` / `?rx=new&replaces=<id>`, `?details=1`, `?prescriptions=1`, `?reports=1`, `?panel=1`, `?appt=meeting` / `?appt=check_in` / `?appt=<id>`. Closing replaces the URL, so the history stays clean. Mounted outside the patient column: a native `<dialog>` inside a `display:none` ancestor is not painted. | ✅ |
 | `InviteDialog` | `doctor/InviteDialog.tsx` | "Share a link" (one-time `/join` link, copy / share / WhatsApp) or "Send by email" → `invitePatient()`. Mounted once in `doctor/layout.tsx`, opened by `?invite=1` anywhere in /doctor. | ✅ |
-| `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked; `blockedAt` per row = conversation block) + actions (resend, open chat). | ✅ |
+| `PatientsTable` | `doctor/PatientsTable.tsx` | Patients with status (Active / Invite pending / Blocked; `blockedAt` per row = conversation block) + actions (resend, open chat, full profile). | ✅ |
 | `PatientDetailsDialog` | `doctor/PatientDetailsDialog.tsx` | Doctor edits name, email, mobile, date of birth, height, weight. Opened from `PatientPopups` (`?details=1`). | ✅ |
 | `ChipGroup` `optionValues` | `ui/ChipGroup.tsx` | When a chip's label isn't its value: the patient's prescription filter shows a doctor's name but keeps their id. | ✅ |
 | `MedicineList` | `doctor/MedicineList.tsx` | Shared master medicines (0005). Doctors add; `canManage` (admin) adds Edit / Deactivate / Merge. No delete. `/doctor/settings/medicines`. | ✅ |
@@ -91,6 +91,9 @@ existing primitives).
 | Correction | `admin/c/[id]/AdminCorrectionDialog.tsx` | The admin writes a correction on the doctor's behalf. Saved as a draft with the conversation's doctor, so the doctor issues it (Q-C). Reuses `MedicineFields`. | ✅ |
 | Audit log | `admin/audit/page.tsx` + `AdminAudit.tsx` | The filters (who, what, from, to) and the table. The filters live in the query string. | ✅ |
 | Audit table | `components/admin/AuditLogTable.tsx` | The one new shared component (PLAN §6, approved). Newest first, 50 to a page, the action codes in plain words, the details in an expandable row. | ✅ |
+| Meetings | `admin/meetings/page.tsx` + `AdminMeetings.tsx` | Every meeting and check-in (decision 76), upcoming first. Filters in the query string: type, status, doctor, patient, clinic, from, to; 50 to a page. Read-only: the doctor schedules their own. | ✅ |
+| Doctor profile | `admin/doctors/[id]/page.tsx` + `AdminDoctorProfile.tsx` | The admin's page for one doctor (decision 77): details, their patients, the counts, and what is coming up. The "Manage" button opens the same `DoctorDialog` the list uses. | ✅ |
+| Patient profile | `admin/patients/[id]/page.tsx` + `AdminPatientProfile.tsx` | The admin's page for one patient (decision 77): details, their doctors, every chat, their prescriptions, reports, meetings and check-ins. The "Manage" button opens the same `PatientDialog` the list uses. | ✅ |
 | Doctors | `admin/doctors/page.tsx` + `AdminDoctors.tsx` | The list: name, specialty, clinic, patient count, status badge (Active / Deactivated). Search. "Patients" links to `/admin/patients?doctor=<id>`. | ✅ |
 | Doctor popup | `admin/doctors/DoctorDialog.tsx` | Name, specialty, registration number, clinic; "also consults" (On / Off / Follow the clinic); auto-complete (On / Off); deactivate / reactivate behind a confirmation. | ✅ |
 | Invite doctor | `admin/doctors/InviteDoctorDialog.tsx` | A one-time link or an email (decision 44). Only the admin can invite doctors (decision 18). | ✅ |
@@ -119,6 +122,15 @@ The six pieces the landing page at `/` is built from. They are not used inside t
 chips, the checklist and the FAQ). Every `src` is `null` until Leroy supplies the real files; the slot
 list is in `docs/SPEC.md` § Landing → "Images needed".
 
+## Profile — `src/components/profile` (shared by all three roles)
+
+| Component | File | What it does | Status |
+|---|---|---|---|
+| `ProfileSummary` | `profile/ProfileSummary.tsx` | The collated profile page (decision 77). One body for three roles: `viewerRole="admin"` sees everything about a doctor or a patient, `viewerRole="doctor"` sees one patient limited to their own chat with them, `viewerRole="patient"` sees their doctor's public details only. Props: `viewerRole`, `person` (the `Profile`), `specialty`, `clinicName`, `conversationId`, `chats`, `prescriptions`, `reports`, `meetings`, `checkIns`, `otherDoctors`, `stats`, `fileHrefBase`, `rxHrefBase`, `actions`, `header`. Approved in PLAN §6 on 2026-11-11. | ✅ |
+
+**The pages that use it**: `/admin/doctors/[id]`, `/admin/patients/[id]`, `/doctor/patients/[id]`, `/doctors/[id]`
+(the patient's view, inside the `(patient)` group so it keeps the tab bar).
+
 ## Server actions — `src/app/actions` (already written; build UI on these)
 
 | Action | File |
@@ -144,7 +156,15 @@ next meeting per doctor), `getDoctorDueCheckIns` (conversations with a check-in 
 `getAdminConversations` (every chat, for the admin's list; `?doctor=<id>` filters),
 `getAdminAuditLog` (the audit log, newest first, 50 to a page; filtered by actor, action group and dates),
 `getAdminActorNames` (the names of the actors in the audit rows),
-`AUDIT_ACTION_GROUPS` (the action codes behind the audit screen's filters).
+`AUDIT_ACTION_GROUPS` (the action codes behind the audit screen's filters),
+`getAdminAppointments` (every meeting and check-in, for the admin's list; filtered by type, status, doctor, patient, clinic and dates),
+`getProfileById` (one person, with their clinic name),
+`getChatsOfPerson` (every chat of one person),
+`getDoctorStats` (a doctor's issued prescriptions and this month's meetings),
+`getConversationReports` (the report messages of one conversation),
+`getPrescriptionsOfPerson` (one person's prescriptions),
+`getAppointmentsOfPerson` (one person's meetings and check-ins),
+`getConversationBetween` (the chat between a doctor and a patient, if there is one).
 
 ## Page-local client components
 

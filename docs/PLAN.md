@@ -55,7 +55,7 @@ After each phase: `npm run typecheck && npm run lint && npm run build` must pass
 | D | Meetings + check-ins | v0.7.0 | ✅ done 2026-11-11 |
 | E | Superadmin panel + audit log | v0.8.0 | ✅ done 2026-11-11 (part 1: shell, overview, doctors, patients, clinics. Part 2: conversations, chat moderation, prescriptions, audit log) |
 | G | Landing page | v0.9.0 | ✅ done 2026-11-11 (placeholder images, decision 65 changed 2026-11-08) |
-| H | Admin chat, meetings view, profile pages, admin redesign | v0.9.x | ☐ (decisions 75–81) |
+| H | Admin chat, meetings view, profile pages, admin redesign | v0.9.x | ◐ part 1 done 2026-11-11 (admin meetings view, decision 76; profile pages, decision 77). Part 2 to do (admin direct chat 75, admin redesign 78) |
 | F | Docs, consent, releases | each release | ☐ |
 
 Order: **A → B → C → P → D → E → G → F** (F's doc updates also happen inside each phase).
@@ -286,6 +286,7 @@ Leroy: reply "approve <name>" or suggest an alternative. Agents: do not build an
 | `marketing/FeatureChecklist` | G | Check-icon list in 1 or 2 columns, title + optional line. | `IconTile` (sm) | ✅ approved 2026-11-07 |
 | `marketing/PhoneFrame` | G | Device frame around a real app screenshot (`next/image`). | `Card` | ✅ approved 2026-11-07 |
 | `Card` variant `tone="feature"` (extension, no new file) | G | Large clickable feature tile with title, chevron, image slot. | `Card` | allowed (extension) |
+| `profile/ProfileSummary` | H | Decision 77 asks for "a collated page per doctor and per patient" for **all three roles**: the admin sees everything, a doctor sees one patient limited to their own chat, a patient sees their doctor's public details. The same body is needed three times with a different scope, so page-local markup would be copied across 6+ route folders. Proposed props: `viewerRole` ("admin" \| "doctor" \| "patient"), `doctor` / `patient` (the `Profile`), `conversationId` (the one chat the doctor or patient is limited to), `clinic`, `prescriptions`, `reports`, `meetings`, `checkIns`, `otherDoctors`, `stats`, `chats`. | `Card`, `Avatar`, `Badge`, `PageHeader`, `AppointmentCard`, `PrescriptionCard`, `FileCard`, `ButtonLink` | ✅ approved 2026-11-11 |
 
 Allowed without approval (backward-compatible extensions, list them in the phase summary):
 - `MessageItem`: handle `kind = 'meeting'` and the "Admin" sender label and "Message removed by admin".
@@ -595,6 +596,49 @@ moderation, admin messages, prescription cancel, the audit log screen.**
   with `Disallow: /` for everything else. `sitemap.ts` lists the same three.
 - **`/sitemap.xml` had to be added to the middleware's public files**, or it was redirected to the login.
 
+### Phase H: admin chat, meetings, profiles (v0.10.x)
+
+**Part 1 (done): the admin's meetings view (76) and the profile pages (77). Part 2 (to do):
+the admin's direct chat (75) and the admin redesign (78).**
+
+- [x] `/admin/meetings` (decision 76): every meeting and check-in, upcoming first. Filters in the
+      query string: type, status, doctor, patient, clinic, from, to. 50 to a page. Read-only.
+- [x] `/admin/doctors/[id]` and `/admin/patients/[id]` (decision 77): the admin's collated pages.
+- [x] `/doctor/patients/[id]` (decision 77): one patient, limited to the doctor's own chat.
+- [x] `/doctors/[id]` (decision 77): the patient's view of their doctor.
+- [x] `components/profile/ProfileSummary` with a `viewerRole` prop (approved 2026-11-11).
+- [ ] Admin direct chat (decision 75) — part 2. Needs a migration.
+- [ ] The admin redesign (decision 78) — part 2, Claude.
+
+#### Phase H part 1 notes
+
+- **One shared body for three roles.** `components/profile/ProfileSummary.tsx` takes a
+  `viewerRole` ("admin" | "doctor" | "patient") and shows what that role may see. Leroy
+  approved the new component in §6 on 2026-11-11. The pages are thin: each one reads its
+  data and hands it over.
+- **The admin's meetings list reads with the NORMAL client.** RLS's `or is_admin()` already
+  opens `meetings` and `check_ins` to the admin, so no service role is used.
+- **"Upcoming first, then the past."** The sort is by the meeting's start and the check-in's
+  due date; anything not scheduled, or already past, goes below.
+- **The doctor and the patient get a clean "not found", not an empty page.** The doctor's page
+  needs `getConversationBetween(doctor, patient)`; the patient's page needs
+  `getConversationBetween(doctor, patient)`. Both are `notFound()` when there is no chat.
+- **The doctor's page reads ONLY that one conversation** — `getPrescriptions(conversation.id)`,
+  `getAppointments(conversation.id)`, `getConversationReports(conversation.id)` — never
+  `getPrescriptionsOfPerson`. RLS refuses the rest anyway; this keeps the query honest.
+- **The patient's doctor page is `/doctors/[id]`, not `/chat/[conversationId]/doctor`.** A
+  doctor is identified by their id, so one URL works for every doctor the patient has, and it
+  can be linked from the chat header and the home card. It sits inside the `(patient)` group,
+  so the patient's tab bar stays.
+- **The admin's profile pages reuse the existing dialogs.** "Manage" opens the same
+  `DoctorDialog` / `PatientDialog` the lists use. No new admin actions.
+- **Opening a report from the admin's patient page writes an "admin.file_viewed" row**, like
+  every other admin view (decision 55).
+- **A patient never sees their doctor's email or when they joined.** The `ProfileSummary`
+  only shows the contact and the joined date when the viewer may see them.
+- **The browser check was skipped** at Leroy's request (2026-11-11): the signed-in pages were
+  verified by code review and the RLS policies, not by signing in.
+
 ### Phase F: docs, consent, releases (runs inside each phase)
 - [ ] Consent checkbox on `/join` and `/set-password`; sets `terms_accepted_at`.
 - [ ] `docs/SPEC.md`, `docs/COMPONENTS.md`, `/styleguide`, `PRODUCT.md`, `docs/SETUP.md` (first admin, cron, env).
@@ -631,6 +675,7 @@ Q-A…Q-J answered "yes" on 2026-11-07, recorded in §3 "Resolved open questions
 
 | Date | Change | By |
 |---|---|---|
+| 2026-11-11 | Phase H part 1 built: `/admin/meetings` (decision 76) and the profile pages (decision 77). `ProfileSummary` approved and built. | Cline |
 | 2026-11-11 | Phase G built: the landing page at `/`. The six approved marketing components, `Card tone="feature"`, placeholder images. Decision 65 changed (placeholders). Q-V…Q-Z added. | Cline |
 | 2026-11-11 | Phase E part 2 built: `/admin/conversations`, `/admin/c/[id]`, `/admin/audit`. `AuditLogTable` approved and built. The admin's correction is a draft for the doctor (issue_prescription checks auth.uid()). Q-S resolved, Q-T and Q-U added. | Cline |
 | 2026-11-07 | Added check-ins (68–72), patient panel redesign Phase P (73–74); components approved; meeting components renamed Appointment*. | Claude |

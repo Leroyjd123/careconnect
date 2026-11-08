@@ -95,6 +95,12 @@ export function PatientPanel({
         <div className="flex flex-col">
           {/* In the sheet the dialog header already names the patient. */}
           {sheet ? null : <span className="text-[17px] font-semibold tracking-tight">{patient.full_name}</span>}
+          {/* The full profile of this patient (decision 77). */}
+          {sheet ? null : (
+            <ButtonLink href={`/doctor/patients/${patient.id}`} variant="ghost" size="sm" className="self-center">
+              Full profile
+            </ButtonLink>
+          )}
           {patient.phone ? (
             <span className="flex items-center justify-center gap-1.5 text-[13px] text-ink-2">
               <Phone aria-hidden="true" className="size-3.5" />
