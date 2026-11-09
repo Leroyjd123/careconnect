@@ -15,6 +15,15 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.1",
+    date: "2026-11-11",
+    title: "Invite links for many patients",
+    added: [
+      "A doctor can now make one invite link for many patients. Each patient who opens it makes their own account.",
+    ],
+    fixed: ["Invite links now always point to the live CareConnect address, never to a test address."],
+  },
+  {
     version: "0.10.0",
     date: "2026-11-11",
     title: "Profiles and meetings",

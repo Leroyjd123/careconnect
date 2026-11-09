@@ -33,7 +33,8 @@ export function InviteDialog({
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<{ name: string; email: string } | null>(null);
-  const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null);
+  const [multiUse, setMultiUse] = useState(false);
+  const [link, setLink] = useState<{ url: string; expiresAt: string; multiUse: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
 
   function close() {
@@ -46,7 +47,7 @@ export function InviteDialog({
   async function makeLink() {
     setSending(true);
     setError(null);
-    const result = await createLinkAction();
+    const result = await createLinkAction({ multiUse });
     setSending(false);
     if (!result.ok || !result.data) {
       setError(result.ok ? "We couldn't create a link. Please try again." : result.error);
@@ -126,7 +127,7 @@ export function InviteDialog({
         title="Invite a patient"
         description={
           mode === "link"
-            ? "Share a one-time link. Your patient opens it, adds their name and email or mobile number, and picks a password."
+            ? "Share a link. Each patient opens it, adds their name and email or mobile number, and picks their own password."
             : "They'll get an email with a link to join."
         }
         footer={footer}
@@ -148,7 +149,7 @@ export function InviteDialog({
           {mode === "link" ? (
             link ? (
               <div className="flex flex-col gap-3">
-                <Field id="invite-link" label="Invite link" hint={`Works once. Expires ${formatDate(link.expiresAt)}.`}>
+                <Field id="invite-link" label="Invite link" hint={`${link.multiUse ? "Works for many patients" : "Works once"}. Expires ${formatDate(link.expiresAt)}.`}>
                   <TextInput id="invite-link" value={link.url} readOnly onFocus={(e) => e.currentTarget.select()} className="text-[15px]" />
                 </Field>
                 <div className="flex flex-wrap gap-2 [&>*]:flex-1">
@@ -173,9 +174,22 @@ export function InviteDialog({
                 </Button>
               </div>
             ) : (
-              <p className="text-[15px] text-ink-2">
-                One link is for one patient. Anyone with the link can join as your patient, so send it only to them.
-              </p>
+              <div className="flex flex-col gap-3">
+                <Segmented
+                  label="Who is this link for"
+                  value={multiUse ? "many" : "one"}
+                  onChange={(v) => setMultiUse(v === "many")}
+                  options={[
+                    { value: "one", label: "One patient" },
+                    { value: "many", label: "Many patients" },
+                  ]}
+                />
+                <p className="text-[15px] text-ink-2">
+                  {multiUse
+                    ? "Share one link with several patients, for example in a group or on a poster. Each patient makes their own account. Anyone with the link can join as your patient until it expires or you cancel it."
+                    : "This link works once, for one patient. Anyone with the link can join as your patient, so send it only to them."}
+                </p>
+              </div>
             )
           ) : (
             <form

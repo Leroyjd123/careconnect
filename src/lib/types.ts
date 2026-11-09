@@ -215,6 +215,9 @@ export type InviteLink = {
   used_at: string | null;
   used_by: string | null;
   revoked_at: string | null;
+  /** 0007: one link many patients can join through. Never marked used. */
+  multi_use: boolean;
+  use_count: number;
 };
 
 /** Row in push_subscriptions (0002). One per browser/device with notifications on. */

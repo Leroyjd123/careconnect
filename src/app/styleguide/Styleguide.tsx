@@ -274,8 +274,8 @@ async function demoInvite(): Promise<ActionResult<{ conversationId: string }>> {
 }
 
 // Image: a real public file. Everything else: fails, so the error state shows.
-async function demoCreateLink(): Promise<ActionResult<{ url: string; expiresAt: string }>> {
-  return { ok: true, data: { url: "https://careconnect.example/join/demo-link-not-real", expiresAt: "2026-10-28T10:00:00.000Z" } };
+async function demoCreateLink(options: { multiUse?: boolean } = {}): Promise<ActionResult<{ url: string; expiresAt: string; multiUse: boolean }>> {
+  return { ok: true, data: { url: "https://careconnect.example/join/demo-link-not-real", expiresAt: "2026-10-28T10:00:00.000Z", multiUse: options.multiUse === true } };
 }
 
 async function demoJoin() {

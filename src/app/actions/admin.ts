@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logAudit } from "@/lib/audit";
 import { requireProfile } from "@/lib/auth";
-import { env } from "@/lib/env";
+import { requestSiteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { EMAIL_RE, PHONE_EMAIL_DOMAIN, ATTACHMENTS_BUCKET } from "@/lib/constants";
@@ -203,7 +203,7 @@ export async function createDoctorInviteLink(input: {
   });
 
   revalidatePath("/admin/doctors");
-  return { ok: true, data: { url: `${env.siteUrl()}/join/${token}`, expiresAt: data.expires_at } };
+  return { ok: true, data: { url: `${await requestSiteUrl()}/join/${token}`, expiresAt: data.expires_at } };
 }
 
 /**
@@ -243,7 +243,7 @@ export async function createAdminPatientInviteLink(input: {
   });
 
   revalidatePath("/admin/patients");
-  return { ok: true, data: { url: `${env.siteUrl()}/join/${token}`, expiresAt: data.expires_at } };
+  return { ok: true, data: { url: `${await requestSiteUrl()}/join/${token}`, expiresAt: data.expires_at } };
 }
 
 export type DoctorJoinState = { error?: string; values?: { fullName: string; email: string; phone: string; specialty: string; regNo: string } };
@@ -367,7 +367,7 @@ export async function inviteDoctorByEmail(input: {
 
   const { data: invited, error: inviteError } = await client.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
-    redirectTo: `${env.siteUrl()}/auth/confirm`,
+    redirectTo: `${await requestSiteUrl()}/auth/confirm`,
   });
   if (inviteError) {
     if (!/already (been )?registered|already exists/i.test(inviteError.message)) {
@@ -644,7 +644,7 @@ export async function inviteAdminPatient(input: {
   // A new patient: Supabase sends the invite email.
   const { data: invited, error: inviteError } = await client.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
-    redirectTo: `${env.siteUrl()}/auth/confirm`,
+    redirectTo: `${await requestSiteUrl()}/auth/confirm`,
   });
   if (inviteError) {
     console.error("inviteAdminPatient invite failed", inviteError);

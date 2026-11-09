@@ -8,7 +8,7 @@ import { requireProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizePhone, validateHealthDetails } from "@/lib/utils";
-import { env } from "@/lib/env";
+import { requestSiteUrl } from "@/lib/site-url";
 import { EMAIL_RE, PHONE_EMAIL_DOMAIN } from "@/lib/constants";
 import type { ActionResult } from "@/lib/types";
 
@@ -32,7 +32,7 @@ export async function invitePatient(input: { fullName: string; email: string }):
   let patientId: string | undefined;
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
-    redirectTo: `${env.siteUrl()}/auth/confirm`,
+    redirectTo: `${await requestSiteUrl()}/auth/confirm`,
   });
 
   if (inviteError) {
@@ -88,7 +88,7 @@ export async function resendInvite(patientId: string): Promise<ActionResult> {
   // For existing users, a magic-link email works as a fresh invite: it lands on /auth/confirm → /set-password.
   const { error } = await admin.auth.signInWithOtp({
     email: patient.email,
-    options: { shouldCreateUser: false, emailRedirectTo: `${env.siteUrl()}/auth/confirm` },
+    options: { shouldCreateUser: false, emailRedirectTo: `${await requestSiteUrl()}/auth/confirm` },
   });
   if (error) return { ok: false, error: "We couldn't resend the invitation. Please try again in a minute." };
   return { ok: true };
@@ -102,13 +102,16 @@ export async function resendInvite(patientId: string): Promise<ActionResult> {
 
 const LINK_DAYS = 7;
 
-export async function createInviteLink(): Promise<ActionResult<{ url: string; expiresAt: string }>> {
+export async function createInviteLink(
+  options: { multiUse?: boolean } = {},
+): Promise<ActionResult<{ url: string; expiresAt: string; multiUse: boolean }>> {
   const doctor = await requireProfile("doctor");
+  const multiUse = options.multiUse === true;
   const supabase = await createClient();
   const token = randomBytes(24).toString("base64url");
   const { data, error } = await supabase
     .from("invite_links")
-    .insert({ token, doctor_id: doctor.id, expires_at: new Date(Date.now() + LINK_DAYS * 86_400_000).toISOString() })
+    .insert({ token, doctor_id: doctor.id, multi_use: multiUse, expires_at: new Date(Date.now() + LINK_DAYS * 86_400_000).toISOString() })
     .select("expires_at")
     .single();
   if (error || !data) {
@@ -116,7 +119,7 @@ export async function createInviteLink(): Promise<ActionResult<{ url: string; ex
     return { ok: false, error: "We couldn't create a link. Please try again." };
   }
   revalidatePath("/doctor/patients");
-  return { ok: true, data: { url: `${env.siteUrl()}/join/${token}`, expiresAt: data.expires_at } };
+  return { ok: true, data: { url: `${await requestSiteUrl()}/join/${token}`, expiresAt: data.expires_at, multiUse } };
 }
 
 /** Stop a link that hasn't been used yet (e.g. sent to the wrong person). */
@@ -143,16 +146,63 @@ export async function checkInviteLink(token: string): Promise<InviteLinkStatus> 
   const admin = createAdminClient();
   const { data: link } = await admin
     .from("invite_links")
-    .select("role, used_at, revoked_at, expires_at, doctor:profiles!invite_links_doctor_id_fkey(full_name, specialty)")
+    .select("role, multi_use, used_at, revoked_at, expires_at, doctor:profiles!invite_links_doctor_id_fkey(full_name, specialty)")
     .eq("token", token)
     .maybeSingle();
   if (!link || link.revoked_at) return { ok: false, reason: "invalid" };
-  if (link.used_at) return { ok: false, reason: "used" };
+  if (link.used_at && !link.multi_use) return { ok: false, reason: "used" };
   if (new Date(link.expires_at).getTime() < Date.now()) return { ok: false, reason: "expired" };
   // A doctor link (decision 44): the doctor joins alone, with no patient and no chat.
   if (link.role === "doctor") return { ok: true, role: "doctor", doctorName: null, specialty: null };
   const doctor = link.doctor as unknown as { full_name: string; specialty: string | null } | null;
   return { ok: true, role: "patient", doctorName: doctor?.full_name || "your doctor", specialty: doctor?.specialty ?? null };
+}
+
+/**
+ * Claims a patient link for one join. A one-time link is marked used atomically (so two people can't
+ * both use it); a multi-use link stays open and is counted after the join succeeds.
+ * Returns a `release` to undo the claim if the join fails.
+ */
+async function claimPatientLink(admin: ReturnType<typeof createAdminClient>, token: string, usedBy: string | null) {
+  const { data: link } = await admin
+    .from("invite_links")
+    .select("id, doctor_id, multi_use")
+    .eq("token", token)
+    .eq("role", "patient")
+    .is("revoked_at", null)
+    .maybeSingle();
+  if (!link?.doctor_id) return null;
+  if (link.multi_use) {
+    return {
+      id: link.id as string,
+      doctorId: link.doctor_id as string,
+      multiUse: true,
+      release: async () => {},
+      done: async () => {
+        await admin.rpc("increment_invite_link_use", { link_id: link.id });
+      },
+    };
+  }
+  const { data: claimed } = await admin
+    .from("invite_links")
+    .update({ used_at: new Date().toISOString(), used_by: usedBy })
+    .eq("id", link.id)
+    .is("used_at", null)
+    .select("id")
+    .maybeSingle();
+  if (!claimed) return null;
+  return {
+    id: link.id as string,
+    doctorId: link.doctor_id as string,
+    multiUse: false,
+    release: async () => {
+      await admin.from("invite_links").update({ used_at: null, used_by: null }).eq("id", link.id);
+    },
+    done: async (patientId?: string) => {
+      if (patientId && !usedBy) await admin.from("invite_links").update({ used_by: patientId }).eq("id", link.id);
+      await admin.rpc("increment_invite_link_use", { link_id: link.id });
+    },
+  };
 }
 
 export type AcceptState = { error?: string };
@@ -168,33 +218,26 @@ export async function acceptInviteLink(token: string): Promise<AcceptState> {
   if (!status.ok) return { error: status.reason === "used" ? "This link has already been used." : "This link has expired. Ask your doctor for a new one." };
 
   const admin = createAdminClient();
-  const { data: claimed } = await admin
-    .from("invite_links")
-    .update({ used_at: new Date().toISOString(), used_by: patient.id })
-    .eq("token", token)
-    .is("used_at", null)
-    .is("revoked_at", null)
-    .eq("role", "patient")
-    .select("id, doctor_id")
-    .maybeSingle();
-  if (!claimed?.doctor_id) return { error: "This link has already been used." };
+  const claimed = await claimPatientLink(admin, token, patient.id);
+  if (!claimed) return { error: "This link has already been used." };
 
   const { data: conv, error } = await admin
     .from("conversations")
-    .upsert({ doctor_id: claimed.doctor_id, patient_id: patient.id }, { onConflict: "doctor_id,patient_id" })
+    .upsert({ doctor_id: claimed.doctorId, patient_id: patient.id }, { onConflict: "doctor_id,patient_id" })
     .select("id")
     .single();
   if (error || !conv) {
-    await admin.from("invite_links").update({ used_at: null, used_by: null }).eq("id", claimed.id);
+    await claimed.release();
     console.error("acceptInviteLink conversation failed", error);
     return { error: "We couldn't connect you to this doctor. Please try again." };
   }
+  await claimed.done();
 
   await logAudit(admin, patient, {
     action: "invite.accepted",
     targetType: "conversation",
     targetId: conv.id,
-    details: { doctor_id: claimed.doctor_id, invite_link_id: claimed.id },
+    details: { doctor_id: claimed.doctorId, invite_link_id: claimed.id, multi_use: claimed.multiUse },
   });
   revalidatePath("/", "layout");
   redirect("/home");
@@ -224,17 +267,10 @@ export async function joinWithInviteLink(token: string, _prev: JoinState, formDa
   if (!status.ok) return { error: status.reason === "used" ? "This link has already been used." : "This link has expired. Ask your doctor for a new one.", values };
 
   const admin = createAdminClient();
-  const { data: claimed } = await admin
-    .from("invite_links")
-    .update({ used_at: new Date().toISOString() })
-    .eq("token", token)
-    .is("used_at", null)
-    .is("revoked_at", null)
-    .eq("role", "patient") // doctor invite links are joined through the admin flow (Phase E)
-    .select("id, doctor_id")
-    .maybeSingle();
-  if (!claimed || !claimed.doctor_id) return { error: "This link has already been used.", values };
-  const release = () => admin.from("invite_links").update({ used_at: null }).eq("id", claimed.id);
+  // Doctor invite links are joined through the admin flow (Phase E); claimPatientLink only takes patient links.
+  const claimed = await claimPatientLink(admin, token, null);
+  if (!claimed) return { error: "This link has already been used.", values };
+  const release = claimed.release;
 
   // Phone-only patients sign in with their number; see PHONE_EMAIL_DOMAIN.
   const authEmail = email || `${phone!.slice(1)}@${PHONE_EMAIL_DOMAIN}`;
@@ -256,10 +292,10 @@ export async function joinWithInviteLink(token: string, _prev: JoinState, formDa
   const patientId = created.user.id;
   await admin
     .from("profiles")
-    .update({ full_name: fullName, email: email || null, phone, invited_by: claimed.doctor_id })
+    .update({ full_name: fullName, email: email || null, phone, invited_by: claimed.doctorId })
     .eq("id", patientId);
-  await admin.from("conversations").upsert({ doctor_id: claimed.doctor_id, patient_id: patientId }, { onConflict: "doctor_id,patient_id" });
-  await admin.from("invite_links").update({ used_by: patientId }).eq("id", claimed.id);
+  await admin.from("conversations").upsert({ doctor_id: claimed.doctorId, patient_id: patientId }, { onConflict: "doctor_id,patient_id" });
+  await claimed.done(patientId);
 
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({ email: authEmail, password });
