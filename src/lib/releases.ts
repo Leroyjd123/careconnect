@@ -15,6 +15,15 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.2",
+    date: "2026-11-11",
+    title: "A fuller landing page",
+    added: [
+      "The landing page now shows real screens from CareConnect: the doctor's inbox and patient panel, the patient list, and the patient's app.",
+      "New sections on the landing page: how it works, what the doctor gets, and a few plain facts.",
+    ],
+  },
+  {
     version: "0.10.1",
     date: "2026-11-11",
     title: "Invite links for many patients",

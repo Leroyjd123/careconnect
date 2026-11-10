@@ -1,10 +1,8 @@
 /**
  * The landing page's images (decision 65, changed 2026-11-08).
  *
- * Leroy supplies the real images later. Until then every `src` is null and the page
- * draws a placeholder box at the same size, so nothing shifts when the real file
- * arrives. Drop the files into `public/landing/` and fill in the `src` here: the
- * page needs no other change.
+ * The images are real app screenshots (Q-F/G), taken from the demo data, in
+ * `public/landing/`. A slot whose `src` is null draws a placeholder box at the same size.
  *
  * Rules: no stock photos, no AI images, no external image URLs, no real patient data.
  */
@@ -19,61 +17,82 @@ export type LandingImage = {
 };
 
 export const LANDING_IMAGES: Record<string, LandingImage> = {
+  /** The showcase: the doctor's inbox, the chat and the patient panel, side by side. */
+  "doctor-panel": {
+    src: "/landing/doctor-panel.png",
+    alt: "The doctor's CareConnect screen: the inbox, a chat with a patient, and that patient's panel with their next check-in and latest prescription.",
+    width: 2160,
+    height: 1350,
+  },
+  /** "Your practice": the doctor's patient list. */
+  "doctor-patients": {
+    src: "/landing/doctor-patients.png",
+    alt: "The doctor's patient list, with each patient's status and a button to open their chat.",
+    width: 1024,
+    height: 768,
+  },
+  /** "Your patients": every prescription, from every doctor. */
+  "patient-rx": {
+    src: "/landing/patient-rx.png",
+    alt: "The patient's prescriptions, from all their doctors, filtered by doctor.",
+    width: 780,
+    height: 1430,
+  },
   /** The hero: the patient's chat with their doctor. */
   "hero-chat": {
-    src: null,
+    src: "/landing/hero-chat.png",
     alt: "A patient messaging their doctor in the CareConnect app.",
-    width: 720,
-    height: 1320,
+    width: 780,
+    height: 1430,
   },
   /** "Your patients can": the patient's home screen. */
   "patient-home": {
-    src: null,
+    src: "/landing/patient-home.png",
     alt: "The patient's home screen in CareConnect, with one card per doctor.",
-    width: 720,
-    height: 1320,
+    width: 780,
+    height: 1430,
   },
   /** Feature tile: chat. */
   "feature-chat": {
-    src: null,
+    src: "/landing/feature-chat.png",
     alt: "A chat between a patient and their doctor.",
-    width: 640,
-    height: 480,
+    width: 1024,
+    height: 768,
   },
   /** Feature tile: reports. */
   "feature-reports": {
-    src: null,
+    src: "/landing/feature-reports.png",
     alt: "A patient sending a report to their doctor.",
-    width: 640,
-    height: 480,
+    width: 780,
+    height: 584,
   },
   /** Feature tile: prescriptions. */
   "feature-prescriptions": {
-    src: null,
+    src: "/landing/feature-prescriptions.png",
     alt: "A prescription the doctor issued, in the app.",
-    width: 640,
-    height: 480,
+    width: 780,
+    height: 585,
   },
   /** Feature tile: video meetings. */
   "feature-meetings": {
-    src: null,
+    src: "/landing/feature-meetings.png",
     alt: "A video meeting card in the chat.",
-    width: 640,
-    height: 480,
+    width: 1024,
+    height: 768,
   },
   /** Feature tile: languages. */
   "feature-languages": {
-    src: null,
+    src: "/landing/feature-languages.png",
     alt: "The language choice in the patient's profile.",
-    width: 640,
-    height: 480,
+    width: 780,
+    height: 470,
   },
   /** Feature tile: privacy. */
   "feature-privacy": {
-    src: null,
+    src: "/landing/feature-privacy.png",
     alt: "A private report, open only to the patient and their doctor.",
-    width: 640,
-    height: 480,
+    width: 480,
+    height: 360,
   },
 };
 
@@ -132,4 +151,38 @@ export const FAQ = [
     q: "Is this for local practices?",
     a: "Yes. CareConnect is built for doctors and clinics serving their own local patients, wherever they are.",
   },
+];
+
+/** "How it works": the three steps from first contact to the first prescription. */
+export const STEPS = [
+  {
+    title: "Tell us about your practice",
+    body: "Write to us. We set up your clinic and your account, and walk you through it.",
+  },
+  {
+    title: "Invite your patients",
+    body: "Send an invitation by email, or share one link with many patients. They set a password and they are in.",
+  },
+  {
+    title: "Look after them from anywhere",
+    body: "Reply to messages, open reports, write prescriptions and arrange video meetings, from your phone or your desk.",
+  },
+];
+
+/** The facts band. Only things the app really does (no invented numbers). */
+export const FACTS = [
+  { value: "1", label: "private chat for each patient" },
+  { value: "5 min", label: "for a file link, then it closes" },
+  { value: "0", label: "charges for your practice" },
+  { value: "24/7", label: "for your patients to write to you" },
+];
+
+/** "Built for the doctor": what the doctor's screen gives them. */
+export const DOCTOR_GETS = [
+  { label: "One inbox for every patient", detail: "Unread first, with a badge when a check-in is due." },
+  { label: "The patient beside the chat", detail: "Their details, their next check-in and their latest prescription." },
+  { label: "Prescriptions in a minute", detail: "Pick the medicine, the dose and how often. It saves as you type." },
+  { label: "Corrections that keep the record", detail: "An issued prescription never changes. A correction is a new one." },
+  { label: "Meetings and check-ins", detail: "Paste your meeting link and pick a time. Reminders go out on their own." },
+  { label: "Your patient list", detail: "See who has joined, resend an invitation, or open a chat." },
 ];

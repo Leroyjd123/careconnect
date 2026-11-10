@@ -73,7 +73,10 @@ import { RotatingWord } from "@/components/marketing/RotatingWord";
 import { ChipMarquee } from "@/components/marketing/ChipMarquee";
 import { FeatureChecklist } from "@/components/marketing/FeatureChecklist";
 import { PhoneFrame } from "@/components/marketing/PhoneFrame";
-import { LANDING_IMAGES, MARQUEE_CHIPS, PATIENT_CAN, ROTATING_WORDS } from "@/lib/landing";
+import { BrowserFrame } from "@/components/marketing/BrowserFrame";
+import { StepList } from "@/components/marketing/StepList";
+import { FactBand } from "@/components/marketing/FactBand";
+import { FACTS, LANDING_IMAGES, MARQUEE_CHIPS, PATIENT_CAN, ROTATING_WORDS, STEPS } from "@/lib/landing";
 import { ProfileSummary } from "@/components/profile/ProfileSummary";
 import { MedicineFields } from "@/components/rx/MedicineFields";
 import { PrescriptionView } from "@/components/rx/PrescriptionView";
@@ -370,7 +373,7 @@ const COVERAGE: [component: string, where: string, status: "shown" | "app"][] = 
   ["MessageBubble, ChatDivider, MessageItem, FileCard, Composer", "#bubbles", "shown"],
   ["The admin's message bubble, edited and removed states", "#adminmessages", "shown"],
   ["AuditLogTable (the admin's audit log)", "#auditlog", "shown"],
-  ["MarketingHeader, DisplayHeading, RotatingWord, ChipMarquee, FeatureChecklist, PhoneFrame", "#marketing", "shown"],
+  ["MarketingHeader, DisplayHeading, RotatingWord, ChipMarquee, FeatureChecklist, PhoneFrame, BrowserFrame, StepList, FactBand", "#marketing", "shown"],
   ["ProfileSummary (the collated profile page)", "#profile", "shown"],
   ["FileViewer", "#viewer", "shown"],
   ["PrescriptionCard, DoseSchedule, MedicineFields, PrescriptionView", "#rxcards", "shown"],
@@ -1639,7 +1642,7 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
             id="marketing"
             title="Landing page pieces"
             file="components/marketing/*.tsx · lib/landing.ts"
-            use="The six pieces the landing page is built from. The images are placeholders until Leroy supplies the real ones (decision 65)."
+            use="The pieces the landing page is built from. The images are real app screenshots from the demo data, in public/landing/."
           >
             <div className="grid gap-5 lg:grid-cols-2">
               <Variant name="MarketingHeader" code="the public top bar" className="w-full">
@@ -1682,8 +1685,17 @@ export function Styleguide({ framed = false }: { framed?: boolean }) {
                   items={PATIENT_CAN.map((label) => ({ label }))}
                 />
               </Variant>
-              <Variant name="PhoneFrame" code="a placeholder until the real image lands" className="w-full">
+              <Variant name="PhoneFrame" code="a phone screenshot" className="w-full">
                 <PhoneFrame image={LANDING_IMAGES["hero-chat"]} />
+              </Variant>
+              <Variant name="BrowserFrame" code="a wide desktop screenshot" className="w-full">
+                <BrowserFrame image={LANDING_IMAGES["doctor-patients"]} address="careconnect · Patients" />
+              </Variant>
+              <Variant name="StepList" code="numbered steps" className="w-full lg:col-span-2">
+                <StepList steps={STEPS} />
+              </Variant>
+              <Variant name="FactBand" code="true facts only" className="w-full lg:col-span-2">
+                <FactBand facts={FACTS} />
               </Variant>
             </div>
           </Section>

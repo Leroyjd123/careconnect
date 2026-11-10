@@ -8,6 +8,8 @@ type PhoneFrameProps = {
   /** The image slot. While `src` is null a placeholder box is drawn at the same size. */
   image: LandingImage;
   /** The size of the frame on a wide screen. */
+  /** Load it straight away (the hero, above the fold). */
+  priority?: boolean;
   className?: string;
 };
 
@@ -17,7 +19,7 @@ type PhoneFrameProps = {
  * While the image is missing (decision 65) it draws a placeholder box at the final
  * size, so nothing moves when Leroy drops the real file in.
  */
-export function PhoneFrame({ image, className }: PhoneFrameProps) {
+export function PhoneFrame({ image, priority, className }: PhoneFrameProps) {
   const ratio = image.height / image.width;
 
   return (
@@ -29,6 +31,7 @@ export function PhoneFrame({ image, className }: PhoneFrameProps) {
             alt={image.alt}
             width={image.width}
             height={image.height}
+            priority={priority}
             className="h-full w-full object-cover"
             sizes="(max-width: 768px) 300px, 340px"
           />

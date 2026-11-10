@@ -104,7 +104,7 @@ existing primitives).
 
 ## Marketing — `src/components/marketing` (the landing page only, PLAN §6)
 
-The six pieces the landing page at `/` is built from. They are not used inside the app.
+The nine pieces the landing page at `/` is built from. They are not used inside the app.
 
 | Component | File | What it does | Status |
 |---|---|---|---|
@@ -113,14 +113,17 @@ The six pieces the landing page at `/` is built from. They are not used inside t
 | `RotatingWord` | `marketing/RotatingWord.tsx` | The headline word that cycles. Props: `words`, `interval`. Respects reduced motion (the first word stays), pauses on hover, and puts the whole list in the markup for screen readers — nothing is announced on every change. A client component. | ✅ |
 | `ChipMarquee` | `marketing/ChipMarquee.tsx` | The slow-scrolling row of chips. Props: `chips`, `label`, `duration`. Pauses on hover, static with reduced motion, and the second row is `aria-hidden` so the chips are read once. A client component. | ✅ |
 | `FeatureChecklist` | `marketing/FeatureChecklist.tsx` | The check list ("Your patients can"). Props: `title`, `subtitle`, `items` ({label, detail}), `columns` (1 | 2). | ✅ |
-| `PhoneFrame` | `marketing/PhoneFrame.tsx` | The phone around an app screenshot. Props: `image` (a `LandingImage`). While the image is missing it draws a placeholder box at the final size (decision 65). | ✅ |
+| `PhoneFrame` | `marketing/PhoneFrame.tsx` | The phone around an app screenshot. Props: `image` (a `LandingImage`), `priority` (the hero). While the image is missing it draws a placeholder box at the final size (decision 65). | ✅ |
+| `BrowserFrame` | `marketing/BrowserFrame.tsx` | PhoneFrame's twin for wide screenshots: a desktop window with an address bar. Props: `image`, `address`, `priority`. | ✅ |
+| `StepList` | `marketing/StepList.tsx` | "How it works": numbered step cards, three across on a wide screen. Props: `steps` ({title, body}). | ✅ |
+| `FactBand` | `marketing/FactBand.tsx` | A band of big values with a line under each (`<dl>`). Props: `facts` ({value, label}). True facts only, no invented numbers. | ✅ |
 
 **The landing page's own parts** (page-local, in `src/app/`): `FeatureTiles.tsx`, `PrivacyStrip.tsx`,
 `FaqList.tsx`, `LandingFooter.tsx`. The page is `src/app/page.tsx`.
 
 **The images** live in one place: `src/lib/landing.ts` (`LANDING_IMAGES`, plus the rotating words, the
-chips, the checklist and the FAQ). Every `src` is `null` until Leroy supplies the real files; the slot
-list is in `docs/SPEC.md` § Landing → "Images needed".
+chips, the checklists, the steps, the facts and the FAQ). The images are real app screenshots from the demo
+data, in `public/landing/` (Q-F/G). A slot with `src: null` still draws a placeholder.
 
 ## Profile — `src/components/profile` (shared by all three roles)
 
